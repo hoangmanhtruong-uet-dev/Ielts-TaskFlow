@@ -56,4 +56,4 @@ jobs:
         # Pixel-baseline @visual checks run on windows-latest in release-verification.yml.
         # Release verification must separately run test:e2e:production-verification
         # with dedicated secret-managed accounts and the approved project ref.
-        run: npm run test:e2e -- --grep-invert @visual
+        run: npm run test:e2e -- --project=chromium-desktop --project=chromium-mobile --grep-invert @visual
