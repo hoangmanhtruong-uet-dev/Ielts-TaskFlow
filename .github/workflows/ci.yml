@@ -53,6 +53,7 @@ jobs:
 
       - name: E2E smoke
         # Public/default mode reports missing authenticated secrets explicitly.
+        # Pixel-baseline @visual checks run on windows-latest in release-verification.yml.
         # Release verification must separately run test:e2e:production-verification
         # with dedicated secret-managed accounts and the approved project ref.
-        run: npm run test:e2e
+        run: npm run test:e2e -- --grep-invert @visual

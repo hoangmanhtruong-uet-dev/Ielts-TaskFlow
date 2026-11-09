@@ -64,9 +64,9 @@ function createFallbackLimiter(
 
       if (isProduction && !loggedMissingRedisInProd) {
         loggedMissingRedisInProd = true;
-        console.error(
+        console.warn(
           JSON.stringify({
-            level: "error",
+            level: "warn",
             event: "UPSTASH_REDIS_MISSING_IN_PROD",
             message:
               "Upstash Redis is not configured in production; using bounded per-instance fallback rate limiter.",

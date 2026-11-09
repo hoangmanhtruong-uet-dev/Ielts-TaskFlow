@@ -52,7 +52,10 @@ afterEach(() => {
 describe("production dependency readiness", () => {
   it("checks Auth, PostgREST/database and the private Storage bucket", async () => {
     stubEnvironment();
-    const fetchMock = vi.fn(healthyResponse);
+    const fetchMock = vi.fn((url: string | URL, init?: RequestInit) => {
+      void init;
+      return healthyResponse(url);
+    });
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(assertProductionReadiness()).resolves.toMatchObject({
@@ -63,6 +66,13 @@ describe("production dependency readiness", () => {
       },
     });
     expect(fetchMock).toHaveBeenCalledTimes(3);
+    const databaseCall = fetchMock.mock.calls.find(
+      ([url]) => new URL(String(url)).pathname === "/rest/v1/learning_modules",
+    );
+    expect(databaseCall?.[1]?.headers).toMatchObject({
+      apikey: REQUIRED_ENV.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${REQUIRED_ENV.SUPABASE_SERVICE_ROLE_KEY}`,
+    });
   });
 
   it("classifies a database failure without exposing its payload", async () => {

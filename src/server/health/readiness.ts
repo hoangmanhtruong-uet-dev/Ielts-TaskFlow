@@ -31,6 +31,7 @@ export async function assertProductionReadiness() {
     checkDatabase(
       publicEnv.NEXT_PUBLIC_SUPABASE_URL,
       publicEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      serverEnv.SUPABASE_SERVICE_ROLE_KEY,
     ),
     checkStorage(
       publicEnv.NEXT_PUBLIC_SUPABASE_URL,
@@ -58,13 +59,19 @@ async function checkAuth(baseUrl: string, anonKey: string) {
   if (!response.ok) throw new DependencyReadinessError("auth");
 }
 
-async function checkDatabase(baseUrl: string, anonKey: string) {
+async function checkDatabase(
+  baseUrl: string,
+  anonKey: string,
+  serviceRoleKey?: string,
+) {
   const url = new URL("/rest/v1/learning_modules", baseUrl);
   url.searchParams.set("select", "id");
   url.searchParams.set("limit", "0");
-  const response = await dependencyFetch("database", url, {
-    headers: { apikey: anonKey },
-  });
+  const headers: Record<string, string> = { apikey: anonKey };
+  if (serviceRoleKey) {
+    headers.Authorization = `Bearer ${serviceRoleKey}`;
+  }
+  const response = await dependencyFetch("database", url, { headers });
   if (!response.ok) throw new DependencyReadinessError("database");
   try {
     const body: unknown = await response.json();
