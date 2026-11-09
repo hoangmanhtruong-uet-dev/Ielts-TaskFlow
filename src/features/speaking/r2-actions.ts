@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 
 import { requireCompletedOnboarding } from "@/features/onboarding/server/learner-profile";
 import { verifySpeakingAudioBuffer } from "@/features/speaking/server/audio-verification";
+import { isR2Configured } from "@/lib/env";
 import {
   deleteR2Objects,
   generateUploadUrl,
@@ -108,6 +109,14 @@ export async function getR2UploadUrlAction(
   );
   if (!ownership.ok) {
     return { status: "error" as const, message: ownership.message };
+  }
+
+  if (!isR2Configured()) {
+    return {
+      status: "unconfigured" as const,
+      message:
+        "Cloudflare R2 chưa được cấu hình; sử dụng bộ nhớ riêng tư dự phòng.",
+    };
   }
 
   const extension = ALLOWED_AUDIO_MIME_EXTENSIONS[normalizedMime];
@@ -281,6 +290,14 @@ export async function uploadR2AudioFallbackAction(formData: FormData) {
   );
   if (!ownership.ok) {
     return { status: "error" as const, message: ownership.message };
+  }
+
+  if (!isR2Configured()) {
+    return {
+      status: "unconfigured" as const,
+      message:
+        "Cloudflare R2 chưa được cấu hình; không thể upload qua R2 fallback.",
+    };
   }
 
   const bytes = new Uint8Array(await file.arrayBuffer());

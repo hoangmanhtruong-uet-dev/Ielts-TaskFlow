@@ -1,8 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   EnvironmentValidationError,
   inspectOptionalAiConfiguration,
+  isR2Configured,
   parsePublicEnv,
   parseServerEnv,
 } from "@/lib/env";
@@ -131,5 +132,36 @@ describe("inspectOptionalAiConfiguration", () => {
       writing: "configured",
       speaking: "disabled",
     });
+  });
+});
+
+describe("isR2Configured", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("returns false when R2 configuration is omitted or partial", () => {
+    vi.stubEnv("R2_ACCOUNT_ID", "");
+    vi.stubEnv("R2_ACCESS_KEY_ID", "");
+    vi.stubEnv("R2_SECRET_ACCESS_KEY", "");
+    vi.stubEnv("R2_BUCKET_NAME", "");
+    vi.stubEnv("CLOUDFLARE_R2_ACCOUNT_ID", "");
+    vi.stubEnv("CLOUDFLARE_R2_ACCESS_KEY_ID", "");
+    vi.stubEnv("CLOUDFLARE_R2_SECRET_ACCESS_KEY", "");
+    vi.stubEnv("CLOUDFLARE_R2_BUCKET_NAME", "");
+
+    expect(isR2Configured()).toBe(false);
+
+    vi.stubEnv("R2_ACCOUNT_ID", "acc-123");
+    expect(isR2Configured()).toBe(false);
+  });
+
+  it("returns true when standard or CLOUDFLARE_R2_* values are complete", () => {
+    vi.stubEnv("R2_ACCOUNT_ID", "acc-123");
+    vi.stubEnv("R2_ACCESS_KEY_ID", "key-123");
+    vi.stubEnv("R2_SECRET_ACCESS_KEY", "secret-123");
+    vi.stubEnv("R2_BUCKET_NAME", "speaking-bucket");
+
+    expect(isR2Configured()).toBe(true);
   });
 });

@@ -7,13 +7,18 @@ import { useRouter } from "next/navigation";
 import { GenericPracticeEngine } from "@/features/core-practice";
 import { submitMockTestSectionAction } from "@/features/mock-tests/actions";
 import type { MockRunnerContext } from "@/features/mock-tests/model";
-import { submitSpeakingAction } from "@/features/speaking/actions";
+import {
+  createSpeakingUploadIntentAction,
+  submitSpeakingAction,
+  verifySpeakingUploadAction,
+} from "@/features/speaking/actions";
 import {
   getR2UploadUrlAction,
   saveR2AudioAction,
   uploadR2AudioFallbackAction,
 } from "@/features/speaking/r2-actions";
 import type { SpeakingPracticeData } from "@/features/speaking/server/content";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 type Recording = {
@@ -187,47 +192,89 @@ export function SpeakingRunner({
           promptId,
         );
 
-        if (result.status !== "success") {
-          setMessage(result.message);
-          return false;
-        }
-
-        try {
-          const uploadRes = await fetch(result.uploadUrl, {
-            method: "PUT",
-            body: recording.blob,
-            headers: {
-              "Content-Type": result.mimeType,
-            },
-          });
-
-          if (!uploadRes.ok) {
-            throw new Error(`HTTP error ${uploadRes.status}`);
-          }
-
-          const saveRes = await saveR2AudioAction(
+        if (result.status === "unconfigured") {
+          setMessage("Đang tải audio lên bộ nhớ riêng tư...");
+          const intentResult = await createSpeakingUploadIntentAction({
             attemptId,
             promptId,
-            result.fileKey,
-            result.mimeType,
-          );
-          if (saveRes.status === "error") {
-            setMessage(saveRes.message);
+            mimeType: recording.mimeType,
+            sizeBytes: recording.blob.size,
+            durationSeconds: recording.duration,
+            idempotencyKey: crypto.randomUUID(),
+          });
+
+          if (intentResult.status !== "ready") {
+            setMessage(intentResult.message);
             return false;
           }
-        } catch {
-          setMessage("Đang thử tải lên qua máy chủ dự phòng...");
-          const ext = EXTENSION_BY_MIME[recording.mimeType] || "webm";
-          const formData = new FormData();
-          formData.append("file", recording.blob, `audio.${ext}`);
-          formData.append("attemptId", attemptId);
-          formData.append("promptId", promptId);
-          formData.append("mimeType", recording.mimeType);
 
-          const fallbackRes = await uploadR2AudioFallbackAction(formData);
-          if (fallbackRes.status !== "success") {
-            setMessage(fallbackRes.message || "Lỗi kết nối khi tải audio lên.");
+          const supabase = createSupabaseBrowserClient();
+          const { error: uploadError } = await supabase.storage
+            .from(intentResult.intent.bucketId)
+            .upload(intentResult.intent.storagePath, recording.blob, {
+              contentType: recording.mimeType,
+              upsert: false,
+            });
+
+          if (uploadError) {
+            setMessage("Không thể tải audio lên bộ nhớ riêng tư.");
             return false;
+          }
+
+          const verifyResult = await verifySpeakingUploadAction({
+            intentId: intentResult.intent.intentId,
+            setSlug: data.set.slug,
+          });
+
+          if (verifyResult.status !== "verified") {
+            setMessage(verifyResult.message);
+            return false;
+          }
+        } else {
+          if (result.status !== "success") {
+            setMessage(result.message);
+            return false;
+          }
+
+          try {
+            const uploadRes = await fetch(result.uploadUrl, {
+              method: "PUT",
+              body: recording.blob,
+              headers: {
+                "Content-Type": result.mimeType,
+              },
+            });
+
+            if (!uploadRes.ok) {
+              throw new Error(`HTTP error ${uploadRes.status}`);
+            }
+
+            const saveRes = await saveR2AudioAction(
+              attemptId,
+              promptId,
+              result.fileKey,
+              result.mimeType,
+            );
+            if (saveRes.status === "error") {
+              setMessage(saveRes.message);
+              return false;
+            }
+          } catch {
+            setMessage("Đang thử tải lên qua máy chủ dự phòng...");
+            const ext = EXTENSION_BY_MIME[recording.mimeType] || "webm";
+            const formData = new FormData();
+            formData.append("file", recording.blob, `audio.${ext}`);
+            formData.append("attemptId", attemptId);
+            formData.append("promptId", promptId);
+            formData.append("mimeType", recording.mimeType);
+
+            const fallbackRes = await uploadR2AudioFallbackAction(formData);
+            if (fallbackRes.status !== "success") {
+              setMessage(
+                fallbackRes.message || "Lỗi kết nối khi tải audio lên.",
+              );
+              return false;
+            }
           }
         }
 
@@ -251,7 +298,7 @@ export function SpeakingRunner({
         setUploadingPromptId(null);
       }
     },
-    [attemptId, router],
+    [attemptId, data.set.slug, router],
   );
 
   const handleSubmit = useCallback(async () => {
