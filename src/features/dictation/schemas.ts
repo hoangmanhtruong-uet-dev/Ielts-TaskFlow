@@ -17,5 +17,7 @@ export const submitDictationSchema = z.object({
 });
 
 export type StartDictationInput = z.infer<typeof startDictationSchema>;
-export type SaveDictationSentenceInput = z.infer<typeof saveDictationSentenceSchema>;
+export type SaveDictationSentenceInput = z.infer<
+  typeof saveDictationSentenceSchema
+>;
 export type SubmitDictationInput = z.infer<typeof submitDictationSchema>;

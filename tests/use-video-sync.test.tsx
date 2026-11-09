@@ -22,7 +22,7 @@ describe("useVideoProgressSync", () => {
     localStorage.setItem("lesson_progress_l1", "45.5");
 
     const { result } = renderHook(() =>
-      useVideoProgressSync({ lessonId: "l1" })
+      useVideoProgressSync({ lessonId: "l1" }),
     );
 
     // Provide mock video element
@@ -37,12 +37,15 @@ describe("useVideoProgressSync", () => {
 
   it("syncs progress to server via interval", () => {
     const updateSpy = vi.spyOn(syncApi, "updateLessonProgressAction");
-    
+
     const { result } = renderHook(() =>
-      useVideoProgressSync({ lessonId: "l1", interval: 1000 })
+      useVideoProgressSync({ lessonId: "l1", interval: 1000 }),
     );
 
-    const mockVideo = { currentTime: 10, duration: 100 } as unknown as HTMLVideoElement;
+    const mockVideo = {
+      currentTime: 10,
+      duration: 100,
+    } as unknown as HTMLVideoElement;
     result.current.videoRef.current = mockVideo;
 
     act(() => {

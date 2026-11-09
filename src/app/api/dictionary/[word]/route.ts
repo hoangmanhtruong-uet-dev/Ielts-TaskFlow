@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { dictionaryRateLimit } from "@/lib/rate-limit";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+
 interface DictionaryMeaning {
   partOfSpeech: string;
   definitions: Array<{
@@ -27,43 +30,99 @@ interface DatamuseWord {
   score: number;
 }
 
+const VALID_WORD_REGEX =
+  /^[a-zA-Z][a-zA-Z'-]{0,39}(?:\s+[a-zA-Z][a-zA-Z'-]{0,39})?$/;
+
+function getClientIp(request: NextRequest): string {
+  return (
+    request.headers.get("x-vercel-forwarded-for")?.split(",")[0]?.trim() ||
+    request.headers.get("x-real-ip")?.trim() ||
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    "unknown"
+  );
+}
+
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ word: string }> }
+  { params }: { params: Promise<{ word: string }> },
 ) {
   try {
-    const { word: rawWord } = await params;
-    const word = decodeURIComponent(rawWord || "").trim().toLowerCase();
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    if (!word || word.length > 50 || /[^a-zA-Z\s-]/.test(word)) {
+    const rateKey = user
+      ? `dict_u_${user.id}`
+      : `dict_ip_${getClientIp(request)}`;
+    const { success: rateAllowed } = await dictionaryRateLimit.limit(rateKey);
+    if (!rateAllowed) {
+      return NextResponse.json(
+        { error: "Too many dictionary requests. Please try again shortly." },
+        { status: 429 },
+      );
+    }
+
+    const { word: rawWord } = await params;
+    let decodedWord = "";
+    try {
+      decodedWord = decodeURIComponent(rawWord || "");
+    } catch {
       return NextResponse.json(
         { error: "Invalid word query" },
-        { status: 400 }
+        { status: 400 },
+      );
+    }
+
+    const word = decodedWord.trim().replace(/\s+/g, " ").toLowerCase();
+
+    if (!word || word.length > 50 || !VALID_WORD_REGEX.test(word)) {
+      return NextResponse.json(
+        { error: "Invalid word query" },
+        { status: 400 },
       );
     }
 
     // Gọi song song Free Dictionary API và Datamuse API (Collocations & Related words)
-    const [dictResult, collocationsResult, synonymsResult] = await Promise.allSettled([
-      fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`, {
-        next: { revalidate: 86400 }, // Cache 24 hours
-      }).then(async (r) => (r.ok ? ((await r.json()) as DictionaryApiResponse[]) : null)),
+    const [dictResult, collocationsResult, synonymsResult] =
+      await Promise.allSettled([
+        fetch(
+          `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`,
+          {
+            next: { revalidate: 86400 }, // Cache 24 hours
+            signal: AbortSignal.timeout(4_000),
+          },
+        ).then(async (r) =>
+          r.ok ? ((await r.json()) as DictionaryApiResponse[]) : null,
+        ),
 
-      fetch(`https://api.datamuse.com/words?rel_jja=${encodeURIComponent(word)}&max=6`, {
-        next: { revalidate: 86400 },
-      }).then(async (r) => (r.ok ? ((await r.json()) as DatamuseWord[]) : [])),
+        fetch(
+          `https://api.datamuse.com/words?rel_jja=${encodeURIComponent(word)}&max=6`,
+          {
+            next: { revalidate: 86400 },
+            signal: AbortSignal.timeout(4_000),
+          },
+        ).then(async (r) => (r.ok ? ((await r.json()) as DatamuseWord[]) : [])),
 
-      fetch(`https://api.datamuse.com/words?rel_syn=${encodeURIComponent(word)}&max=6`, {
-        next: { revalidate: 86400 },
-      }).then(async (r) => (r.ok ? ((await r.json()) as DatamuseWord[]) : [])),
-    ]);
+        fetch(
+          `https://api.datamuse.com/words?rel_syn=${encodeURIComponent(word)}&max=6`,
+          {
+            next: { revalidate: 86400 },
+            signal: AbortSignal.timeout(4_000),
+          },
+        ).then(async (r) => (r.ok ? ((await r.json()) as DatamuseWord[]) : [])),
+      ]);
 
-    const dictData = dictResult.status === "fulfilled" ? dictResult.value : null;
+    const dictData =
+      dictResult.status === "fulfilled" ? dictResult.value : null;
     const collocations =
-      collocationsResult.status === "fulfilled" && Array.isArray(collocationsResult.value)
+      collocationsResult.status === "fulfilled" &&
+      Array.isArray(collocationsResult.value)
         ? collocationsResult.value.map((c) => c.word)
         : [];
     const synonymsFromDatamuse =
-      synonymsResult.status === "fulfilled" && Array.isArray(synonymsResult.value)
+      synonymsResult.status === "fulfilled" &&
+      Array.isArray(synonymsResult.value)
         ? synonymsResult.value.map((s) => s.word)
         : [];
 
@@ -82,15 +141,16 @@ export async function GET(
           },
           {
             headers: {
-              "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=604800",
+              "Cache-Control":
+                "public, s-maxage=86400, stale-while-revalidate=604800",
             },
-          }
+          },
         );
       }
 
       return NextResponse.json(
         { error: `Word '${word}' not found` },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -102,10 +162,16 @@ export async function GET(
       firstEntry.phonetics?.find((p) => p.text)?.text ||
       null;
 
-    // Tìm audio URL (ưu tiên file mp3 có âm thanh)
+    // Tìm audio URL (chỉ chấp nhận URL https:// hợp lệ)
+    const httpsAudios = (firstEntry.phonetics || [])
+      .map((p) => p.audio)
+      .filter(
+        (audio): audio is string =>
+          typeof audio === "string" && audio.startsWith("https://"),
+      );
     const audioUrl =
-      firstEntry.phonetics?.find((p) => p.audio && p.audio.endsWith(".mp3"))?.audio ||
-      firstEntry.phonetics?.find((p) => p.audio)?.audio ||
+      httpsAudios.find((audio) => audio.endsWith(".mp3")) ??
+      httpsAudios[0] ??
       null;
 
     // Tổng hợp meanings
@@ -130,13 +196,19 @@ export async function GET(
       },
       {
         headers: {
-          "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=604800",
+          "Cache-Control":
+            "public, s-maxage=86400, stale-while-revalidate=604800",
         },
-      }
+      },
     );
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Internal Server Error";
-    console.error("GET /api/dictionary/[word] error:", message);
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error(
+      "GET /api/dictionary/[word] error:",
+      err instanceof Error ? err.message : "unknown",
+    );
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

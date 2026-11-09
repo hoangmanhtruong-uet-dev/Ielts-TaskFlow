@@ -24,7 +24,7 @@ export function AppLogo({
           : "focus-visible:ring-[var(--ring)]",
         className,
       )}
-      aria-label="IELTS Flow - Trang chủ"
+      aria-label="Indigo Scholar - Trang chủ"
     >
       <span
         aria-hidden="true"

@@ -12,7 +12,13 @@ interface WordOfTheDayProps {
   example: string;
 }
 
-export function WordOfTheDayCard({ word, phonetic, type, meaning, example }: WordOfTheDayProps) {
+export function WordOfTheDayCard({
+  word,
+  phonetic,
+  type,
+  meaning,
+  example,
+}: WordOfTheDayProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [error, setError] = useState(false);
 
@@ -28,11 +34,13 @@ export function WordOfTheDayCard({ word, phonetic, type, meaning, example }: Wor
     const utterance = new SpeechSynthesisUtterance(word);
     utterance.lang = "en-US";
     utterance.rate = 0.9;
-    
+
     // Attempt to find a high quality English voice (Google or Apple)
     const voices = window.speechSynthesis.getVoices();
     const preferredVoice = voices.find(
-      (v) => v.lang.startsWith("en") && (v.name.includes("Google") || v.name.includes("Siri"))
+      (v) =>
+        v.lang.startsWith("en") &&
+        (v.name.includes("Google") || v.name.includes("Siri")),
     );
     if (preferredVoice) {
       utterance.voice = preferredVoice;
@@ -63,16 +71,20 @@ export function WordOfTheDayCard({ word, phonetic, type, meaning, example }: Wor
           aria-label="Play audio"
           className={cn(
             "grid size-9 place-items-center rounded-full transition-colors",
-            isPlaying ? "bg-white/40 animate-pulse" : "bg-white/20 hover:bg-white/30"
+            isPlaying
+              ? "animate-pulse bg-white/40"
+              : "bg-white/20 hover:bg-white/30",
           )}
         >
-          {error ? <VolumeX size={18} className="text-red-300" /> : <Volume2 size={18} />}
+          {error ? (
+            <VolumeX size={18} className="text-red-300" />
+          ) : (
+            <Volume2 size={18} />
+          )}
         </button>
       </div>
-      <p className="mt-4 text-sm leading-relaxed text-white/95">
-        {meaning}
-      </p>
-      <div className="mt-4 rounded-xl bg-black/20 p-3 text-xs italic text-white/90">
+      <p className="mt-4 text-sm leading-relaxed text-white/95">{meaning}</p>
+      <div className="mt-4 rounded-xl bg-black/20 p-3 text-xs text-white/90 italic">
         "{example}"
       </div>
     </article>

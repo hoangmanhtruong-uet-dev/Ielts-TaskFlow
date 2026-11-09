@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React, { memo } from 'react';
+import React, { memo } from "react";
 
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5];
 
@@ -15,15 +15,15 @@ export const DictationSpeedSelector = memo(function DictationSpeedSelector({
 }: Props) {
   return (
     <div className="flex items-center gap-1">
-      <span className="text-xs text-gray-500 mr-1">Tốc độ:</span>
+      <span className="mr-1 text-xs text-gray-500">Tốc độ:</span>
       {SPEEDS.map((speed) => (
         <button
           key={speed}
           onClick={() => onSpeedChange(speed)}
-          className={`px-2 py-1 text-xs rounded-md transition-colors ${
+          className={`rounded-md px-2 py-1 text-xs transition-colors ${
             currentSpeed === speed
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              ? "bg-blue-600 text-white"
+              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
           }`}
         >
           {speed}x

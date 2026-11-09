@@ -4,13 +4,13 @@ Cập nhật: 2026-10-23 · Phạm vi: từ trạng thái hiện tại (Phase 1�
 
 ## 0. Chẩn đoán hiện trạng
 
-| Hạng mục | Trạng thái |
-| --- | --- |
-| Engine (14 features, RLS, migrations, tests, runbooks) | ✅ Gần như hoàn chỉnh |
-| Content (lí thuyết + bài tập) | ❌ Rất mỏng — seed migration chỉ vài lesson/pass/task mỗi loại |
-| Dev Supabase project (`copgpiplkccnqgupdwcr`) | ❌ Đã chết — DNS NXDOMAIN, login fail `AUTH_PROVIDER_ERROR` |
+| Hạng mục                                                        | Trạng thái                                                                                               |
+| --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Engine (14 features, RLS, migrations, tests, runbooks)          | ✅ Gần như hoàn chỉnh                                                                                    |
+| Content (lí thuyết + bài tập)                                   | ❌ Rất mỏng — seed migration chỉ vài lesson/pass/task mỗi loại                                           |
+| Dev Supabase project (`copgpiplkccnqgupdwcr`)                   | ❌ Đã chết — DNS NXDOMAIN, login fail `AUTH_PROVIDER_ERROR`                                              |
 | Production checklist (`docs/PRODUCTION_READINESS_CHECKLIST.md`) | ❌ NO-GO — toàn bộ gate là `BLOCKED_BY_EXTERNAL_CONFIGURATION` (Vercel, domain, SMTP, backup, scheduler) |
-| Billing (Phase 11), AI writing/speaking | ⚠️ Code có sẵn nhưng chưa bật — quyết định: **defer, launch miễn phí trước** |
+| Billing (Phase 11), AI writing/speaking                         | ⚠️ Code có sẵn nhưng chưa bật — quyết định: **defer, launch miễn phí trước**                             |
 
 **Kết luận chiến lược:** phần kỹ thuật không còn là瓶颈. Nút thắt duy nhất là **content** và **cấu hình cloud**. Là project cá nhân thiếu chuyên môn IELTS, không tự viết tay toàn bộ nội dung — chuyển sang vai **editor vận hành pipeline**, dựa vào 3 trụ:
 
@@ -24,16 +24,16 @@ Cập nhật: 2026-10-23 · Phạm vi: từ trạng thái hiện tại (Phase 1�
 
 **Scope content MVP (chống tham lam — theo KI-010/011):** chỉ **Academic**, band mục tiêu **5.0–6.5**, đúng 1 roadmap:
 
-| Loại | Số lượng tối thiểu |
-| --- | --- |
-| Module lí thuyết (Grammar + Vocab) | 4 module × 5 lesson = 20 lesson |
-| Exercise questions | ~120 câu (multiple-choice, fill, matching) |
-| Reading passages (có question set) | 4 |
-| Listening sets (audio TTS + questions) | 4 |
-| Writing tasks (Task 1 + 2, rubric tay) | 6 |
-| Speaking parts (cue cards) | 8 |
-| Mock test hoàn chỉnh | 1 |
-| Placement test | đã có seed — rà lại |
+| Loại                                   | Số lượng tối thiểu                         |
+| -------------------------------------- | ------------------------------------------ |
+| Module lí thuyết (Grammar + Vocab)     | 4 module × 5 lesson = 20 lesson            |
+| Exercise questions                     | ~120 câu (multiple-choice, fill, matching) |
+| Reading passages (có question set)     | 4                                          |
+| Listening sets (audio TTS + questions) | 4                                          |
+| Writing tasks (Task 1 + 2, rubric tay) | 6                                          |
+| Speaking parts (cue cards)             | 8                                          |
+| Mock test hoàn chỉnh                   | 1                                          |
+| Placement test                         | đã có seed — rà lại                        |
 
 Tổng ~160 items chất lượng đã review > 1000 items chưa kiểm chứng.
 
@@ -66,17 +66,17 @@ Tổng ~160 items chất lượng đã review > 1000 items chưa kiểm chứng.
 
 Chạy đúng các ID trong `docs/PRODUCTION_READINESS_CHECKLIST.md`, tạo project Supabase **dành riêng cho production** (ref mới thứ 2, tách khỏi dev ở G0):
 
-| Gate | Việc cần làm |
-| --- | --- |
-| RA-01/03 | Commit sạch → release PR → CI green trên exact SHA |
-| RA-04/ENV-01 | Vercel project + env vars + `NEXT_PUBLIC_SITE_URL` + domain + DNS/TLS |
-| RA-05/SB-02/SMTP | Support mailbox thật + Supabase Auth SMTP + test confirm/reset mail (KI-088) |
-| SB-03 | Bật leaked-password protection, rate limit, CAPTCHA signup |
-| SB-04/05/06/07 | Push migrations lên prod project, remote lint + owner verifier rollback-only, bucket policies |
-| RET-01/02 | Scheduler gọi cleanup route hằng ngày + alert non-2xx |
-| KI-085 | Bật backup/PITR trên Supabase prod |
-| RET-05 | Chạy DSR tabletop (export + delete) trên user test |
-| KI-089 | Config E2E accounts A/B, chạy authenticated suite 0 skip |
+| Gate             | Việc cần làm                                                                                  |
+| ---------------- | --------------------------------------------------------------------------------------------- |
+| RA-01/03         | Commit sạch → release PR → CI green trên exact SHA                                            |
+| RA-04/ENV-01     | Vercel project + env vars + `NEXT_PUBLIC_SITE_URL` + domain + DNS/TLS                         |
+| RA-05/SB-02/SMTP | Support mailbox thật + Supabase Auth SMTP + test confirm/reset mail (KI-088)                  |
+| SB-03            | Bật leaked-password protection, rate limit, CAPTCHA signup                                    |
+| SB-04/05/06/07   | Push migrations lên prod project, remote lint + owner verifier rollback-only, bucket policies |
+| RET-01/02        | Scheduler gọi cleanup route hằng ngày + alert non-2xx                                         |
+| KI-085           | Bật backup/PITR trên Supabase prod                                                            |
+| RET-05           | Chạy DSR tabletop (export + delete) trên user test                                            |
+| KI-089           | Config E2E accounts A/B, chạy authenticated suite 0 skip                                      |
 
 ## G4 — Private beta (1–2 tuần)
 
@@ -94,20 +94,20 @@ Chạy đúng các ID trong `docs/PRODUCTION_READINESS_CHECKLIST.md`, tạo proj
 
 ## Lịch ước lượng (part-time ~10–15h/tuần)
 
-| Giai đoạn | Thời gian |
-| --- | --- |
-| G0 | Tuần 0 (nửa ngày) |
-| G1 content | Tuần 1–4 |
-| G2 + G3 infra | Tuần 5 |
-| G4 beta | Tuần 6–7 |
-| G5 launch | Tuần 8 |
+| Giai đoạn     | Thời gian         |
+| ------------- | ----------------- |
+| G0            | Tuần 0 (nửa ngày) |
+| G1 content    | Tuần 1–4          |
+| G2 + G3 infra | Tuần 5            |
+| G4 beta       | Tuần 6–7          |
+| G5 launch     | Tuần 8            |
 
 ## Rủi ro chính
 
-| Rủi ro | Giảm thiểu |
-| --- | --- |
-| Bản quyền đề Cambridge | Chỉ dùng format + nội dung tự sinh, metadata licence bắt buộc, script validate chặn publish thiếu provenance |
+| Rủi ro                     | Giảm thiểu                                                                                                               |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Bản quyền đề Cambridge     | Chỉ dùng format + nội dung tự sinh, metadata licence bắt buộc, script validate chặn publish thiếu provenance             |
 | AI sinh câu sai answer key | Bắt buộc 2 lớp: script kiểm tra cấu trúc + người spot-check ≥20% mỗi batch; item stats sau beta phát hiện câu bất thường |
-| Thiếu chuyên môn sư phạm | Neo vào CEFR descriptors làm thang độ khó; reviewer thuê duyệt rubric Writing/Speaking |
-| Scope phình (KI-010) | Bảng scope cứng ở mục 0; mọi thứ ngoài bảng → backlog sau launch |
-| Dev project chết lần nữa | Document ref + backup PITR ngay từ G0; seed content nằm trong migration, không phụ thuộc data tay |
+| Thiếu chuyên môn sư phạm   | Neo vào CEFR descriptors làm thang độ khó; reviewer thuê duyệt rubric Writing/Speaking                                   |
+| Scope phình (KI-010)       | Bảng scope cứng ở mục 0; mọi thứ ngoài bảng → backlog sau launch                                                         |
+| Dev project chết lần nữa   | Document ref + backup PITR ngay từ G0; seed content nằm trong migration, không phụ thuộc data tay                        |

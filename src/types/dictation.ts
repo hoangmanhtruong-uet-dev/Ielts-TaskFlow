@@ -80,10 +80,11 @@ export interface DictationSessionState {
 }
 
 export type DictationDifficulty = 1 | 2 | 3 | 4 | 5;
-export type DictationCategory = 'general' | 'business' | 'academic' | 'daily' | 'news';
+export type DictationCategory =
+  "general" | "business" | "academic" | "daily" | "news";
 
 export interface WordDiff {
   word: string;
-  type: 'correct' | 'incorrect' | 'missing' | 'extra';
+  type: "correct" | "incorrect" | "missing" | "extra";
   expected?: string;
 }

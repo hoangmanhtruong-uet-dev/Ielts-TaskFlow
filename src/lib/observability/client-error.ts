@@ -13,7 +13,7 @@ export async function reportClientBoundaryError(
     keepalive: true,
   });
   if (!response.ok) return undefined;
-  const body: any = await response.json();
+  const body: unknown = await response.json();
   if (
     body &&
     typeof body === "object" &&

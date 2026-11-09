@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import { Maximize2, X, Compass, MapPin, Check } from "lucide-react";
 import type { QuestionOption } from "./true-false-button-group";
 
@@ -19,7 +20,10 @@ export interface MapLabellingRendererProps {
   answerText?: string;
   mapImageUrl?: string;
   pins?: MapPinData[];
-  onChange: (draft: { answerText: string; selectedOptionIds: string[] }) => void;
+  onChange: (draft: {
+    answerText: string;
+    selectedOptionIds: string[];
+  }) => void;
 }
 
 const DEFAULT_PINS: MapPinData[] = [
@@ -29,7 +33,7 @@ const DEFAULT_PINS: MapPinData[] = [
   { letter: "D", x: 30, y: 60, title: "Student Union" },
   { letter: "E", x: 72, y: 65, title: "Sports Pavilion" },
   { letter: "F", x: 50, y: 75, title: "Main Square Fountain" },
-  { letter: "G", x: 88, y: 80, title: "Bicycle Parking" }
+  { letter: "G", x: 88, y: 80, title: "Bicycle Parking" },
 ];
 
 export function MapLabellingRenderer({
@@ -39,7 +43,7 @@ export function MapLabellingRenderer({
   answerText = "",
   mapImageUrl,
   pins = DEFAULT_PINS,
-  onChange
+  onChange,
 }: MapLabellingRendererProps) {
   const [isZoomed, setIsZoomed] = useState(false);
   const [hoveredLetter, setHoveredLetter] = useState<string | null>(null);
@@ -47,46 +51,52 @@ export function MapLabellingRenderer({
   // Selected letter can be derived from answerText or selected option
   const selectedLetter =
     answerText.trim() ||
-    options.find((o) => selectedOptionIds.includes(o.id))?.label?.trim().slice(0, 1) ||
+    options
+      .find((o) => selectedOptionIds.includes(o.id))
+      ?.label?.trim()
+      .slice(0, 1) ||
     "";
 
   const handleSelectLetter = (letter: string) => {
-    const matchedOpt = options.find(
-      (o) => o.label.trim().toLowerCase().startsWith(letter.toLowerCase())
+    const matchedOpt = options.find((o) =>
+      o.label.trim().toLowerCase().startsWith(letter.toLowerCase()),
     );
     onChange({
       answerText: letter,
-      selectedOptionIds: matchedOpt ? [matchedOpt.id] : []
+      selectedOptionIds: matchedOpt ? [matchedOpt.id] : [],
     });
   };
 
   const renderMapCanvas = (zoomMode = false) => (
     <div
-      className={`relative w-full rounded-2xl overflow-hidden border border-[#2B3060] bg-[#0C0E1D] select-none ${
+      className={`relative w-full overflow-hidden rounded-2xl border border-[#2B3060] bg-[#0C0E1D] select-none ${
         zoomMode ? "h-[500px]" : "h-72 sm:h-80"
       }`}
     >
       {/* Compass Indicator */}
-      <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 bg-[#141731]/80 backdrop-blur-md px-2.5 py-1 rounded-lg border border-[#2B3060] text-[10px] font-bold text-zinc-300">
+      <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 rounded-lg border border-[#2B3060] bg-[#141731]/80 px-2.5 py-1 text-[10px] font-bold text-zinc-300 backdrop-blur-md">
         <Compass size={13} className="text-[#F6E85C]" />
         <span>N</span>
       </div>
 
       {/* Main Entrance Marker */}
-      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-20 bg-[#1B1F40] border border-[#2B3060] px-3 py-0.5 rounded-full text-[10px] font-semibold text-zinc-300 uppercase tracking-widest shadow-md">
+      <div className="absolute bottom-2 left-1/2 z-20 -translate-x-1/2 rounded-full border border-[#2B3060] bg-[#1B1F40] px-3 py-0.5 text-[10px] font-semibold tracking-widest text-zinc-300 uppercase shadow-md">
         Main Entrance
       </div>
 
       {mapImageUrl ? (
-        <img
+        <Image
           src={mapImageUrl}
           alt="IELTS Listening Map"
-          className="w-full h-full object-cover"
+          fill
+          unoptimized
+          sizes="(max-width: 1024px) 100vw, 50vw"
+          className="object-cover"
         />
       ) : (
         /* Vector SVG Architectural Map Fallback */
         <svg
-          className="w-full h-full"
+          className="h-full w-full"
           viewBox="0 0 600 400"
           preserveAspectRatio="none"
           xmlns="http://www.w3.org/2000/svg"
@@ -138,29 +148,136 @@ export function MapLabellingRenderer({
           />
 
           {/* Buildings / Zones */}
-          <rect x="70" y="60" width="130" height="90" rx="12" fill="#141731" stroke="#3B4280" strokeWidth="2" />
-          <text x="135" y="110" fill="#94A3B8" fontSize="11" textAnchor="middle" fontWeight="bold">West Wing</text>
+          <rect
+            x="70"
+            y="60"
+            width="130"
+            height="90"
+            rx="12"
+            fill="#141731"
+            stroke="#3B4280"
+            strokeWidth="2"
+          />
+          <text
+            x="135"
+            y="110"
+            fill="#94A3B8"
+            fontSize="11"
+            textAnchor="middle"
+            fontWeight="bold"
+          >
+            West Wing
+          </text>
 
-          <rect x="230" y="40" width="140" height="90" rx="12" fill="#141731" stroke="#3B4280" strokeWidth="2" />
-          <text x="300" y="90" fill="#94A3B8" fontSize="11" textAnchor="middle" fontWeight="bold">Library</text>
+          <rect
+            x="230"
+            y="40"
+            width="140"
+            height="90"
+            rx="12"
+            fill="#141731"
+            stroke="#3B4280"
+            strokeWidth="2"
+          />
+          <text
+            x="300"
+            y="90"
+            fill="#94A3B8"
+            fontSize="11"
+            textAnchor="middle"
+            fontWeight="bold"
+          >
+            Library
+          </text>
 
-          <rect x="410" y="70" width="120" height="85" rx="12" fill="#141731" stroke="#3B4280" strokeWidth="2" />
-          <text x="470" y="115" fill="#94A3B8" fontSize="11" textAnchor="middle" fontWeight="bold">Sciences</text>
+          <rect
+            x="410"
+            y="70"
+            width="120"
+            height="85"
+            rx="12"
+            fill="#141731"
+            stroke="#3B4280"
+            strokeWidth="2"
+          />
+          <text
+            x="470"
+            y="115"
+            fill="#94A3B8"
+            fontSize="11"
+            textAnchor="middle"
+            fontWeight="bold"
+          >
+            Sciences
+          </text>
 
-          <rect x="110" y="210" width="110" height="70" rx="12" fill="#141731" stroke="#3B4280" strokeWidth="2" />
-          <text x="165" y="250" fill="#94A3B8" fontSize="11" textAnchor="middle" fontWeight="bold">Union</text>
+          <rect
+            x="110"
+            y="210"
+            width="110"
+            height="70"
+            rx="12"
+            fill="#141731"
+            stroke="#3B4280"
+            strokeWidth="2"
+          />
+          <text
+            x="165"
+            y="250"
+            fill="#94A3B8"
+            fontSize="11"
+            textAnchor="middle"
+            fontWeight="bold"
+          >
+            Union
+          </text>
 
-          <circle cx="300" cy="240" r="32" fill="#141731" stroke="#38BDF8" strokeWidth="2" strokeDasharray="4 2" />
-          <text x="300" y="244" fill="#38BDF8" fontSize="10" textAnchor="middle">Lake</text>
+          <circle
+            cx="300"
+            cy="240"
+            r="32"
+            fill="#141731"
+            stroke="#38BDF8"
+            strokeWidth="2"
+            strokeDasharray="4 2"
+          />
+          <text
+            x="300"
+            y="244"
+            fill="#38BDF8"
+            fontSize="10"
+            textAnchor="middle"
+          >
+            Lake
+          </text>
 
-          <rect x="380" y="210" width="110" height="70" rx="12" fill="#141731" stroke="#3B4280" strokeWidth="2" />
-          <text x="435" y="250" fill="#94A3B8" fontSize="11" textAnchor="middle" fontWeight="bold">Pavilion</text>
+          <rect
+            x="380"
+            y="210"
+            width="110"
+            height="70"
+            rx="12"
+            fill="#141731"
+            stroke="#3B4280"
+            strokeWidth="2"
+          />
+          <text
+            x="435"
+            y="250"
+            fill="#94A3B8"
+            fontSize="11"
+            textAnchor="middle"
+            fontWeight="bold"
+          >
+            Pavilion
+          </text>
         </svg>
       )}
 
       {/* Interactive Pins Overlay */}
       {pins.map((pin) => {
-        const isSelected = selectedLetter.toUpperCase() === pin.letter.toUpperCase();
+        const isSelected =
+          selectedLetter.toUpperCase() === pin.letter.toUpperCase();
         const isHovered = hoveredLetter === pin.letter;
 
         return (
@@ -172,12 +289,12 @@ export function MapLabellingRenderer({
             onMouseLeave={() => setHoveredLetter(null)}
             style={{ left: `${pin.x}%`, top: `${pin.y}%` }}
             aria-label={`Vị trí ${pin.letter}`}
-            className={`absolute -translate-x-1/2 -translate-y-1/2 z-30 flex h-8 w-8 items-center justify-center rounded-full font-bold text-xs transition-all duration-200 cursor-pointer shadow-lg ${
+            className={`absolute z-30 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-xs font-bold shadow-lg transition-all duration-200 ${
               isSelected
-                ? "bg-[#F6E85C] text-[#0C0E1D] ring-4 ring-[#F6E85C]/40 scale-125 z-40"
+                ? "z-40 scale-125 bg-[#F6E85C] text-[#0C0E1D] ring-4 ring-[#F6E85C]/40"
                 : isHovered
-                  ? "bg-indigo-500 text-white ring-4 ring-indigo-500/30 scale-110"
-                  : "bg-[#141731] text-indigo-200 border-2 border-indigo-400/80 hover:border-indigo-300"
+                  ? "scale-110 bg-indigo-500 text-white ring-4 ring-indigo-500/30"
+                  : "border-2 border-indigo-400/80 bg-[#141731] text-indigo-200 hover:border-indigo-300"
             }`}
           >
             {pin.letter}
@@ -198,7 +315,7 @@ export function MapLabellingRenderer({
         <button
           type="button"
           onClick={() => setIsZoomed(true)}
-          className="flex items-center gap-1 text-xs text-zinc-400 hover:text-white bg-[#141731] hover:bg-[#1B1F40] px-2.5 py-1 rounded-lg border border-[#2B3060] transition-colors"
+          className="flex items-center gap-1 rounded-lg border border-[#2B3060] bg-[#141731] px-2.5 py-1 text-xs text-zinc-400 transition-colors hover:bg-[#1B1F40] hover:text-white"
         >
           <Maximize2 size={13} />
           Phóng to
@@ -210,12 +327,13 @@ export function MapLabellingRenderer({
 
       {/* Quick Letter Pill Selectors */}
       <div className="pt-2">
-        <p className="text-xs text-zinc-400 mb-2 font-medium">
+        <p className="mb-2 text-xs font-medium text-zinc-400">
           Chọn ký tự tương ứng trên bản đồ:
         </p>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-wrap items-center gap-2">
           {pins.map((pin) => {
-            const isSelected = selectedLetter.toUpperCase() === pin.letter.toUpperCase();
+            const isSelected =
+              selectedLetter.toUpperCase() === pin.letter.toUpperCase();
             return (
               <button
                 key={pin.letter}
@@ -223,10 +341,10 @@ export function MapLabellingRenderer({
                 onClick={() => handleSelectLetter(pin.letter)}
                 onMouseEnter={() => setHoveredLetter(pin.letter)}
                 onMouseLeave={() => setHoveredLetter(null)}
-                className={`h-10 px-4 rounded-xl text-sm font-bold flex items-center gap-1.5 transition-all border ${
+                className={`flex h-10 items-center gap-1.5 rounded-xl border px-4 text-sm font-bold transition-all ${
                   isSelected
-                    ? "bg-[#F6E85C] text-[#0C0E1D] border-[#F6E85C] shadow-lg shadow-[#F6E85C]/20"
-                    : "bg-[#141731] text-zinc-200 hover:text-white hover:bg-[#1B1F40] border-[#2B3060]"
+                    ? "border-[#F6E85C] bg-[#F6E85C] text-[#0C0E1D] shadow-lg shadow-[#F6E85C]/20"
+                    : "border-[#2B3060] bg-[#141731] text-zinc-200 hover:bg-[#1B1F40] hover:text-white"
                 }`}
               >
                 {pin.letter}
@@ -239,17 +357,17 @@ export function MapLabellingRenderer({
 
       {/* Fullscreen Zoom Modal */}
       {isZoomed && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="relative w-full max-w-4xl bg-[#141731] border border-[#2B3060] rounded-3xl p-6 shadow-2xl">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
+        <div className="animate-in fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md duration-200">
+          <div className="relative w-full max-w-4xl rounded-3xl border border-[#2B3060] bg-[#141731] p-6 shadow-2xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="flex items-center gap-2 text-base font-bold text-white">
                 <MapPin size={18} className="text-[#F6E85C]" />
                 Bản đồ vị trí chi tiết
               </h3>
               <button
                 type="button"
                 onClick={() => setIsZoomed(false)}
-                className="p-1.5 rounded-lg text-zinc-400 hover:text-white bg-[#1B1F40] border border-[#2B3060]"
+                className="rounded-lg border border-[#2B3060] bg-[#1B1F40] p-1.5 text-zinc-400 hover:text-white"
               >
                 <X size={18} />
               </button>
@@ -264,7 +382,7 @@ export function MapLabellingRenderer({
               <button
                 type="button"
                 onClick={() => setIsZoomed(false)}
-                className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-4 py-2 rounded-xl transition-colors"
+                className="rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-indigo-500"
               >
                 Xong
               </button>

@@ -8,7 +8,7 @@ interface FillInBlanksProps {
 }
 
 export function FillInBlanks({
-  questionId,
+  questionId: _questionId,
   prompt,
   selectedAnswer = "",
   onChange,
@@ -18,7 +18,7 @@ export function FillInBlanks({
 
   return (
     <div className="space-y-6">
-      <h4 className="text-lg font-medium text-zinc-900 dark:text-zinc-100 leading-loose">
+      <h4 className="text-lg leading-loose font-medium text-zinc-900 dark:text-zinc-100">
         {parts.map((part, i) => (
           <span key={i}>
             {part}
@@ -27,7 +27,7 @@ export function FillInBlanks({
                 type="text"
                 value={selectedAnswer}
                 onChange={(e) => onChange(e.target.value)}
-                className="mx-2 inline-block w-32 border-b-2 border-zinc-400 dark:border-zinc-600 bg-transparent px-2 text-center text-blue-600 dark:text-blue-400 focus:border-blue-600 dark:focus:border-blue-400 focus:outline-none font-semibold"
+                className="mx-2 inline-block w-32 border-b-2 border-zinc-400 bg-transparent px-2 text-center font-semibold text-blue-600 focus:border-blue-600 focus:outline-none dark:border-zinc-600 dark:text-blue-400 dark:focus:border-blue-400"
                 placeholder="Nhập..."
                 autoComplete="off"
                 spellCheck="false"

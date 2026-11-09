@@ -25,7 +25,7 @@ export function WritingComplete({
     : null;
   return (
     <div className="mx-auto min-h-[100dvh] max-w-3xl bg-[#fbf9ff] pb-24 text-[#211b2a] lg:min-h-0 lg:rounded-3xl lg:border lg:border-[#e5dfef]">
-      <main className="space-y-5 px-4 py-7 sm:px-6">
+      <div className="space-y-5 px-4 py-7 sm:px-6">
         <section className="text-center">
           <span className="mx-auto grid size-12 place-items-center rounded-full bg-[#f1edff] text-[#4d32d4]">
             <CheckCircle2 aria-hidden="true" size={24} />
@@ -108,7 +108,7 @@ export function WritingComplete({
             View history
           </Link>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

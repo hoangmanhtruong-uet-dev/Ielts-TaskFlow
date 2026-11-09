@@ -1,6 +1,8 @@
+import { AlertTriangle } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { Button } from "@/components/ui/button";
 import { ResetPasswordForm } from "@/features/auth/components/reset-password-form";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -15,26 +17,33 @@ export default async function ResetPasswordPage() {
   const validRecoverySession = !error && Boolean(data.user);
 
   return (
-    <div className="flex w-full items-center justify-center">
-      {validRecoverySession ? (
-        <ResetPasswordForm />
-      ) : (
-        <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gray-900/80 p-8 shadow-2xl backdrop-blur-xl sm:p-10 text-center max-w-md w-full">
-          <div className="mb-4 text-red-400">
-            <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
+    <div className="w-full">
+      <h1 className="text-3xl font-bold tracking-tight text-pretty text-[var(--foreground)]">
+        Đặt lại mật khẩu
+      </h1>
+      <p className="mt-3 leading-7 text-[var(--muted-foreground)]">
+        Chọn mật khẩu mới có ít nhất 8 ký tự để bảo vệ tài khoản của bạn.
+      </p>
+      <div className="mt-8">
+        {validRecoverySession ? (
+          <ResetPasswordForm />
+        ) : (
+          <div className="surface-card p-6 text-center sm:p-8" role="alert">
+            <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-[var(--destructive-subtle)] text-[var(--destructive)]">
+              <AlertTriangle aria-hidden="true" className="size-6" />
+            </div>
+            <h2 className="text-xl font-bold text-[var(--foreground)]">
+              Liên kết không hợp lệ
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--muted-foreground)]">
+              Liên kết khôi phục không hợp lệ hoặc đã hết hạn.
+            </p>
+            <Button asChild className="mt-6 w-full">
+              <Link href="/forgot-password">Yêu cầu liên kết mới</Link>
+            </Button>
           </div>
-          <h2 className="mb-2 text-xl font-bold text-white">Liên kết không hợp lệ</h2>
-          <p className="mb-6 text-sm text-gray-400">Liên kết khôi phục không hợp lệ hoặc đã hết hạn.</p>
-          <Link
-            href="/forgot-password"
-            className="flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30 transition-all hover:scale-[1.02] hover:shadow-indigo-500/40"
-          >
-            Yêu cầu liên kết mới
-          </Link>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

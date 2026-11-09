@@ -13,7 +13,8 @@ describe("SpeakingHubClient", () => {
     {
       slug: "tech-future-society",
       title: "Technology and Social Connections",
-      description: "Discuss how modern messaging apps affect real-world relationships.",
+      description:
+        "Discuss how modern messaging apps affect real-world relationships.",
       difficulty: "c1",
       testType: "academic",
       estimatedMinutes: 5,
@@ -26,12 +27,16 @@ describe("SpeakingHubClient", () => {
   it("renders header, 4 criteria HUD, and 3D visualizer container", () => {
     render(<SpeakingHubClient items={dummyItems} />);
 
-    expect(screen.getByText("AI Speaking Studio & Acoustic Resonance")).toBeInTheDocument();
+    expect(
+      screen.getByText("AI Speaking Studio & Acoustic Resonance"),
+    ).toBeInTheDocument();
     expect(screen.getByText("Fluency")).toBeInTheDocument();
     expect(screen.getByText("Lexical")).toBeInTheDocument();
     expect(screen.getByText("Grammar")).toBeInTheDocument();
     expect(screen.getByText("Pronun")).toBeInTheDocument();
-    expect(screen.getByLabelText("3D Vocal Acoustic Visualizer")).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("3D Vocal Acoustic Visualizer"),
+    ).toBeInTheDocument();
   });
 
   it("changes band dropdown and updates the stage descriptor", () => {
@@ -47,20 +52,26 @@ describe("SpeakingHubClient", () => {
   it("renders Live Speaking Lab and allows switching between tabs", () => {
     render(<SpeakingHubClient items={dummyItems} />);
 
-    expect(screen.getByText("Acoustic Reflex & Pronunciation Lab")).toBeInTheDocument();
+    expect(
+      screen.getByText("Acoustic Reflex & Pronunciation Lab"),
+    ).toBeInTheDocument();
 
     // Tab 1 (IPA Gym) is active by default
     expect(screen.getByText("Âm ma sát răng: /θ/ vs /s/")).toBeInTheDocument();
 
     // Switch to 60s Prep Coach
     fireEvent.click(screen.getByText("60s Prep Coach"));
-    expect(screen.getByText("IELTS Part 2 1-Minute Prep Countdown")).toBeInTheDocument();
+    expect(
+      screen.getByText("IELTS Part 2 1-Minute Prep Countdown"),
+    ).toBeInTheDocument();
     expect(screen.getByText("Bắt đầu 60s")).toBeInTheDocument();
 
     // Switch to Filler Trap
     fireEvent.click(screen.getByText("Filler Trap"));
     expect(screen.getByText(/Hesitation Trap/i)).toBeInTheDocument();
-    expect(screen.getAllByText(/BAND 7.5\+ UPGRADE/i).length).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getAllByText(/BAND 7.5\+ UPGRADE/i).length,
+    ).toBeGreaterThanOrEqual(1);
   });
 
   it("renders 4 practice modes and opens Quick Speaking Modal", () => {
@@ -87,20 +98,30 @@ describe("SpeakingHubClient", () => {
   it("filters cue cards by search input and part chips", () => {
     render(<SpeakingHubClient items={dummyItems} />);
 
-    const searchInput = screen.getByPlaceholderText(/Tìm kiếm chủ đề speaking/i);
+    const searchInput = screen.getByPlaceholderText(
+      /Tìm kiếm chủ đề speaking/i,
+    );
 
     // Search for "eco-friendly"
     fireEvent.change(searchInput, { target: { value: "eco-friendly" } });
-    expect(screen.getByText("Describe an eco-friendly habit you adopted")).toBeInTheDocument();
-    expect(screen.queryByText("The Role of Artificial Intelligence in Education")).not.toBeInTheDocument();
+    expect(
+      screen.getByText("Describe an eco-friendly habit you adopted"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("The Role of Artificial Intelligence in Education"),
+    ).not.toBeInTheDocument();
 
     // Reset search
     fireEvent.change(searchInput, { target: { value: "" } });
 
     // Filter Part 1
     fireEvent.click(screen.getByRole("button", { name: "Part 1" }));
-    expect(screen.getByText("Daily Routine & Work-Life Equilibrium")).toBeInTheDocument();
-    expect(screen.queryByText("Describe an eco-friendly habit you adopted")).not.toBeInTheDocument();
+    expect(
+      screen.getByText("Daily Routine & Work-Life Equilibrium"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Describe an eco-friendly habit you adopted"),
+    ).not.toBeInTheDocument();
   });
 
   it("tests microphone toggle interaction", () => {
@@ -110,6 +131,8 @@ describe("SpeakingHubClient", () => {
     fireEvent.click(testMicBtn);
 
     expect(screen.getByText("Live Audio Testing...")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Dừng test" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Dừng test" }),
+    ).toBeInTheDocument();
   });
 });

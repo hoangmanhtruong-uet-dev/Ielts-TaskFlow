@@ -87,46 +87,46 @@ export function MockTestSession({
   );
 
   return (
-    <div className="space-y-8 font-sans pb-12">
+    <div className="space-y-8 pb-12 font-sans">
       {/* Header */}
-      <section className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 sm:p-10 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-72 h-72 bg-indigo-50 rounded-full -translate-y-1/2 translate-x-1/3 opacity-50 pointer-events-none" />
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-start justify-between gap-6">
+      <section className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-8 shadow-sm sm:p-10">
+        <div className="pointer-events-none absolute top-0 right-0 h-72 w-72 translate-x-1/3 -translate-y-1/2 rounded-full bg-indigo-50 opacity-50" />
+        <div className="relative z-10 flex flex-col justify-between gap-6 sm:flex-row sm:items-start">
           <div className="flex-1">
-            <div className="flex items-center gap-3 mb-4">
-              <span className="rounded-full bg-indigo-100 text-indigo-700 px-3 py-1 text-[11px] font-black uppercase tracking-wider">
+            <div className="mb-4 flex items-center gap-3">
+              <span className="rounded-full bg-indigo-100 px-3 py-1 text-[11px] font-black tracking-wider text-indigo-700 uppercase">
                 {formatMockSessionStatus(data.session.status)}
               </span>
               <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600">
-                <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="size-2 animate-pulse rounded-full bg-emerald-400" />
                 Live Session
               </div>
             </div>
-            <h1 className="text-2xl font-black text-slate-800 sm:text-3xl mb-2">
+            <h1 className="mb-2 text-2xl font-black text-slate-800 sm:text-3xl">
               {data.version.title}
             </h1>
-            <p className="text-sm font-medium text-slate-500 max-w-lg">
+            <p className="max-w-lg text-sm font-medium text-slate-500">
               Complete each section in order. Time limits are strictly enforced.
             </p>
           </div>
 
           {/* Progress Widget */}
-          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 shrink-0 min-w-[180px] text-center">
-            <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3">
+          <div className="min-w-[180px] shrink-0 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-center">
+            <p className="mb-3 text-[10px] font-black tracking-widest text-slate-400 uppercase">
               Overall Progress
             </p>
-            <div className="text-4xl font-black text-indigo-600 mb-1">
+            <div className="mb-1 text-4xl font-black text-indigo-600">
               {completedCount}
               <span className="text-xl font-bold text-slate-400">
                 /{data.sections.length}
               </span>
             </div>
-            <p className="text-xs font-semibold text-slate-500 mb-3">
+            <p className="mb-3 text-xs font-semibold text-slate-500">
               Sections done
             </p>
-            <div className="h-2 w-full rounded-full bg-slate-200 overflow-hidden">
+            <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
               <div
-                className="h-full bg-indigo-500 rounded-full transition-all duration-500"
+                className="h-full rounded-full bg-indigo-500 transition-all duration-500"
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
@@ -138,7 +138,7 @@ export function MockTestSession({
       {error ? (
         <p
           role="alert"
-          className="rounded-xl bg-rose-50 border border-rose-100 px-5 py-4 font-semibold text-rose-700 text-sm"
+          className="rounded-xl border border-rose-100 bg-rose-50 px-5 py-4 text-sm font-semibold text-rose-700"
         >
           ⚠️ {errors[error] ?? "Yêu cầu chưa thể xử lý. Vui lòng thử lại."}
         </p>
@@ -146,7 +146,7 @@ export function MockTestSession({
 
       {/* Sections List */}
       <section>
-        <h2 className="text-sm font-black text-slate-500 uppercase tracking-widest mb-4">
+        <h2 className="mb-4 text-sm font-black tracking-widest text-slate-500 uppercase">
           Section Checklist
         </h2>
         <ol className="space-y-4">
@@ -167,7 +167,7 @@ export function MockTestSession({
             return (
               <li
                 key={section.id}
-                className={`flex items-center gap-5 bg-white rounded-2xl border p-6 shadow-sm transition-all ${
+                className={`flex items-center gap-5 rounded-2xl border bg-white p-6 shadow-sm transition-all ${
                   isDone
                     ? "border-emerald-100 bg-emerald-50/20"
                     : isLocked
@@ -179,7 +179,7 @@ export function MockTestSession({
               >
                 {/* Step number / status dot */}
                 <div
-                  className={`size-10 rounded-full flex items-center justify-center shrink-0 font-black text-sm transition-all ${
+                  className={`flex size-10 shrink-0 items-center justify-center rounded-full text-sm font-black transition-all ${
                     isDone
                       ? "bg-emerald-500 text-white"
                       : isCurrent
@@ -198,35 +198,35 @@ export function MockTestSession({
 
                 {/* Section icon */}
                 <div
-                  className={`size-12 rounded-2xl flex items-center justify-center shrink-0 ${colors.icon}`}
+                  className={`flex size-12 shrink-0 items-center justify-center rounded-2xl ${colors.icon}`}
                 >
                   <Icon size={22} />
                 </div>
 
                 {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                <div className="min-w-0 flex-1">
+                  <div className="mb-1 flex flex-wrap items-center gap-2">
                     <span
-                      className={`text-[10px] font-black uppercase tracking-wider border rounded-md px-2 py-0.5 ${colors.badge}`}
+                      className={`rounded-md border px-2 py-0.5 text-[10px] font-black tracking-wider uppercase ${colors.badge}`}
                     >
                       {formatMockSectionType(section.type)}
                     </span>
                     {isInProgress && (
-                      <span className="text-[10px] font-black uppercase text-amber-600 bg-amber-50 border border-amber-100 rounded-md px-2 py-0.5 flex items-center gap-1">
-                        <span className="size-1.5 rounded-full bg-amber-400 animate-pulse" />
+                      <span className="flex items-center gap-1 rounded-md border border-amber-100 bg-amber-50 px-2 py-0.5 text-[10px] font-black text-amber-600 uppercase">
+                        <span className="size-1.5 animate-pulse rounded-full bg-amber-400" />
                         In Progress
                       </span>
                     )}
                     {isDone && (
-                      <span className="text-[10px] font-black uppercase text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-md px-2 py-0.5 flex items-center gap-1">
+                      <span className="flex items-center gap-1 rounded-md border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-[10px] font-black text-emerald-600 uppercase">
                         <CheckCircle2 size={11} /> Submitted
                       </span>
                     )}
                   </div>
-                  <h3 className="text-sm font-bold text-slate-800 truncate">
+                  <h3 className="truncate text-sm font-bold text-slate-800">
                     {section.title}
                   </h3>
-                  <p className="text-xs font-medium text-slate-500 flex items-center gap-1.5 mt-1">
+                  <p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-slate-500">
                     <Clock3 size={12} />
                     {formatMockDuration(section.timeLimitSeconds)}
                     {isLocked && " · Locked"}
@@ -236,17 +236,17 @@ export function MockTestSession({
                 {/* Action */}
                 <div className="shrink-0">
                   {isDone ? (
-                    <span className="flex items-center gap-1.5 text-sm font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-full px-4 py-2">
+                    <span className="flex items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-600">
                       <Check size={15} /> Done
                     </span>
                   ) : isLocked ? (
-                    <span className="flex items-center gap-1.5 text-sm font-bold text-slate-400 bg-slate-50 border border-slate-100 rounded-full px-4 py-2">
+                    <span className="flex items-center gap-1.5 rounded-full border border-slate-100 bg-slate-50 px-4 py-2 text-sm font-bold text-slate-400">
                       <LockKeyhole size={15} /> Locked
                     </span>
                   ) : section.practicePath ? (
                     <Button
                       asChild
-                      className="rounded-xl h-11 px-5 font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm"
+                      className="h-11 rounded-xl bg-indigo-600 px-5 font-bold text-white shadow-sm hover:bg-indigo-700"
                     >
                       <Link href={section.practicePath}>
                         Continue <ArrowRight size={16} className="ml-1" />
@@ -271,7 +271,7 @@ export function MockTestSession({
                       />
                       <Button
                         type="submit"
-                        className="rounded-xl h-11 px-5 font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm"
+                        className="h-11 rounded-xl bg-indigo-600 px-5 font-bold text-white shadow-sm hover:bg-indigo-700"
                       >
                         Start Section <ArrowRight size={16} className="ml-1" />
                       </Button>
@@ -286,10 +286,10 @@ export function MockTestSession({
 
       {/* Finish / Summary CTA */}
       {data.session.status === "completed" ? (
-        <div className="bg-emerald-600 rounded-3xl p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-lg shadow-emerald-200 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -translate-y-1/3 translate-x-1/4 pointer-events-none" />
+        <div className="relative flex flex-col items-start justify-between gap-6 overflow-hidden rounded-3xl bg-emerald-600 p-8 shadow-lg shadow-emerald-200 sm:flex-row sm:items-center">
+          <div className="pointer-events-none absolute top-0 right-0 h-48 w-48 translate-x-1/4 -translate-y-1/3 rounded-full bg-white/5" />
           <div className="relative z-10">
-            <h2 className="text-xl font-black text-white mb-1 flex items-center gap-2">
+            <h2 className="mb-1 flex items-center gap-2 text-xl font-black text-white">
               <Trophy size={20} /> Exam Completed!
             </h2>
             <p className="text-sm font-medium text-emerald-100">
@@ -298,7 +298,7 @@ export function MockTestSession({
           </div>
           <Button
             asChild
-            className="rounded-2xl h-14 px-8 text-base font-black bg-white text-emerald-700 hover:bg-emerald-50 shadow-md shrink-0 relative z-10"
+            className="relative z-10 h-14 shrink-0 rounded-2xl bg-white px-8 text-base font-black text-emerald-700 shadow-md hover:bg-emerald-50"
           >
             <Link
               href={`/mock-tests/${data.test.slug}/session/${data.session.id}/summary`}
@@ -308,26 +308,25 @@ export function MockTestSession({
           </Button>
         </div>
       ) : allSubmitted ? (
-        <div className="bg-indigo-600 rounded-3xl p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-lg shadow-indigo-200 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/3 translate-x-1/4 pointer-events-none" />
+        <div className="relative flex flex-col items-start justify-between gap-6 overflow-hidden rounded-3xl bg-indigo-600 p-8 shadow-lg shadow-indigo-200 sm:flex-row sm:items-center">
+          <div className="pointer-events-none absolute top-0 right-0 h-64 w-64 translate-x-1/4 -translate-y-1/3 rounded-full bg-white/5" />
           <div className="relative z-10">
-            <h2 className="text-xl font-black text-white mb-2 flex items-center gap-2">
+            <h2 className="mb-2 flex items-center gap-2 text-xl font-black text-white">
               <Sparkles size={20} /> All Sections Submitted!
             </h2>
-            <p className="text-sm font-medium text-indigo-200 max-w-sm">
+            <p className="max-w-sm text-sm font-medium text-indigo-200">
               Lock in your results and generate your AI-powered band score
               report and detailed feedback.
             </p>
           </div>
-          <form action={submitMockTestAction} className="relative z-10 shrink-0">
-            <input
-              type="hidden"
-              name="mockTestSlug"
-              value={data.test.slug}
-            />
+          <form
+            action={submitMockTestAction}
+            className="relative z-10 shrink-0"
+          >
+            <input type="hidden" name="mockTestSlug" value={data.test.slug} />
             <input type="hidden" name="sessionId" value={data.session.id} />
             <ConfirmSubmitButton
-              className="h-14 px-8 text-base font-black rounded-2xl bg-white text-indigo-700 hover:bg-indigo-50 shadow-md"
+              className="h-14 rounded-2xl bg-white px-8 text-base font-black text-indigo-700 shadow-md hover:bg-indigo-50"
               label="Finish & Get Report"
               title="Finalize Mock Test?"
               description="Your session will be locked and your AI band score report will be generated from all four sections."

@@ -8,7 +8,13 @@ const signOut = vi.fn();
 
 vi.mock("@/lib/supabase/server", () => ({
   createSupabaseServerClient: vi.fn(async () => ({
-    auth: { resetPasswordForEmail, signInWithOtp, getUser, updateUser, signOut },
+    auth: {
+      resetPasswordForEmail,
+      signInWithOtp,
+      getUser,
+      updateUser,
+      signOut,
+    },
   })),
 }));
 
@@ -40,6 +46,10 @@ describe("password recovery actions", () => {
       expect.objectContaining({
         email: "learner@example.com",
       }),
+    );
+    expect(output).toHaveBeenCalledOnce();
+    expect(JSON.stringify(output.mock.calls)).not.toContain(
+      "learner@example.com",
     );
   });
 

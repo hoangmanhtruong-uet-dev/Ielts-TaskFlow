@@ -19,10 +19,15 @@ export function ThreeSonicVisualizer({
   visualMode,
   playbackSpeed,
   ambientNoise,
-  className = ""
+  className = "",
 }: ThreeSonicVisualizerProps) {
   const mountRef = useRef<HTMLDivElement | null>(null);
-  const stateRef = useRef({ isPlaying, visualMode, playbackSpeed, ambientNoise });
+  const stateRef = useRef({
+    isPlaying,
+    visualMode,
+    playbackSpeed,
+    ambientNoise,
+  });
 
   useEffect(() => {
     stateRef.current = { isPlaying, visualMode, playbackSpeed, ambientNoise };
@@ -39,7 +44,11 @@ export function ThreeSonicVisualizer({
     const camera = new THREE.PerspectiveCamera(55, width / height, 0.1, 1000);
     camera.position.z = 5.2;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+      powerPreference: "high-performance",
+    });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
@@ -51,12 +60,14 @@ export function ThreeSonicVisualizer({
 
     // 1. Icosahedron Core Wireframe
     const coreGeo = new THREE.IcosahedronGeometry(1.45, 3);
-    const originalPositions = new Float32Array(coreGeo.attributes.position.array);
+    const originalPositions = new Float32Array(
+      coreGeo.attributes.position.array,
+    );
     const coreMat = new THREE.MeshBasicMaterial({
       color: 0x6366f1,
       wireframe: true,
       transparent: true,
-      opacity: 0.45
+      opacity: 0.45,
     });
     const coreMesh = new THREE.Mesh(coreGeo, coreMat);
     mainGroup.add(coreMesh);
@@ -68,7 +79,6 @@ export function ThreeSonicVisualizer({
 
     const baseColor1 = new THREE.Color("#6366f1");
     const baseColor2 = new THREE.Color("#06b6d4");
-    const baseColor3 = new THREE.Color("#f59e0b");
 
     for (let i = 0; i < particlesCount; i++) {
       const radius = 1.9 + Math.random() * 1.4;
@@ -86,15 +96,21 @@ export function ThreeSonicVisualizer({
     }
 
     const particlesGeo = new THREE.BufferGeometry();
-    particlesGeo.setAttribute("position", new THREE.BufferAttribute(posArray, 3));
-    particlesGeo.setAttribute("color", new THREE.BufferAttribute(colorsArray, 3));
+    particlesGeo.setAttribute(
+      "position",
+      new THREE.BufferAttribute(posArray, 3),
+    );
+    particlesGeo.setAttribute(
+      "color",
+      new THREE.BufferAttribute(colorsArray, 3),
+    );
 
     const particlesMat = new THREE.PointsMaterial({
       size: 0.045,
       vertexColors: true,
       transparent: true,
       opacity: 0.85,
-      blending: THREE.AdditiveBlending
+      blending: THREE.AdditiveBlending,
     });
     const particlesMesh = new THREE.Points(particlesGeo, particlesMat);
     mainGroup.add(particlesMesh);
@@ -105,7 +121,7 @@ export function ThreeSonicVisualizer({
       color: 0x818cf8,
       side: THREE.DoubleSide,
       transparent: true,
-      opacity: 0.35
+      opacity: 0.35,
     });
     const ringMesh1 = new THREE.Mesh(ringGeo1, ringMat1);
     ringMesh1.rotation.x = Math.PI / 2.3;
@@ -116,7 +132,7 @@ export function ThreeSonicVisualizer({
       color: 0x22d3ee,
       side: THREE.DoubleSide,
       transparent: true,
-      opacity: 0.25
+      opacity: 0.25,
     });
     const ringMesh2 = new THREE.Mesh(ringGeo2, ringMat2);
     ringMesh2.rotation.x = -Math.PI / 3;
@@ -158,7 +174,12 @@ export function ThreeSonicVisualizer({
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
 
-      const { isPlaying: playing, visualMode: mode, playbackSpeed: speed, ambientNoise: noise } = stateRef.current;
+      const {
+        isPlaying: playing,
+        visualMode: mode,
+        playbackSpeed: speed,
+        ambientNoise: noise,
+      } = stateRef.current;
       const speedMultiplier = playing ? speed * 1.6 : 0.45;
       clock += 0.018 * speedMultiplier;
 
@@ -182,7 +203,10 @@ export function ThreeSonicVisualizer({
         const origY = originalPositions[i + 1];
         const origZ = originalPositions[i + 2];
 
-        const wave = Math.sin(origX * 2.5 + clock * 2.2) * Math.cos(origY * 2.5 + clock * 2.2) * amp;
+        const wave =
+          Math.sin(origX * 2.5 + clock * 2.2) *
+          Math.cos(origY * 2.5 + clock * 2.2) *
+          amp;
 
         currentPos[i] = origX * (1 + wave);
         currentPos[i + 1] = origY * (1 + wave);
@@ -240,7 +264,7 @@ export function ThreeSonicVisualizer({
   return (
     <div
       ref={mountRef}
-      className={`relative w-full h-full min-h-[260px] cursor-grab active:cursor-grabbing flex items-center justify-center ${className}`}
+      className={`relative flex h-full min-h-[260px] w-full cursor-grab items-center justify-center active:cursor-grabbing ${className}`}
       title="Khối cầu sóng âm 3D: Di chuột để xoay góc nhìn"
     />
   );

@@ -1,7 +1,9 @@
 # TASK EXECUTION PLAN: Rebuild Reading Hub (`/practice/reading`) — Indigo Scholar Dark Navy & 3D Lexical Matrix
 
 ## 1. Mục Tiêu (Goal)
+
 Tái cấu trúc và nâng cấp toàn diện trang Luyện Đọc IELTS (`src/app/(dashboard)/practice/reading`) sang chuẩn Dark Navy & Indigo Scholar, tích hợp:
+
 - Khối ma trận từ vựng 3D Three.js (`ThreeReadingVisualizer`)
 - Trạm phản xạ đọc hiểu tức thì (`LiveReadingLab`): Bẫy True/False/Not Given, Speed Reading WPM Meter, Bẫy Matching Headings
 - Bento Grid 4 Chế độ đọc chuyên sâu
@@ -12,16 +14,16 @@ Tái cấu trúc và nâng cấp toàn diện trang Luyện Đọc IELTS (`src/a
 
 ## 2. Danh Sách File Cần Tạo & Chỉnh Sửa
 
-| File | Hành Động | Mô Tả |
-|---|---|---|
-| `src/app/(dashboard)/practice/reading/components/reading-curated-data.ts` | **CREATE** | Định nghĩa types & dữ liệu Curated (Passages, T/F/NG traps, Speed tests, Tracks) |
-| `src/app/(dashboard)/practice/reading/components/ThreeReadingVisualizer.tsx` | **CREATE** | Three.js WebGL 3D Cybernetic Lexical Matrix & Laser Scanner |
-| `src/app/(dashboard)/practice/reading/components/LiveReadingLab.tsx` | **CREATE** | Mini-lab đọc hiểu: T/F/NG Detective, Speed WPM Meter, Matching Headings |
-| `src/app/(dashboard)/practice/reading/components/QuickReadingModal.tsx` | **CREATE** | Split-View modal đọc và làm bài trực tiếp (Passage + Question Sheet) |
-| `src/app/(dashboard)/practice/reading/reading.css` | **CREATE** | Bổ sung styling hiệu ứng laser scan, split-view layout |
-| `src/app/(dashboard)/practice/reading/client.tsx` | **CREATE** | Component điều phối trung tâm Reading Hub |
-| `src/app/(dashboard)/practice/reading/page.tsx` | **REWRITE** | Server Component tải dữ liệu Supabase song song và render client |
-| `src/app/(dashboard)/practice/reading/reading.test.tsx` | **CREATE** | Unit tests toàn diện cho trang Reading Hub |
+| File                                                                         | Hành Động   | Mô Tả                                                                            |
+| ---------------------------------------------------------------------------- | ----------- | -------------------------------------------------------------------------------- |
+| `src/app/(dashboard)/practice/reading/components/reading-curated-data.ts`    | **CREATE**  | Định nghĩa types & dữ liệu Curated (Passages, T/F/NG traps, Speed tests, Tracks) |
+| `src/app/(dashboard)/practice/reading/components/ThreeReadingVisualizer.tsx` | **CREATE**  | Three.js WebGL 3D Cybernetic Lexical Matrix & Laser Scanner                      |
+| `src/app/(dashboard)/practice/reading/components/LiveReadingLab.tsx`         | **CREATE**  | Mini-lab đọc hiểu: T/F/NG Detective, Speed WPM Meter, Matching Headings          |
+| `src/app/(dashboard)/practice/reading/components/QuickReadingModal.tsx`      | **CREATE**  | Split-View modal đọc và làm bài trực tiếp (Passage + Question Sheet)             |
+| `src/app/(dashboard)/practice/reading/reading.css`                           | **CREATE**  | Bổ sung styling hiệu ứng laser scan, split-view layout                           |
+| `src/app/(dashboard)/practice/reading/client.tsx`                            | **CREATE**  | Component điều phối trung tâm Reading Hub                                        |
+| `src/app/(dashboard)/practice/reading/page.tsx`                              | **REWRITE** | Server Component tải dữ liệu Supabase song song và render client                 |
+| `src/app/(dashboard)/practice/reading/reading.test.tsx`                      | **CREATE**  | Unit tests toàn diện cho trang Reading Hub                                       |
 
 ---
 
@@ -36,6 +38,7 @@ Tái cấu trúc và nâng cấp toàn diện trang Luyện Đọc IELTS (`src/a
 ---
 
 ## 4. Trạng Thái Hiện Tại: HOÀN TẤT G0 (CLOUD DATABASE RESTORED)
+
 1. Tái cấu trúc Reading Hub và Listening Hub theo chuẩn Indigo Scholar & Dark Navy 3D: Đã hoàn tất 100%.
 2. Giải quyết nút thắt Go-Live về kho nội dung mỏng:
    - Sửa lỗi POS trong `scripts/content/ingest-oxford-vocab.mjs` và nạp thành công 320 từ vựng Oxford CEFR (`20261024100000_seed_oxford_cefr_vocabulary.sql`).

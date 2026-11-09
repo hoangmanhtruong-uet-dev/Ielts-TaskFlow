@@ -17,16 +17,19 @@ const CEFR_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
 export function StatsStrip({
   lessonsDone = 0,
-  streakDays = 12,
-  thisWeekTime = "2h 55m",
-  level = { code: "A2", label: "Elementary", progress: 35 },
+  streakDays = 0,
+  thisWeekTime = "0h 0m",
+  level = { code: "A1", label: "Beginner", progress: 0 },
 }: StatsStripProps) {
   const currentIdx = Math.max(0, CEFR_LEVELS.indexOf(level.code));
   const nextLevel = CEFR_LEVELS[currentIdx + 1] ?? "C2";
 
   // 5 intervals between 6 levels
   const progressRatio = Math.min(100, Math.max(0, level.progress)) / 100;
-  const ladderRatio = Math.min(1, Math.max(0, (currentIdx + progressRatio) / 5));
+  const ladderRatio = Math.min(
+    1,
+    Math.max(0, (currentIdx + progressRatio) / 5),
+  );
 
   return (
     <section className="strip">
@@ -64,10 +67,7 @@ export function StatsStrip({
             const isDone = i < currentIdx;
             const isCurrent = i === currentIdx;
             return (
-              <span
-                key={code}
-                className={isDone ? "d" : isCurrent ? "n" : ""}
-              >
+              <span key={code} className={isDone ? "d" : isCurrent ? "n" : ""}>
                 {code}
               </span>
             );

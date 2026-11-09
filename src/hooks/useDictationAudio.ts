@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useRef, useState, useCallback, useEffect } from 'react';
+import { useRef, useState, useCallback, useEffect } from "react";
 
 interface UseDictationAudioProps {
   audioUrl: string;
@@ -29,6 +29,7 @@ export function useDictationAudio({
 }: UseDictationAudioProps): UseDictationAudioReturn {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const sentenceEndRef = useRef<number | null>(null);
+  const playbackSpeedRef = useRef(1);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -36,26 +37,23 @@ export function useDictationAudio({
   const [isLoading, setIsLoading] = useState(true);
   const [replayCount, setReplayCount] = useState(0);
 
-  // Initialize audio element once
+  // Initialize and cleanly dispose audio element on URL change / unmount
   useEffect(() => {
-    if (!audioRef.current) {
-      const audio = new Audio();
-      audio.preload = 'auto';
-      audio.crossOrigin = 'anonymous';
-      audioRef.current = audio;
-    }
-
-    const audio = audioRef.current;
+    const audio = new Audio();
+    audio.preload = "auto";
+    audio.crossOrigin = "anonymous";
+    audio.playbackRate = playbackSpeedRef.current;
     audio.src = audioUrl;
+    audioRef.current = audio;
+    sentenceEndRef.current = null;
 
     const handleLoadedMetadata = () => {
-      setDuration(audio.duration);
+      setDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
       setIsLoading(false);
     };
 
     const handleTimeUpdate = () => {
       setCurrentTime(audio.currentTime);
-      // Auto-pause at sentence end
       if (
         sentenceEndRef.current !== null &&
         audio.currentTime >= sentenceEndRef.current
@@ -67,30 +65,62 @@ export function useDictationAudio({
     };
 
     const handleEnded = () => setIsPlaying(false);
+    const handlePause = () => setIsPlaying(false);
+    const handlePlay = () => setIsPlaying(true);
+
     const handleError = () => {
-      // Fallback to low quality
       if (audioUrlLow && audio.src !== audioUrlLow) {
         audio.src = audioUrlLow;
+      } else {
+        setIsLoading(false);
+        setIsPlaying(false);
       }
     };
 
-    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
-    audio.addEventListener('timeupdate', handleTimeUpdate);
-    audio.addEventListener('ended', handleEnded);
-    audio.addEventListener('error', handleError);
+    audio.addEventListener("loadedmetadata", handleLoadedMetadata);
+    audio.addEventListener("timeupdate", handleTimeUpdate);
+    audio.addEventListener("ended", handleEnded);
+    audio.addEventListener("pause", handlePause);
+    audio.addEventListener("play", handlePlay);
+    audio.addEventListener("error", handleError);
 
     return () => {
-      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
-      audio.removeEventListener('timeupdate', handleTimeUpdate);
-      audio.removeEventListener('ended', handleEnded);
-      audio.removeEventListener('error', handleError);
+      audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      audio.removeEventListener("timeupdate", handleTimeUpdate);
+      audio.removeEventListener("ended", handleEnded);
+      audio.removeEventListener("pause", handlePause);
+      audio.removeEventListener("play", handlePlay);
+      audio.removeEventListener("error", handleError);
+      audio.pause();
+      audio.removeAttribute("src");
+      try {
+        audio.load();
+      } catch {
+        // Ignore jsdom or browser load reset issues during unmount
+      }
+      if (audioRef.current === audio) {
+        audioRef.current = null;
+      }
+      sentenceEndRef.current = null;
+      setIsPlaying(false);
     };
   }, [audioUrl, audioUrlLow]);
 
-  const play = useCallback(() => {
-    audioRef.current?.play();
-    setIsPlaying(true);
+  const safePlay = useCallback((audio: HTMLAudioElement) => {
+    const maybePromise = audio.play();
+    if (maybePromise && typeof maybePromise.catch === "function") {
+      maybePromise.catch(() => {
+        setIsPlaying(false);
+      });
+    }
   }, []);
+
+  const play = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    setIsPlaying(true);
+    safePlay(audio);
+  }, [safePlay]);
 
   const pause = useCallback(() => {
     audioRef.current?.pause();
@@ -111,17 +141,19 @@ export function useDictationAudio({
 
   const playSentence = useCallback(
     (startTime: number, endTime: number) => {
-      if (!audioRef.current) return;
+      const audio = audioRef.current;
+      if (!audio) return;
       sentenceEndRef.current = endTime;
-      audioRef.current.currentTime = startTime;
-      audioRef.current.play();
+      audio.currentTime = startTime;
       setIsPlaying(true);
       setReplayCount((prev) => prev + 1);
+      safePlay(audio);
     },
-    []
+    [safePlay],
   );
 
   const setPlaybackSpeed = useCallback((speed: number) => {
+    playbackSpeedRef.current = speed;
     if (audioRef.current) {
       audioRef.current.playbackRate = speed;
     }

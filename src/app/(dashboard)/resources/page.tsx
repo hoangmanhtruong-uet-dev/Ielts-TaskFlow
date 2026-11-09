@@ -1,177 +1,286 @@
 "use client";
 
-import React from "react";
-import { 
-  Search, 
-  Download, 
-  Star, 
-  Lock,
-  Sparkles,
-  Filter
+import React, { useMemo, useState } from "react";
+import Link from "next/link";
+import {
+  ArrowUpRight,
+  BookOpen,
+  CheckCircle2,
+  Compass,
+  Headphones,
+  Mic,
+  PenLine,
+  Search,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+
+type SkillCategory =
+  "all" | "listening" | "reading" | "writing" | "speaking" | "vocabulary";
+
+interface CuratedResource {
+  id: string;
+  title: string;
+  source: string;
+  description: string;
+  category: Exclude<SkillCategory, "all">;
+  level: string;
+  href: string;
+  isExternal: boolean;
+  actionLabel: string;
+}
+
+const CURATED_RESOURCES: CuratedResource[] = [
+  {
+    id: "ielts-org-samples",
+    title: "Đề mẫu chính thức IELTS Academic & General Training",
+    source: "IELTS.org (Nguồn chính thức)",
+    description:
+      "Bộ câu hỏi mẫu miễn phí do hội đồng khảo thí công bố cho cả 4 kỹ năng Listening, Reading, Writing và Speaking.",
+    category: "reading",
+    level: "Band 4.0 - 9.0",
+    href: "https://ielts.org/take-a-test/preparation-resources/sample-test-questions",
+    isExternal: true,
+    actionLabel: "Mở trên IELTS.org",
+  },
+  {
+    id: "british-council-learn",
+    title: "British Council LearnEnglish — Kỹ năng & Ngữ pháp",
+    source: "British Council",
+    description:
+      "Bài đọc, bài nghe và luyện tập ngữ pháp phân cấp CEFR A1–C1 công khai miễn phí.",
+    category: "listening",
+    level: "A1 - C1",
+    href: "https://learnenglish.britishcouncil.org/",
+    isExternal: true,
+    actionLabel: "Truy cập British Council",
+  },
+  {
+    id: "cambridge-dictionary",
+    title: "Cambridge Dictionary & Phiên âm Anh–Anh / Anh–Mỹ",
+    source: "Cambridge University Press",
+    description:
+      "Tra cứu nghĩa học thuật, collocation, ví dụ chuẩn xác và audio phát âm bản ngữ.",
+    category: "vocabulary",
+    level: "Mọi trình độ",
+    href: "https://dictionary.cambridge.org/",
+    isExternal: true,
+    actionLabel: "Mở từ điển",
+  },
+  {
+    id: "indigo-writing-lab",
+    title: "Luyện viết IELTS Writing Task 1 & 2 theo 4 tiêu chí",
+    source: "Indigo Scholar",
+    description:
+      "Luyện viết có đồng hồ đếm ngược, lưu nháp tự động và nhận đánh giá theo 4 tiêu chí Task Achievement, Coherence, Lexical, Grammar.",
+    category: "writing",
+    level: "Band 5.0 - 8.5",
+    href: "/practice/writing",
+    isExternal: false,
+    actionLabel: "Vào phòng luyện viết",
+  },
+  {
+    id: "indigo-dictation-lab",
+    title: "Kho bài nghe Chép chính tả (Dictation) có kiểm tra từng từ",
+    source: "Indigo Scholar",
+    description:
+      "Nghe từng câu và so sánh từng từ thiếu/dư theo thời gian thực để cải thiện chính tả và bắt âm nối.",
+    category: "listening",
+    level: "A2 - C1",
+    href: "/dictation",
+    isExternal: false,
+    actionLabel: "Luyện Dictation",
+  },
+  {
+    id: "indigo-speaking-studio",
+    title: "Phòng luyện Speaking 3 phần kèm chuyển giọng nói Whisper",
+    source: "Indigo Scholar",
+    description:
+      "Ghi âm trực tiếp câu trả lời IELTS Speaking, lưu an toàn trên bộ nhớ đám mây và đối chiếu transcript thực tế.",
+    category: "speaking",
+    level: "Band 5.0 - 8.5",
+    href: "/practice/speaking",
+    isExternal: false,
+    actionLabel: "Vào phòng Speaking",
+  },
+  {
+    id: "indigo-vocab-vault",
+    title: "Sổ tay Từ vựng & Ôn tập Spaced Repetition",
+    source: "Indigo Scholar",
+    description:
+      "Tổng hợp từ vựng bạn đã lưu trong bài đọc/bài nghe để ôn tập theo chu kỳ trí nhớ.",
+    category: "vocabulary",
+    level: "Cá nhân hóa",
+    href: "/learn/vocabulary",
+    isExternal: false,
+    actionLabel: "Mở kho từ vựng",
+  },
+  {
+    id: "indigo-error-notebook",
+    title: "Sổ ghi nhận lỗi sai từ bài làm thực tế",
+    source: "Indigo Scholar",
+    description:
+      "Rà soát lại những câu đã trả lời sai trong các phiên luyện Reading & Listening để tránh lặp lỗi.",
+    category: "reading",
+    level: "Cá nhân hóa",
+    href: "/error-notebook",
+    isExternal: false,
+    actionLabel: "Xem lỗi đã ghi nhận",
+  },
+];
+
+const CATEGORY_TABS: { id: SkillCategory; label: string }[] = [
+  { id: "all", label: "Tất cả" },
+  { id: "listening", label: "Listening" },
+  { id: "reading", label: "Reading" },
+  { id: "writing", label: "Writing" },
+  { id: "speaking", label: "Speaking" },
+  { id: "vocabulary", label: "Vocabulary" },
+];
+
+function CategoryIcon({ category }: { category: CuratedResource["category"] }) {
+  if (category === "listening")
+    return <Headphones className="size-4 text-sky-600" />;
+  if (category === "writing")
+    return <PenLine className="size-4 text-emerald-600" />;
+  if (category === "speaking") return <Mic className="size-4 text-amber-600" />;
+  if (category === "vocabulary")
+    return <Compass className="size-4 text-purple-600" />;
+  return <BookOpen className="size-4 text-indigo-600" />;
+}
 
 export default function ResourcesPage() {
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState<SkillCategory>("all");
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return CURATED_RESOURCES.filter((item) => {
+      if (category !== "all" && item.category !== category) return false;
+      if (!q) return true;
+      return (
+        item.title.toLowerCase().includes(q) ||
+        item.description.toLowerCase().includes(q) ||
+        item.source.toLowerCase().includes(q)
+      );
+    });
+  }, [query, category]);
+
   return (
     <div className="space-y-8">
-      {/* Header & Filters */}
-      <div className="flex flex-col gap-6 rounded-2xl bg-white p-6 shadow-sm border border-slate-100">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col gap-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <h1 className="text-2xl font-black text-slate-800 tracking-tight">
-              Thư viện Ebook & Tài liệu
+            <h1 className="text-2xl font-black tracking-tight text-slate-900">
+              Thư viện Học liệu Chính thức &amp; Công cụ Thực hành
             </h1>
-            <p className="text-slate-500 mt-1">Hơn 500+ tài liệu độc quyền được biên soạn bởi chuyên gia</p>
+            <p className="mt-1 text-sm text-slate-600">
+              Tuyển chọn nguồn học liệu mở chính thức từ hội đồng khảo thí quốc
+              tế và các module luyện tập trên Indigo Scholar — tôn trọng bản
+              quyền, hoàn toàn miễn phí.
+            </p>
           </div>
-          
+
           <div className="relative">
-            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input 
-              type="text" 
-              placeholder="Tìm kiếm tài liệu, sách..." 
-              className="w-full sm:w-72 rounded-xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-sm outline-none transition-colors focus:border-indigo-500 focus:bg-white focus:ring-1 focus:ring-indigo-500"
+            <Search
+              size={18}
+              className="absolute top-1/2 left-3.5 -translate-y-1/2 text-slate-400"
+              aria-hidden="true"
+            />
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Tìm tài liệu hoặc công cụ..."
+              aria-label="Tìm kiếm tài liệu"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pr-4 pl-10 text-sm text-slate-900 transition-colors outline-none focus:border-indigo-500 focus:bg-white focus:ring-1 focus:ring-indigo-500 sm:w-72"
             />
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 border-t border-slate-100 pt-6">
-          <Button variant="secondary" className="gap-2 text-slate-600 bg-slate-50 hover:bg-slate-100">
-            <Filter size={16} /> Tất cả kỹ năng
-          </Button>
-          <Button variant="secondary" className="gap-2 text-slate-600 bg-slate-50 hover:bg-slate-100">
-            Target Band: 7.0+
-          </Button>
-          <Button variant="secondary" className="gap-2 text-slate-600 bg-slate-50 hover:bg-slate-100">
-            Định dạng: PDF
-          </Button>
+        <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4">
+          {CATEGORY_TABS.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setCategory(tab.id)}
+              className={`rounded-xl px-3.5 py-2 text-xs font-bold transition-colors ${
+                category === tab.id
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Pro Banner */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-900 to-purple-900 p-6 sm:p-8 shadow-xl">
-        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-purple-500/20 blur-3xl" />
-        <div className="absolute -left-10 -bottom-10 h-40 w-40 rounded-full bg-blue-500/20 blur-2xl" />
-        
-        <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-6">
-          <div className="text-white text-center sm:text-left">
-            <h2 className="text-2xl font-bold flex items-center justify-center sm:justify-start gap-2">
-              <Sparkles className="text-yellow-400" /> Nâng cấp PRO để mở khóa toàn bộ
-            </h2>
-            <p className="mt-2 text-indigo-100 max-w-xl">
-              Tài khoản Free bị giới hạn 3 lượt tải/ngày. Thành viên PRO được tải không giới hạn, không bị đóng dấu watermark (logo) vào tài liệu, và nhận sớm tài liệu mới.
-            </p>
-          </div>
-          <Button className="shrink-0 bg-yellow-400 hover:bg-yellow-300 text-yellow-900 font-bold px-8 shadow-[0_0_20px_rgba(250,204,21,0.3)]">
-            Nâng cấp ngay
-          </Button>
-        </div>
+      <div className="flex items-start gap-3 rounded-2xl border border-indigo-200 bg-indigo-50/70 p-5 text-sm text-slate-700">
+        <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-indigo-600" />
+        <p className="leading-relaxed">
+          Indigo Scholar không lưu trữ hoặc phân phối lại sách bản quyền trái
+          phép. Các tài liệu bên ngoài dẫn trực tiếp về trang chính thức của
+          IELTS.org, British Council và Cambridge Dictionary.
+        </p>
       </div>
 
-      {/* Resource Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        
-        {/* Book Card 1 - Free */}
-        <div className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:shadow-md flex flex-col h-full">
-          {/* 3D Book Cover Mock */}
-          <div className="relative mb-6 h-56 w-full flex items-center justify-center bg-slate-50 rounded-xl overflow-hidden perspective-1000">
-            <div className="absolute top-2 right-2 z-20 flex gap-1">
-              <span className="rounded bg-indigo-500/90 px-2 py-1 text-[10px] font-bold text-white shadow-sm backdrop-blur-sm">PDF</span>
-              <span className="rounded bg-amber-500/90 px-2 py-1 text-[10px] font-bold text-white shadow-sm backdrop-blur-sm">MP3</span>
-            </div>
-            
-            <div className="relative h-48 w-36 shadow-2xl transition-transform duration-500 group-hover:scale-105 group-hover:rotate-y-12 transform-style-3d bg-gradient-to-br from-blue-600 to-indigo-800 rounded-r-md rounded-l-sm flex flex-col items-center p-4">
-              <div className="absolute left-0 top-0 h-full w-2 bg-black/20" /> {/* Spine shadow */}
-              <h3 className="text-white font-black text-center mt-4 leading-tight">IELTS<br/>Trainer 2</h3>
-              <p className="text-blue-200 text-[10px] mt-auto">Academic & General</p>
-            </div>
-          </div>
-
-          <div className="flex-1 flex flex-col">
-            <h3 className="font-bold text-slate-800 line-clamp-2 mb-1">
-              Tuyển tập IELTS Trainer 2 (Kèm Audio & Giải chi tiết)
-            </h3>
-            <div className="flex items-center gap-1 text-sm font-semibold text-yellow-500 mb-4">
-              <Star size={14} className="fill-yellow-500" /> 4.9 <span className="text-slate-400 font-normal ml-1">(1.2k tải)</span>
-            </div>
-            
-            <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500">24.5 MB</span>
-              <Button size="sm" className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200">
-                <Download size={14} className="mr-1" /> Tải Xuống
-              </Button>
-            </div>
-          </div>
+      {filtered.length === 0 ? (
+        <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center">
+          <p className="text-base font-bold text-slate-800">
+            Không tìm thấy tài liệu phù hợp
+          </p>
+          <p className="mt-1 text-sm text-slate-500">
+            Hãy thử từ khóa khác hoặc chọn bộ lọc &quot;Tất cả&quot;.
+          </p>
         </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {filtered.map((item) => (
+            <article
+              key={item.id}
+              className="flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+            >
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">
+                  <CategoryIcon category={item.category} />
+                  {item.source}
+                </span>
+                <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-semibold text-indigo-700">
+                  {item.level}
+                </span>
+              </div>
 
-        {/* Book Card 2 - Locked Pro */}
-        <div className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:shadow-md flex flex-col h-full relative">
-          <div className="absolute top-0 right-0 p-3 z-30">
-            <span className="flex items-center gap-1 rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 px-3 py-1 text-xs font-bold text-yellow-900 shadow-sm">
-              <Sparkles size={12} /> PRO
-            </span>
-          </div>
-          
-          {/* 3D Book Cover Mock */}
-          <div className="relative mb-6 h-56 w-full flex items-center justify-center bg-slate-50 rounded-xl overflow-hidden perspective-1000">
-            <div className="absolute top-2 left-2 z-20 flex gap-1">
-              <span className="rounded bg-indigo-500/90 px-2 py-1 text-[10px] font-bold text-white shadow-sm backdrop-blur-sm">PDF</span>
-            </div>
-            
-            <div className="relative h-48 w-36 shadow-2xl transition-transform duration-500 group-hover:scale-105 group-hover:-rotate-y-12 transform-style-3d bg-gradient-to-br from-emerald-600 to-teal-800 rounded-r-md rounded-l-sm flex flex-col items-center p-4">
-              <div className="absolute left-0 top-0 h-full w-2 bg-black/20" />
-              <h3 className="text-white font-black text-center mt-4 leading-tight text-xl">IDEA<br/>BANK</h3>
-              <p className="text-emerald-200 text-[10px] mt-auto text-center">Writing Task 2 Band 8.0</p>
-            </div>
-          </div>
+              <h2 className="mb-2 text-base font-bold text-slate-900">
+                {item.title}
+              </h2>
+              <p className="flex-1 text-sm leading-relaxed text-slate-600">
+                {item.description}
+              </p>
 
-          <div className="flex-1 flex flex-col">
-            <h3 className="font-bold text-slate-800 line-clamp-2 mb-1">
-              Bộ Idea Bank Task 2 (100 Chủ Đề Hay Gặp)
-            </h3>
-            <div className="flex items-center gap-1 text-sm font-semibold text-yellow-500 mb-4">
-              <Star size={14} className="fill-yellow-500" /> 5.0 <span className="text-slate-400 font-normal ml-1">(540 tải)</span>
-            </div>
-            
-            <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500">12.1 MB</span>
-              <Button size="sm" variant="secondary" className="gap-2 text-slate-600 group-hover:bg-indigo-50 group-hover:text-indigo-700 group-hover:border-indigo-200">
-                <Lock size={14} /> Mở Khóa
-              </Button>
-            </div>
-          </div>
+              <div className="mt-5 flex items-center justify-end border-t border-slate-100 pt-4">
+                {item.isExternal ? (
+                  <a
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-indigo-700"
+                  >
+                    {item.actionLabel}
+                    <ArrowUpRight className="size-4" />
+                  </a>
+                ) : (
+                  <Link
+                    href={item.href}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-bold text-indigo-700 transition-colors hover:bg-indigo-100"
+                  >
+                    {item.actionLabel}
+                    <ArrowUpRight className="size-4" />
+                  </Link>
+                )}
+              </div>
+            </article>
+          ))}
         </div>
-
-        {/* Book Card 3 - Anki Deck */}
-        <div className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:shadow-md flex flex-col h-full">
-          <div className="relative mb-6 h-56 w-full flex items-center justify-center bg-slate-50 rounded-xl overflow-hidden perspective-1000">
-            <div className="absolute top-2 right-2 z-20 flex gap-1">
-              <span className="rounded bg-sky-500/90 px-2 py-1 text-[10px] font-bold text-white shadow-sm backdrop-blur-sm">ANKI</span>
-            </div>
-            
-            <div className="relative h-40 w-48 shadow-2xl transition-transform duration-500 group-hover:-translate-y-2 group-hover:rotate-3 transform-style-3d bg-white rounded-xl flex flex-col items-center justify-center p-4 border-4 border-sky-400">
-              <span className="text-5xl mb-2">🧠</span>
-              <h3 className="text-sky-700 font-black text-center leading-tight">Core 3000<br/>Vocab</h3>
-            </div>
-          </div>
-
-          <div className="flex-1 flex flex-col">
-            <h3 className="font-bold text-slate-800 line-clamp-2 mb-1">
-              Bộ thẻ Anki 3000 Từ Vựng Lõi (Có hình ảnh & âm thanh)
-            </h3>
-            <div className="flex items-center gap-1 text-sm font-semibold text-yellow-500 mb-4">
-              <Star size={14} className="fill-yellow-500" /> 4.8 <span className="text-slate-400 font-normal ml-1">(2.1k tải)</span>
-            </div>
-            
-            <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500">85 MB</span>
-              <Button size="sm" className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200">
-                <Download size={14} className="mr-1" /> Tải Xuống
-              </Button>
-            </div>
-          </div>
-        </div>
-
-      </div>
+      )}
     </div>
   );
 }

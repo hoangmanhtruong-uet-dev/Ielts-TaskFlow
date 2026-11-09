@@ -62,7 +62,7 @@ export function SpeakingImprovement({
         </h1>
       </header>
 
-      <main className="space-y-5 px-4 py-5 sm:px-6">
+      <div className="space-y-5 px-4 py-5 sm:px-6">
         <Attempt label="Attempt 1" feedback={previous} />
         <Attempt label="Latest attempt" feedback={feedback} current />
 
@@ -119,7 +119,7 @@ export function SpeakingImprovement({
             Practice pronunciation
           </Link>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
@@ -133,7 +133,7 @@ function Attempt({
   feedback: {
     estimatedPronunciationBand: number | null;
     estimatedFluencyBand: number | null;
-    suggestions?: any;
+    suggestions?: unknown;
   } | null;
   current?: boolean;
 }) {

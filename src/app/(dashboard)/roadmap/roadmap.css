@@ -2,7 +2,12 @@
   background-color: #0b0d14;
   color: #f1f5f9;
   min-height: 100dvh;
-  font-family: var(--font-be-vietnam-pro, "Be Vietnam Pro", system-ui, sans-serif);
+  font-family: var(
+    --font-be-vietnam-pro,
+    "Be Vietnam Pro",
+    system-ui,
+    sans-serif
+  );
 }
 
 .roadmap-root .glass-card {
@@ -20,7 +25,10 @@
   transform: translate(-50%, -115%);
   pointer-events: auto;
   cursor: pointer;
-  transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease,
+    box-shadow 0.2s ease;
   user-select: none;
   z-index: 10;
 }

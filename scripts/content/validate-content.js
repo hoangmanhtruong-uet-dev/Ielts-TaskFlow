@@ -36,7 +36,14 @@ const VALID_QUESTION_TYPE = [
   "matching",
   "short_text",
 ];
-const VALID_SKILL = ["READING", "LISTENING", "WRITING", "SPEAKING", "GRAMMAR", "VOCABULARY"];
+const VALID_SKILL = [
+  "READING",
+  "LISTENING",
+  "WRITING",
+  "SPEAKING",
+  "GRAMMAR",
+  "VOCABULARY",
+];
 
 let errors = [];
 let warnings = [];
@@ -62,9 +69,16 @@ function validateProvenance(prov) {
   }
   if (!prov.source) error("Provenance: thiếu `source` (nguồn nội dung).");
   if (!prov.license) error("Provenance: thiếu `license` (giấy phép sử dụng).");
-  if (!prov.checksum) warn("Provenance: thiếu `checksum` (khuyến khích để kiểm tra tính toàn vẹn).");
-  if (prov.ai_generated === undefined) warn("Provenance: thiếu `ai_generated` (đánh dấu nội dung AI draft).");
-  if (prov.ai_generated) warn("Nội dung được sinh bởi AI — bắt buộc người review duyệt trước khi publish.");
+  if (!prov.checksum)
+    warn(
+      "Provenance: thiếu `checksum` (khuyến khích để kiểm tra tính toàn vẹn).",
+    );
+  if (prov.ai_generated === undefined)
+    warn("Provenance: thiếu `ai_generated` (đánh dấu nội dung AI draft).");
+  if (prov.ai_generated)
+    warn(
+      "Nội dung được sinh bởi AI — bắt buộc người review duyệt trước khi publish.",
+    );
 }
 
 function validateAnswerKey(exercise) {
@@ -85,7 +99,9 @@ function validateAnswerKey(exercise) {
   const sorted = [...positions].sort((a, b) => a - b);
   for (let i = 0; i < sorted.length; i++) {
     if (sorted[i] !== i + 1) {
-      error(`Exercise ${id}: vị trí câu hỏi không liên tục (gap tại ${i + 1}).`);
+      error(
+        `Exercise ${id}: vị trí câu hỏi không liên tục (gap tại ${i + 1}).`,
+      );
       break;
     }
   }
@@ -98,12 +114,16 @@ function validateAnswerKey(exercise) {
     }
   }
 
-  ok(`Exercise ${id}: ${question_set.length} câu, answer_key có ${Object.keys(answer_key).length} đáp án.`);
+  ok(
+    `Exercise ${id}: ${question_set.length} câu, answer_key có ${Object.keys(answer_key).length} đáp án.`,
+  );
 }
 
 function validateDifficulty(difficulty, ctx) {
   if (!VALID_DIFFICULTY.includes(difficulty)) {
-    error(`${ctx}: độ khó '${difficulty}' không hợp lệ. Phải là một trong: ${VALID_DIFFICULTY.join(", ")}.`);
+    error(
+      `${ctx}: độ khó '${difficulty}' không hợp lệ. Phải là một trong: ${VALID_DIFFICULTY.join(", ")}.`,
+    );
   }
 }
 
@@ -143,7 +163,8 @@ function validateContent(input) {
   }
 
   // 5. Content quality rules (từ CONTENT_OPERATIONS.md §7.4)
-  if (exercises.length === 0) error("Không có exercise nào — không publish được.");
+  if (exercises.length === 0)
+    error("Không có exercise nào — không publish được.");
   if (lessons.length === 0) error("Không có lesson nào — không publish được.");
 
   // 6. AI-generated content warning
@@ -151,14 +172,20 @@ function validateContent(input) {
     warn("⚠️ Nội dung AI-generated — bắt buộc spot-check ≥20% item mỗi batch.");
   }
 
-  console.log(`\n📊 Kết quả: ${errors.length} lỗi, ${warnings.length} cảnh báo.`);
+  console.log(
+    `\n📊 Kết quả: ${errors.length} lỗi, ${warnings.length} cảnh báo.`,
+  );
 
   if (errors.length > 0) {
-    console.error("\n🛡️ VALIDATE THẤT BẠI — Không được sinh migration publish.");
+    console.error(
+      "\n🛡️ VALIDATE THẤT BẠI — Không được sinh migration publish.",
+    );
     process.exit(1);
   }
 
-  console.log("\n🎉 VALIDATE THÀNH CÔNG — Có thể tiến hành sinh seed migration draft.");
+  console.log(
+    "\n🎉 VALIDATE THÀNH CÔNG — Có thể tiến hành sinh seed migration draft.",
+  );
   return { errors, warnings };
 }
 
@@ -166,7 +193,9 @@ function validateContent(input) {
 
 const args = process.argv.slice(2);
 if (args.length === 0) {
-  console.error("Usage: node scripts/content/validate-content.js <path-to-json>");
+  console.error(
+    "Usage: node scripts/content/validate-content.js <path-to-json>",
+  );
   process.exit(1);
 }
 

@@ -161,12 +161,13 @@ export async function getListeningCatalog(): Promise<ListeningCatalogItem[]> {
 
 export async function getListeningPracticePage(
   exerciseSlug: string,
+  options?: { mockAttemptId?: string },
 ): Promise<ListeningPracticePageData | null> {
   const route = listeningRouteSchema
     .pick({ exerciseSlug: true })
     .safeParse({ exerciseSlug });
   if (!route.success) return null;
-  await requireCompletedOnboarding();
+  const { account } = await requireCompletedOnboarding();
   const supabase = await createSupabaseServerClient();
   const { data: exercise, error: exerciseError } = await supabase
     .from("exercise_sets")
@@ -187,15 +188,25 @@ export async function getListeningPracticePage(
       .order("version", { ascending: false }),
     supabase
       .from("learner_attempts")
-      .select("id, exercise_set_version_id, status, last_saved_at, created_at")
+      .select(
+        "id, exercise_set_version_id, status, is_mock, last_saved_at, created_at",
+      )
+      .eq("user_id", account.user.id)
       .eq("exercise_set_id", exercise.id)
       .order("created_at", { ascending: false }),
   ]);
   if (versionsResult.error || attemptsResult.error)
     throw new ListeningReadError();
-  const activeAttempt = attemptsResult.data.find(
-    (item) => item.status === "in_progress",
-  );
+  const activeAttempt = options?.mockAttemptId
+    ? attemptsResult.data.find(
+        (item) =>
+          item.id === options.mockAttemptId &&
+          item.status === "in_progress" &&
+          Boolean(item.is_mock),
+      )
+    : attemptsResult.data.find(
+        (item) => item.status === "in_progress" && !item.is_mock,
+      );
   const version =
     versionsResult.data.find(
       (item) => item.id === activeAttempt?.exercise_set_version_id,
@@ -354,7 +365,9 @@ export async function getListeningPracticePage(
           }
         : null,
     latestResultId:
-      attemptsResult.data.find((item) => item.status === "scored")?.id ?? null,
+      attemptsResult.data.find(
+        (item) => item.status === "scored" && !item.is_mock,
+      )?.id ?? null,
   };
 }
 
@@ -373,6 +386,9 @@ export async function getListeningPracticeResult(
   const parsed = listeningPracticeResultSchema.safeParse(data);
   if (!parsed.success)
     throw new ListeningReadError("Kết quả Listening không hợp lệ.");
+  const questionIds = parsed.data.questions.map(
+    (question) => question.questionId,
+  );
   const [
     { data: exercise },
     { data: version },
@@ -390,10 +406,13 @@ export async function getListeningPracticeResult(
       .select("title, summary")
       .eq("id", parsed.data.exerciseSetVersionId)
       .maybeSingle(),
-    supabase
-      .from("exercise_options")
-      .select("id, label, position")
-      .order("position"),
+    questionIds.length
+      ? supabase
+          .from("exercise_options")
+          .select("id, label, position")
+          .in("question_id", questionIds)
+          .order("position")
+      : Promise.resolve({ data: [], error: null }),
   ]);
   if (optionsError) throw new ListeningReadError();
   if (!exercise || !version) return null;

@@ -1,20 +1,50 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+  useSyncExternalStore,
+} from "react";
 import "./dictation.css";
+
+export interface DictationSentenceMeta {
+  id: string;
+  startTime: number;
+  endTime: number;
+  hint?: string | null;
+}
 
 export interface DictationLesson {
   id: string;
+  dbExerciseId?: string;
   cat: string;
   lv: "Cơ bản" | "Trung bình" | "Nâng cao";
   title: string;
   desc: string;
   dur: string;
+  audioUrl?: string | null;
+  audioUrlLow?: string | null;
+  sentenceMeta?: DictationSentenceMeta[];
   s: string[];
   custom?: boolean;
 }
 
-const BASE_LESSONS: DictationLesson[] = [
+export interface DictationProgressEntry {
+  best: number;
+  last: number;
+  completed?: boolean;
+}
+
+export interface DictationClientProps {
+  initialLessons?: DictationLesson[];
+  initialProgress?: Record<string, DictationProgressEntry>;
+  initialStats?: { n: number; sum: number };
+}
+
+export const BASE_LESSONS: DictationLesson[] = [
   {
     id: "cafe",
     cat: "Giao tiếp",
@@ -118,7 +148,14 @@ const BASE_LESSONS: DictationLesson[] = [
   },
 ];
 
-const CATEGORIES = ["Tất cả", "Tổng hợp", "Giao tiếp", "Công sở", "Học thuật", "Tin tức"];
+const CATEGORIES = [
+  "Tất cả",
+  "Tổng hợp",
+  "Giao tiếp",
+  "Công sở",
+  "Học thuật",
+  "Tin tức",
+];
 const LEVELS = ["Tất cả", "Cơ bản", "Trung bình", "Nâng cao"] as const;
 
 const LEVEL_COLORS: Record<string, string> = {
@@ -127,11 +164,21 @@ const LEVEL_COLORS: Record<string, string> = {
   "Nâng cao": "#FF6A82",
 };
 
+export type DiffToken =
+  | { kind: "ok" | "miss" | "extra" | "plain"; text: string }
+  | {
+      kind: "cloze-miss";
+      prefix: string;
+      typed: string;
+      expected: string;
+      suffix: string;
+    };
+
 interface SentenceResult {
   acc: number;
   revealed?: boolean;
   missed: string[];
-  html: string;
+  tokens: DiffToken[];
 }
 
 interface DiffOp {
@@ -141,7 +188,10 @@ interface DiffOp {
 }
 
 function cleanWord(w: string) {
-  return w.replace(/[’‘]/g, "'").toLowerCase().replace(/[^a-z0-9']/g, "");
+  return w
+    .replace(/[’‘]/g, "'")
+    .toLowerCase()
+    .replace(/[^a-z0-9']/g, "");
 }
 
 function splitWords(s: string) {
@@ -158,7 +208,10 @@ function alignDiff(targetWords: string[], userWords: string[]): DiffOp[] {
 
   for (let i = n - 1; i >= 0; i--) {
     for (let j = m - 1; j >= 0; j--) {
-      d[i][j] = T[i] === A[j] ? d[i + 1][j + 1] + 1 : Math.max(d[i + 1][j], d[i][j + 1]);
+      d[i][j] =
+        T[i] === A[j]
+          ? d[i + 1][j + 1] + 1
+          : Math.max(d[i + 1][j], d[i][j + 1]);
     }
   }
 
@@ -194,6 +247,7 @@ function alignDiff(targetWords: string[], userWords: string[]): DiffOp[] {
 
 function makeBlanks(sentence: string): number[] {
   const w = splitWords(sentence);
+  if (w.length === 0) return [];
   let el = w
     .map((x, i) => [i, cleanWord(x).length] as [number, number])
     .filter((x) => x[1] >= 4)
@@ -202,7 +256,7 @@ function makeBlanks(sentence: string): number[] {
     const best = w
       .map((x, i) => [i, cleanWord(x).length] as [number, number])
       .sort((a, b) => b[1] - a[1])[0];
-    el = [best[0]];
+    if (best) el = [best[0]];
   }
   return el.filter((_, k) => k % 2 === 0 || el.length === 1);
 }
@@ -219,15 +273,166 @@ function normalizeSearch(s: string) {
     .replace(/đ/g, "d");
 }
 
-export function DictationClient() {
+const subscribeNoop = () => () => {};
+const EMPTY_PROG: Record<string, DictationProgressEntry> = {};
+const EMPTY_STATS: { n: number; sum: number } = { n: 0, sum: 0 };
+const EMPTY_NOTES: Record<string, number> = {};
+const EMPTY_MINE: DictationLesson[] = [];
+
+let cachedProgRaw: string | null = null;
+let cachedProgVal: Record<string, DictationProgressEntry> = EMPTY_PROG;
+function getStoredProgSnapshot(): Record<string, DictationProgressEntry> {
+  try {
+    const raw = localStorage.getItem("dict.prog");
+    if (!raw) return EMPTY_PROG;
+    if (raw === cachedProgRaw) return cachedProgVal;
+    const parsed: unknown = JSON.parse(raw);
+    if (
+      typeof parsed === "object" &&
+      parsed !== null &&
+      !Array.isArray(parsed)
+    ) {
+      cachedProgRaw = raw;
+      cachedProgVal = parsed as Record<string, DictationProgressEntry>;
+      return cachedProgVal;
+    }
+  } catch {
+    // Ignore storage access failures
+  }
+  return EMPTY_PROG;
+}
+
+let cachedStatsRaw: string | null = null;
+let cachedStatsVal: { n: number; sum: number } = EMPTY_STATS;
+function getStoredStatsSnapshot(): { n: number; sum: number } {
+  try {
+    const raw = localStorage.getItem("dict.stats");
+    if (!raw) return EMPTY_STATS;
+    if (raw === cachedStatsRaw) return cachedStatsVal;
+    const parsed: unknown = JSON.parse(raw);
+    if (
+      typeof parsed === "object" &&
+      parsed !== null &&
+      typeof (parsed as { n?: unknown }).n === "number" &&
+      typeof (parsed as { sum?: unknown }).sum === "number"
+    ) {
+      cachedStatsRaw = raw;
+      cachedStatsVal = parsed as { n: number; sum: number };
+      return cachedStatsVal;
+    }
+  } catch {
+    // Ignore storage access failures
+  }
+  return EMPTY_STATS;
+}
+
+let cachedNotesRaw: string | null = null;
+let cachedNotesVal: Record<string, number> = EMPTY_NOTES;
+function getStoredNotesSnapshot(): Record<string, number> {
+  try {
+    const raw = localStorage.getItem("dict.notes");
+    if (!raw) return EMPTY_NOTES;
+    if (raw === cachedNotesRaw) return cachedNotesVal;
+    const parsed: unknown = JSON.parse(raw);
+    if (
+      typeof parsed === "object" &&
+      parsed !== null &&
+      !Array.isArray(parsed)
+    ) {
+      cachedNotesRaw = raw;
+      cachedNotesVal = parsed as Record<string, number>;
+      return cachedNotesVal;
+    }
+  } catch {
+    // Ignore storage access failures
+  }
+  return EMPTY_NOTES;
+}
+
+let cachedMineRaw: string | null = null;
+let cachedMineVal: DictationLesson[] = EMPTY_MINE;
+function getStoredMineSnapshot(): DictationLesson[] {
+  try {
+    const raw = localStorage.getItem("dict.mine");
+    if (!raw) return EMPTY_MINE;
+    if (raw === cachedMineRaw) return cachedMineVal;
+    const parsed: unknown = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      cachedMineRaw = raw;
+      cachedMineVal = parsed.filter(
+        (item): item is DictationLesson =>
+          Boolean(item) &&
+          typeof item.id === "string" &&
+          typeof item.title === "string" &&
+          Array.isArray(item.s) &&
+          item.s.length > 0,
+      );
+      return cachedMineVal;
+    }
+  } catch {
+    // Ignore storage access failures
+  }
+  return EMPTY_MINE;
+}
+
+export function DictationClient({
+  initialLessons,
+  initialProgress,
+  initialStats,
+}: DictationClientProps = {}) {
   // Main view: 'lib' | 'play' | 'result'
   const [view, setView] = useState<"lib" | "play" | "result">("lib");
 
-  // Local storage state
-  const [prog, setProg] = useState<Record<string, { best: number; last: number }>>({});
-  const [stats, setStats] = useState({ n: 0, sum: 0 });
-  const [notes, setNotes] = useState<Record<string, number>>({});
-  const [mine, setMine] = useState<DictationLesson[]>([]);
+  // Progress / stats / notes state (seeded with server DB state & localStorage snapshot)
+  const storedProg = useSyncExternalStore(
+    subscribeNoop,
+    getStoredProgSnapshot,
+    () => EMPTY_PROG,
+  );
+  const storedStats = useSyncExternalStore(
+    subscribeNoop,
+    getStoredStatsSnapshot,
+    () => EMPTY_STATS,
+  );
+  const storedNotes = useSyncExternalStore(
+    subscribeNoop,
+    getStoredNotesSnapshot,
+    () => EMPTY_NOTES,
+  );
+  const storedMine = useSyncExternalStore(
+    subscribeNoop,
+    getStoredMineSnapshot,
+    () => EMPTY_MINE,
+  );
+
+  const [progOverride, setProgOverride] = useState<Record<
+    string,
+    DictationProgressEntry
+  > | null>(null);
+  const [statsOverride, setStatsOverride] = useState<{
+    n: number;
+    sum: number;
+  } | null>(null);
+  const [notesOverride, setNotesOverride] = useState<Record<
+    string,
+    number
+  > | null>(null);
+  const [mineOverride, setMineOverride] = useState<DictationLesson[] | null>(
+    null,
+  );
+
+  const prog = useMemo(
+    () => progOverride ?? { ...storedProg, ...(initialProgress ?? {}) },
+    [initialProgress, progOverride, storedProg],
+  );
+  const stats = useMemo(
+    () =>
+      statsOverride ??
+      (initialStats && initialStats.n > 0 ? initialStats : storedStats),
+    [initialStats, statsOverride, storedStats],
+  );
+  const notes = notesOverride ?? storedNotes;
+  const mine = mineOverride ?? storedMine;
 
   // Filter state
   const [searchQuery, setSearchQuery] = useState("");
@@ -235,7 +440,9 @@ export function DictationClient() {
   const [selectedLv, setSelectedLv] = useState<string>("Tất cả");
 
   // Player state
-  const [activeLesson, setActiveLesson] = useState<DictationLesson | null>(null);
+  const [activeLesson, setActiveLesson] = useState<DictationLesson | null>(
+    null,
+  );
   const [currentIdx, setCurrentIdx] = useState(0);
   const [mode, setMode] = useState<"full" | "cloze">("full");
   const [speed, setSpeed] = useState(1);
@@ -244,10 +451,18 @@ export function DictationClient() {
   const [hints, setHints] = useState(0);
   const [hintN, setHintN] = useState(0);
   const [playerStatus, setPlayerStatus] = useState<"ask" | "checked">("ask");
-  const [currentResult, setCurrentResult] = useState<SentenceResult | null>(null);
+  const [currentResult, setCurrentResult] = useState<SentenceResult | null>(
+    null,
+  );
   const [results, setResults] = useState<SentenceResult[]>([]);
-  const [startTime, setStartTime] = useState(Date.now());
+  const [startTime, setStartTime] = useState(() => Date.now());
+  const [sentenceStartTime, setSentenceStartTime] = useState(() => Date.now());
   const [elapsedSecs, setElapsedSecs] = useState(0);
+
+  // Inline confirmation & notification states (replacing blocking alert()/confirm())
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [confirmExit, setConfirmExit] = useState(false);
+  const [notesSavedCount, setNotesSavedCount] = useState<number | null>(null);
 
   // Input states
   const [fullInput, setFullInput] = useState("");
@@ -261,97 +476,223 @@ export function DictationClient() {
   const [newError, setNewError] = useState("");
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const segmentEndRef = useRef<number | null>(null);
 
-  // Load from localStorage on mount
-  useEffect(() => {
+  const stopAllAudio = useCallback(() => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+    const audio = audioRef.current;
+    if (audio) {
+      audio.pause();
+    }
+    segmentEndRef.current = null;
+    setIsPlaying(false);
+  }, []);
+
+  // Save helpers
+  const saveProg = useCallback(
+    (newProg: Record<string, DictationProgressEntry>) => {
+      setProgOverride(newProg);
+      try {
+        localStorage.setItem("dict.prog", JSON.stringify(newProg));
+      } catch {
+        // Ignore storage quota failure
+      }
+    },
+    [],
+  );
+
+  const saveStats = useCallback((newStats: { n: number; sum: number }) => {
+    setStatsOverride(newStats);
     try {
-      const savedProg = localStorage.getItem("dict.prog");
-      if (savedProg) setProg(JSON.parse(savedProg));
-      const savedStats = localStorage.getItem("dict.stats");
-      if (savedStats) setStats(JSON.parse(savedStats));
-      const savedNotes = localStorage.getItem("dict.notes");
-      if (savedNotes) setNotes(JSON.parse(savedNotes));
-      const savedMine = localStorage.getItem("dict.mine");
-      if (savedMine) setMine(JSON.parse(savedMine));
+      localStorage.setItem("dict.stats", JSON.stringify(newStats));
     } catch {
-      // Fallback
+      // Ignore storage quota failure
     }
   }, []);
 
-  // Save changes
-  const saveProg = (newProg: Record<string, { best: number; last: number }>) => {
-    setProg(newProg);
-    try {
-      localStorage.setItem("dict.prog", JSON.stringify(newProg));
-    } catch {}
-  };
-
-  const saveStats = (newStats: { n: number; sum: number }) => {
-    setStats(newStats);
-    try {
-      localStorage.setItem("dict.stats", JSON.stringify(newStats));
-    } catch {}
-  };
-
-  const saveNotes = (newNotes: Record<string, number>) => {
-    setNotes(newNotes);
+  const saveNotes = useCallback((newNotes: Record<string, number>) => {
+    setNotesOverride(newNotes);
     try {
       localStorage.setItem("dict.notes", JSON.stringify(newNotes));
-    } catch {}
-  };
+    } catch {
+      // Ignore storage quota failure
+    }
+  }, []);
 
-  const saveMine = (newMine: DictationLesson[]) => {
-    setMine(newMine);
+  const saveMine = useCallback((newMine: DictationLesson[]) => {
+    setMineOverride(newMine);
     try {
       localStorage.setItem("dict.mine", JSON.stringify(newMine));
-    } catch {}
-  };
+    } catch {
+      // Ignore storage quota failure
+    }
+  }, []);
+
+  const baseCatalog = useMemo(
+    () =>
+      initialLessons && initialLessons.length > 0
+        ? initialLessons
+        : BASE_LESSONS,
+    [initialLessons],
+  );
 
   // Lessons list
-  const allLessons = useMemo(() => [...BASE_LESSONS, ...mine], [mine]);
+  const allLessons = useMemo(
+    () => [...baseCatalog, ...mine],
+    [baseCatalog, mine],
+  );
 
-  // Audio Speech synthesis
-  const say = useCallback(
-    (text: string, r: number = speed) => {
+  // Clean up HTMLAudioElement when activeLesson changes or component unmounts
+  useEffect(() => {
+    const url = activeLesson?.audioUrl;
+    if (!url || typeof Audio === "undefined") {
+      return () => {
+        stopAllAudio();
+      };
+    }
+
+    const audio = new Audio();
+    audio.preload = "auto";
+    audio.crossOrigin = "anonymous";
+    audio.src = url;
+    audioRef.current = audio;
+
+    const handleTimeUpdate = () => {
       if (
-        typeof window === "undefined" ||
-        !("speechSynthesis" in window) ||
-        typeof SpeechSynthesisUtterance === "undefined"
+        segmentEndRef.current !== null &&
+        audio.currentTime >= segmentEndRef.current
       ) {
+        audio.pause();
+        segmentEndRef.current = null;
+        setIsPlaying(false);
+      }
+    };
+    const handleEnded = () => setIsPlaying(false);
+    const handlePause = () => setIsPlaying(false);
+    const handleError = () => {
+      const lowUrl = activeLesson?.audioUrlLow;
+      if (lowUrl && audio.src !== lowUrl) {
+        audio.src = lowUrl;
+      } else {
+        setIsPlaying(false);
+      }
+    };
+
+    audio.addEventListener("timeupdate", handleTimeUpdate);
+    audio.addEventListener("ended", handleEnded);
+    audio.addEventListener("pause", handlePause);
+    audio.addEventListener("error", handleError);
+
+    return () => {
+      audio.removeEventListener("timeupdate", handleTimeUpdate);
+      audio.removeEventListener("ended", handleEnded);
+      audio.removeEventListener("pause", handlePause);
+      audio.removeEventListener("error", handleError);
+      audio.pause();
+      audio.removeAttribute("src");
+      try {
+        audio.load();
+      } catch {
+        // Ignore reset failure in headless environment
+      }
+      if (audioRef.current === audio) {
+        audioRef.current = null;
+      }
+      segmentEndRef.current = null;
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+      setIsPlaying(false);
+    };
+  }, [activeLesson?.audioUrl, activeLesson?.audioUrlLow, stopAllAudio]);
+
+  // Global unmount speech cancellation
+  useEffect(() => {
+    return () => {
+      stopAllAudio();
+    };
+  }, [stopAllAudio]);
+
+  // Web Speech synthesis helper
+  const sayWebSpeech = useCallback((text: string, r: number) => {
+    if (
+      typeof window === "undefined" ||
+      !("speechSynthesis" in window) ||
+      typeof SpeechSynthesisUtterance === "undefined"
+    ) {
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "en-US";
+    u.rate = r;
+    const voices = window.speechSynthesis.getVoices();
+    const prefVoice =
+      voices.find(
+        (v) =>
+          /^en[-_]US/i.test(v.lang) &&
+          (v.name.includes("Google") || v.name.includes("Siri")),
+      ) || voices.find((v) => /^en/i.test(v.lang));
+    if (prefVoice) u.voice = prefVoice;
+
+    u.onstart = () => setIsPlaying(true);
+    u.onend = u.onerror = () => setIsPlaying(false);
+    window.speechSynthesis.speak(u);
+  }, []);
+
+  // Play sentence audio (real audio clip if available, otherwise Web Speech fallback)
+  const playSentence = useCallback(
+    (text: string, r: number = speed, sentenceMeta?: DictationSentenceMeta) => {
+      const audio = audioRef.current;
+      if (audio && activeLesson?.audioUrl && sentenceMeta) {
+        if (typeof window !== "undefined" && "speechSynthesis" in window) {
+          window.speechSynthesis.cancel();
+        }
+        segmentEndRef.current = sentenceMeta.endTime;
+        audio.playbackRate = r;
+        try {
+          audio.currentTime = sentenceMeta.startTime;
+        } catch {
+          // Ignore seek before metadata ready
+        }
+        setIsPlaying(true);
+        const maybePromise = audio.play();
+        if (maybePromise && typeof maybePromise.catch === "function") {
+          maybePromise.catch(() => {
+            segmentEndRef.current = null;
+            sayWebSpeech(text, r);
+          });
+        }
         return;
       }
-      window.speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = "en-US";
-      u.rate = r;
-      const voices = window.speechSynthesis.getVoices();
-      const prefVoice =
-        voices.find((v) => /^en[-_]US/i.test(v.lang) && (v.name.includes("Google") || v.name.includes("Siri"))) ||
-        voices.find((v) => /^en/i.test(v.lang));
-      if (prefVoice) u.voice = prefVoice;
-
-      u.onstart = () => setIsPlaying(true);
-      u.onend = u.onerror = () => setIsPlaying(false);
-      window.speechSynthesis.speak(u);
+      sayWebSpeech(text, r);
     },
-    [speed]
+    [activeLesson?.audioUrl, sayWebSpeech, speed],
   );
 
   // Filter lessons
   const filteredLessons = useMemo(() => {
     return allLessons.filter((l) => {
       const matchCat =
-        selectedCat === "Tất cả" || (selectedCat === "Của tôi" ? l.custom : l.cat === selectedCat);
+        selectedCat === "Tất cả" ||
+        (selectedCat === "Của tôi" ? l.custom : l.cat === selectedCat);
       const matchLv = selectedLv === "Tất cả" || l.lv === selectedLv;
       const matchQ =
         !searchQuery ||
-        normalizeSearch(`${l.title} ${l.desc} ${l.cat}`).includes(normalizeSearch(searchQuery));
+        normalizeSearch(`${l.title} ${l.desc} ${l.cat}`).includes(
+          normalizeSearch(searchQuery),
+        );
       return matchCat && matchLv && matchQ;
     });
   }, [allLessons, selectedCat, selectedLv, searchQuery]);
 
   // Start a lesson
-  const startLesson = (lesson: DictationLesson) => {
+  const handleStartLesson = useCallback((lesson: DictationLesson) => {
+    setConfirmExit(false);
+    setNotesSavedCount(null);
     setActiveLesson(lesson);
     setCurrentIdx(0);
     setResults([]);
@@ -362,30 +703,37 @@ export function DictationClient() {
     setCurrentResult(null);
     setFullInput("");
     setClozeInputs({});
-    setStartTime(Date.now());
+    const nowMs = Date.now();
+    setStartTime(nowMs);
+    setSentenceStartTime(nowMs);
     setView("play");
-  };
+  }, []);
 
   // Play audio when entering sentence
   useEffect(() => {
     if (view === "play" && activeLesson && playerStatus === "ask") {
       const sent = activeLesson.s[currentIdx];
+      const meta = activeLesson.sentenceMeta?.[currentIdx];
       const timer = setTimeout(() => {
-        say(sent, speed);
+        playSentence(sent, speed, meta);
       }, 200);
       return () => clearTimeout(timer);
     }
-  }, [view, activeLesson, currentIdx, playerStatus, say, speed]);
+  }, [view, activeLesson, currentIdx, playerStatus, playSentence, speed]);
 
   // Handle replay audio
-  const handleReplay = () => {
+  const handleReplay = useCallback(() => {
     if (!activeLesson) return;
     setReplays((prev) => prev + 1);
-    say(activeLesson.s[currentIdx], speed);
-  };
+    playSentence(
+      activeLesson.s[currentIdx],
+      speed,
+      activeLesson.sentenceMeta?.[currentIdx],
+    );
+  }, [activeLesson, currentIdx, playSentence, speed]);
 
   // Handle hint
-  const handleHint = () => {
+  const handleHint = useCallback(() => {
     if (!activeLesson) return;
     const sent = activeLesson.s[currentIdx];
     const totalWords = splitWords(sent).length;
@@ -393,7 +741,34 @@ export function DictationClient() {
       setHintN((prev) => prev + 1);
       setHints((prev) => prev + 1);
     }
-  };
+  }, [activeLesson, currentIdx, hintN]);
+
+  // Persist DB-backed dictation attempt without blocking UX
+  const dbExerciseId = activeLesson?.dbExerciseId;
+  const currentSentenceMetaId = activeLesson?.sentenceMeta?.[currentIdx]?.id;
+  const persistDbSubmission = useCallback(
+    (userInputText: string) => {
+      if (!dbExerciseId || !currentSentenceMetaId) return;
+      const timeSpent = Math.max(
+        0,
+        Math.round((Date.now() - sentenceStartTime) / 1000),
+      );
+      void fetch("/api/dictation/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          exerciseId: dbExerciseId,
+          sentenceId: currentSentenceMetaId,
+          userInput: userInputText,
+          timeSpent,
+          replayCount: replays,
+        }),
+      }).catch(() => {
+        // Non-blocking telemetry sync
+      });
+    },
+    [dbExerciseId, currentSentenceMetaId, replays, sentenceStartTime],
+  );
 
   // Handle check answer
   const handleCheck = () => {
@@ -402,7 +777,7 @@ export function DictationClient() {
     const tw = splitWords(sent);
     let acc = 0;
     let missed: string[] = [];
-    let html = "";
+    let tokens: DiffToken[] = [];
 
     if (mode === "full") {
       if (!fullInput.trim()) {
@@ -414,18 +789,20 @@ export function DictationClient() {
       const okCount = ops.filter((o) => o.t === "ok").length;
       const extraCount = ops.filter((o) => o.t === "extra").length;
       const missCount = ops.filter((o) => o.t === "miss").length;
-      acc = Math.round((100 * okCount) / (okCount + missCount + extraCount)) || 0;
-      missed = ops.filter((o) => o.t === "miss" && (o.c?.length ?? 0) >= 2).map((o) => o.c as string);
-      html = ops
-        .map(
-          (o) =>
-            `<span class="w ${o.t}">${o.w}</span>`
-        )
-        .join("");
+      acc =
+        Math.round((100 * okCount) / (okCount + missCount + extraCount)) || 0;
+      missed = ops
+        .filter((o) => o.t === "miss" && (o.c?.length ?? 0) >= 2)
+        .map((o) => o.c as string);
+      tokens = ops.map((o) => ({ kind: o.t, text: o.w }));
+      persistDbSubmission(fullInput.trim());
     } else {
       const blanks = makeBlanks(sent);
       let good = 0;
-      const mapped: Record<number, { ok: boolean; typed: string; core: string }> = {};
+      const mapped: Record<
+        number,
+        { ok: boolean; typed: string; core: string }
+      > = {};
 
       blanks.forEach((k) => {
         const core = tw[k].replace(/^[^A-Za-z0-9']+|[^A-Za-z0-9']+$/g, "");
@@ -436,28 +813,34 @@ export function DictationClient() {
         mapped[k] = { ok: isOk, typed: typed.trim(), core };
       });
 
-      acc = Math.round((100 * good) / blanks.length) || 0;
-      html = tw
-        .map((w, k) => {
-          const m = mapped[k];
-          if (!m) return `<span class="w plain">${w}</span>`;
-          const mm = w.match(/^([^A-Za-z0-9']*)(.*?)([^A-Za-z0-9']*)$/);
-          const prefix = mm ? mm[1] : "";
-          const core = mm ? mm[2] : w;
-          const suffix = mm ? mm[3] : "";
-          return m.ok
-            ? `<span class="w ok">${w}</span>`
-            : `<span class="w">${m.typed ? `<span class="w extra">${m.typed}</span> ` : ""}<span class="w miss">${core}</span>${suffix}</span>`;
-        })
-        .join(" ");
+      acc =
+        blanks.length > 0 ? Math.round((100 * good) / blanks.length) || 0 : 0;
+      tokens = tw.map((w, k) => {
+        const m = mapped[k];
+        if (!m) return { kind: "plain" as const, text: w };
+        const mm = w.match(/^([^A-Za-z0-9']*)(.*?)([^A-Za-z0-9']*)$/);
+        const prefix = mm ? mm[1] : "";
+        const core = mm ? mm[2] : w;
+        const suffix = mm ? mm[3] : "";
+        if (m.ok) {
+          return { kind: "ok" as const, text: w };
+        }
+        return {
+          kind: "cloze-miss" as const,
+          prefix,
+          typed: m.typed,
+          expected: core,
+          suffix,
+        };
+      });
     }
 
-    const res: SentenceResult = { acc, html, missed };
+    const res: SentenceResult = { acc, tokens, missed };
     setCurrentResult(res);
     setPlayerStatus("checked");
 
     if (acc === 100) {
-      say("Correct", 1.1);
+      sayWebSpeech("Correct", 1.1);
     }
   };
 
@@ -469,14 +852,14 @@ export function DictationClient() {
       acc: 0,
       revealed: true,
       missed: [],
-      html: `<span class="w plain">${sent}</span>`,
+      tokens: [{ kind: "plain", text: sent }],
     };
     setCurrentResult(res);
     setPlayerStatus("checked");
   };
 
   // Advance to next sentence or finish
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     if (!activeLesson || !currentResult) return;
     const updatedResults = [...results, currentResult];
     setResults(updatedResults);
@@ -488,28 +871,25 @@ export function DictationClient() {
       setFullInput("");
       setClozeInputs({});
       setCurrentResult(null);
+      setSentenceStartTime(Date.now());
     } else {
-      // Finished all sentences!
-      if (typeof window !== "undefined" && "speechSynthesis" in window) {
-        window.speechSynthesis.cancel();
-      }
+      stopAllAudio();
       const sum = updatedResults.reduce((acc, r) => acc + r.acc, 0);
       const avg = Math.round(sum / updatedResults.length) || 0;
 
-      // Update stats
       const newStats = {
         n: stats.n + updatedResults.length,
         sum: stats.sum + sum,
       };
       saveStats(newStats);
 
-      // Update prog
       const existingBest = prog[activeLesson.id]?.best ?? 0;
-      const newProg = {
+      const newProg: Record<string, DictationProgressEntry> = {
         ...prog,
         [activeLesson.id]: {
           best: Math.max(avg, existingBest),
           last: avg,
+          completed: true,
         },
       };
       saveProg(newProg);
@@ -517,14 +897,35 @@ export function DictationClient() {
       setElapsedSecs(Math.round((Date.now() - startTime) / 1000));
       setView("result");
     }
-  };
+  }, [
+    activeLesson,
+    currentIdx,
+    currentResult,
+    prog,
+    results,
+    saveProg,
+    saveStats,
+    startTime,
+    stats.n,
+    stats.sum,
+    stopAllAudio,
+  ]);
 
   // Global hotkeys
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        if (isNewOpen) setIsNewOpen(false);
+        if (isNotesOpen) setIsNotesOpen(false);
+        return;
+      }
       if (isNewOpen || isNotesOpen) return;
       if (view === "play") {
-        if (e.altKey && e.key.toLowerCase() === "r" && playerStatus !== "checked") {
+        if (
+          e.altKey &&
+          e.key.toLowerCase() === "r" &&
+          playerStatus !== "checked"
+        ) {
           e.preventDefault();
           handleReplay();
         }
@@ -535,7 +936,8 @@ export function DictationClient() {
         if (
           e.key === "Enter" &&
           playerStatus === "checked" &&
-          (document.activeElement?.tagName !== "BUTTON" || document.activeElement.id === "bNext")
+          (document.activeElement?.tagName !== "BUTTON" ||
+            document.activeElement.id === "bNext")
         ) {
           e.preventDefault();
           handleNext();
@@ -544,7 +946,15 @@ export function DictationClient() {
     }
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [view, isNewOpen, isNotesOpen, playerStatus, handleReplay, handleHint, handleNext]);
+  }, [
+    view,
+    isNewOpen,
+    isNotesOpen,
+    playerStatus,
+    handleReplay,
+    handleHint,
+    handleNext,
+  ]);
 
   // Create custom lesson
   const handleCreateLesson = () => {
@@ -590,40 +1000,48 @@ export function DictationClient() {
     setSearchQuery("");
   };
 
-  // Delete custom lesson
+  // Delete custom lesson with non-blocking two-step UI confirm
   const handleDeleteLesson = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm("Xoá bài này?")) {
-      const updatedMine = mine.filter((m) => m.id !== id);
-      saveMine(updatedMine);
-      const updatedProg = { ...prog };
-      delete updatedProg[id];
-      saveProg(updatedProg);
-      if (updatedMine.length === 0 && selectedCat === "Của tôi") {
-        setSelectedCat("Tất cả");
-      }
+    if (confirmDeleteId !== id) {
+      setConfirmDeleteId(id);
+      return;
+    }
+    setConfirmDeleteId(null);
+    const updatedMine = mine.filter((m) => m.id !== id);
+    saveMine(updatedMine);
+    const updatedProg = { ...prog };
+    delete updatedProg[id];
+    saveProg(updatedProg);
+    if (updatedMine.length === 0 && selectedCat === "Của tôi") {
+      setSelectedCat("Tất cả");
     }
   };
 
-  // Compute category categories list
+  // Compute category list
   const categoryList = useMemo(() => {
     return [...CATEGORIES, ...(mine.length ? ["Của tôi"] : [])];
   }, [mine.length]);
 
   // Overall stats
   const avgAccuracy = stats.n ? `${Math.round(stats.sum / stats.n)}%` : "–";
-  const completedLessonsCount = Object.values(prog).filter((p) => p.best >= 0).length;
+  const completedLessonsCount = Object.values(prog).filter(
+    (p) => p.best >= 0,
+  ).length;
 
   return (
     <div className="dictation-scope">
       {/* VIEW 1: LIBRARY */}
       {view === "lib" ? (
-        <main className="wrap">
+        <div className="wrap dict-main">
           {/* Header */}
           <div className="head">
             <div>
               <h1>Luyện nghe chép chính tả</h1>
-              <p>Nghe audio tiếng Anh và gõ lại chính xác. Cải thiện kỹ năng nghe mỗi ngày.</p>
+              <p>
+                Nghe audio tiếng Anh và gõ lại chính xác. Cải thiện kỹ năng nghe
+                mỗi ngày.
+              </p>
             </div>
             <div className="acts">
               <button
@@ -667,7 +1085,16 @@ export function DictationClient() {
           {/* Filters row */}
           <div className="fl">
             <label className="search">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#98A0CF" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <svg
+                width="17"
+                height="17"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#98A0CF"
+                strokeWidth="2"
+                strokeLinecap="round"
+                aria-hidden="true"
+              >
                 <circle cx="11" cy="11" r="7" />
                 <path d="m20 20-3.5-3.5" />
               </svg>
@@ -715,12 +1142,15 @@ export function DictationClient() {
             {filteredLessons.length === 0 ? (
               <div className="empty">
                 <h2>Không có bài nào</h2>
-                <p>Thử đổi từ khoá hoặc bộ lọc, hoặc tạo bài từ văn bản của bạn.</p>
+                <p>
+                  Thử đổi từ khoá hoặc bộ lọc, hoặc tạo bài từ văn bản của bạn.
+                </p>
               </div>
             ) : (
               filteredLessons.map((lesson) => {
                 const p = prog[lesson.id];
                 const accentColor = LEVEL_COLORS[lesson.lv] || "#5EE0A0";
+                const isConfirmDelete = confirmDeleteId === lesson.id;
                 return (
                   <article
                     key={lesson.id}
@@ -729,24 +1159,47 @@ export function DictationClient() {
                     tabIndex={0}
                     role="button"
                     aria-label={`Bài học: ${lesson.title}`}
-                    onClick={() => startLesson(lesson)}
+                    onClick={() => {
+                      setConfirmDeleteId(null);
+                      handleStartLesson(lesson);
+                    }}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter") startLesson(lesson);
+                      if (e.key === "Enter") handleStartLesson(lesson);
                     }}
                   >
                     {lesson.custom ? (
                       <button
                         type="button"
                         className="del"
-                        aria-label={`Xoá bài ${lesson.title}`}
+                        aria-label={
+                          isConfirmDelete
+                            ? `Xác nhận xoá bài ${lesson.title}`
+                            : `Xoá bài ${lesson.title}`
+                        }
+                        title={
+                          isConfirmDelete ? "Bấm lần nữa để xoá" : "Xoá bài"
+                        }
+                        style={
+                          isConfirmDelete
+                            ? {
+                                width: "auto",
+                                padding: "0 8px",
+                                color: "#FF6A82",
+                                background: "#1B1F40",
+                                fontSize: "12px",
+                                fontWeight: 700,
+                              }
+                            : undefined
+                        }
                         onClick={(e) => handleDeleteLesson(lesson.id, e)}
                       >
-                        ✕
+                        {isConfirmDelete ? "Xoá?" : "✕"}
                       </button>
                     ) : null}
 
                     <div className="cat">
                       <span>{lesson.cat}</span>
+                      {lesson.dbExerciseId ? <span>Đồng bộ</span> : null}
                     </div>
 
                     <h3>{lesson.title}</h3>
@@ -779,12 +1232,12 @@ export function DictationClient() {
               })
             )}
           </div>
-        </main>
+        </div>
       ) : null}
 
       {/* VIEW 2: PLAYER */}
       {view === "play" && activeLesson ? (
-        <main className="wrap">
+        <div className="wrap dict-main">
           <div className="pl">
             {/* Player Topbar */}
             <div className="pl-top">
@@ -792,12 +1245,12 @@ export function DictationClient() {
                 type="button"
                 className="back"
                 onClick={() => {
-                  if (typeof window !== "undefined" && "speechSynthesis" in window) {
-                    window.speechSynthesis.cancel();
-                  }
-                  if (results.length > 0 && !confirm("Thoát bài giữa chừng? Kết quả sẽ không được lưu.")) {
+                  stopAllAudio();
+                  if (results.length > 0 && !confirmExit) {
+                    setConfirmExit(true);
                     return;
                   }
+                  setConfirmExit(false);
                   setView("lib");
                 }}
               >
@@ -830,6 +1283,50 @@ export function DictationClient() {
               </div>
             </div>
 
+            {confirmExit ? (
+              <div
+                className="note"
+                role="alert"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: "12px",
+                  flexWrap: "wrap",
+                }}
+              >
+                <span>
+                  Thoát bài giữa chừng? Kết quả chưa hoàn thành sẽ không được
+                  lưu.
+                </span>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    style={{ padding: "6px 14px", fontSize: "13px" }}
+                    onClick={() => setConfirmExit(false)}
+                  >
+                    Tiếp tục làm
+                  </button>
+                  <button
+                    type="button"
+                    className="btn"
+                    style={{
+                      padding: "6px 14px",
+                      fontSize: "13px",
+                      background: "#FF6A82",
+                    }}
+                    onClick={() => {
+                      setConfirmExit(false);
+                      setView("lib");
+                    }}
+                  >
+                    Thoát bài
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
             {/* Progress Bar per sentence */}
             <div className="prog">
               {activeLesson.s.map((_, k) => {
@@ -856,9 +1353,21 @@ export function DictationClient() {
                   type="button"
                   className={`play ${isPlaying ? "on" : ""}`}
                   aria-label="Phát câu này"
-                  onClick={() => say(activeLesson.s[currentIdx], speed)}
+                  onClick={() =>
+                    playSentence(
+                      activeLesson.s[currentIdx],
+                      speed,
+                      activeLesson.sentenceMeta?.[currentIdx],
+                    )
+                  }
                 >
-                  <svg width="34" height="34" viewBox="0 0 24 24" fill="#fff" aria-hidden="true">
+                  <svg
+                    width="34"
+                    height="34"
+                    viewBox="0 0 24 24"
+                    fill="#fff"
+                    aria-hidden="true"
+                  >
                     <path d="M8 5v14l11-7z" />
                   </svg>
                   <span className="bars" aria-hidden="true">
@@ -870,7 +1379,11 @@ export function DictationClient() {
                 </button>
 
                 <div className="lrow">
-                  <button type="button" className="replay" onClick={handleReplay}>
+                  <button
+                    type="button"
+                    className="replay"
+                    onClick={handleReplay}
+                  >
                     Nghe lại <span className="kbd">Alt+R</span>
                   </button>
                   <span>Tốc độ</span>
@@ -882,7 +1395,11 @@ export function DictationClient() {
                         aria-pressed={speed === r}
                         onClick={() => {
                           setSpeed(r);
-                          say(activeLesson.s[currentIdx], r);
+                          playSentence(
+                            activeLesson.s[currentIdx],
+                            r,
+                            activeLesson.sentenceMeta?.[currentIdx],
+                          );
                         }}
                       >
                         {r}x
@@ -921,7 +1438,9 @@ export function DictationClient() {
                         if (!blanks.includes(k)) {
                           return <span key={k}>{w} </span>;
                         }
-                        const m = w.match(/^([^A-Za-z0-9']*)(.*?)([^A-Za-z0-9']*)$/);
+                        const m = w.match(
+                          /^([^A-Za-z0-9']*)(.*?)([^A-Za-z0-9']*)$/,
+                        );
                         const prefix = m ? m[1] : "";
                         const core = m ? m[2] : w;
                         const suffix = m ? m[3] : "";
@@ -960,18 +1479,31 @@ export function DictationClient() {
                   <div className="hintline">
                     {hintN > 0 ? (
                       <>
-                        {splitWords(activeLesson.s[currentIdx]).slice(0, hintN).join(" ")}
-                        {hintN < splitWords(activeLesson.s[currentIdx]).length ? <s> …</s> : null}
+                        {splitWords(activeLesson.s[currentIdx])
+                          .slice(0, hintN)
+                          .join(" ")}
+                        {hintN <
+                        splitWords(activeLesson.s[currentIdx]).length ? (
+                          <s> …</s>
+                        ) : null}
                       </>
                     ) : null}
                   </div>
 
                   {/* Action buttons */}
                   <div className="row">
-                    <button type="button" className="btn ghost" onClick={handleHint}>
+                    <button
+                      type="button"
+                      className="btn ghost"
+                      onClick={handleHint}
+                    >
                       Gợi ý <span className="kbd">Alt+H</span>
                     </button>
-                    <button type="button" className="btn ghost" onClick={handleReveal}>
+                    <button
+                      type="button"
+                      className="btn ghost"
+                      onClick={handleReveal}
+                    >
                       Xem đáp án
                     </button>
                     <span className="sp2" />
@@ -983,35 +1515,79 @@ export function DictationClient() {
               ) : currentResult ? (
                 <div className="res" aria-live="polite">
                   <div className="score">
-                    <b>{currentResult.revealed ? "–" : `${currentResult.acc}%`}</b>
+                    <b>
+                      {currentResult.revealed ? "–" : `${currentResult.acc}%`}
+                    </b>
                     <span>
                       {currentResult.revealed
                         ? "Bạn đã xem đáp án, câu này tính 0%"
                         : currentResult.acc >= 90
-                        ? "Chính xác!"
-                        : currentResult.acc >= 60
-                        ? "Gần đúng, xem lại các từ đánh dấu bên dưới"
-                        : "Nghe lại và thử thêm lần nữa"}
+                          ? "Chính xác!"
+                          : currentResult.acc >= 60
+                            ? "Gần đúng, xem lại các từ đánh dấu bên dưới"
+                            : "Nghe lại và thử thêm lần nữa"}
                     </span>
                   </div>
 
-                  <div
-                    className="diff"
-                    dangerouslySetInnerHTML={{ __html: currentResult.html }}
-                  />
+                  {/* XSS-safe declarative JSX diff rendering */}
+                  <div className="diff">
+                    {currentResult.tokens.map((tok, idx) => {
+                      if (tok.kind === "cloze-miss") {
+                        return (
+                          <React.Fragment key={idx}>
+                            <span className="w">
+                              {tok.prefix}
+                              {tok.typed ? (
+                                <>
+                                  <span className="w extra">
+                                    {tok.typed}
+                                  </span>{" "}
+                                </>
+                              ) : null}
+                              <span className="w miss">{tok.expected}</span>
+                              {tok.suffix}
+                            </span>{" "}
+                          </React.Fragment>
+                        );
+                      }
+                      const cls =
+                        tok.kind === "ok"
+                          ? "w ok"
+                          : tok.kind === "miss"
+                            ? "w miss"
+                            : tok.kind === "extra"
+                              ? "w extra"
+                              : "w plain";
+                      return (
+                        <span key={idx} className={cls}>
+                          {tok.text}
+                        </span>
+                      );
+                    })}
+                  </div>
 
                   <div className="leg">
                     <span>
                       <i style={{ color: "var(--ok)" }}>xanh</i> đúng
                     </span>
                     <span>
-                      <i style={{ background: "rgba(246,232,92,.18)", color: "var(--mark)" }}>
+                      <i
+                        style={{
+                          background: "rgba(246,232,92,.18)",
+                          color: "var(--mark)",
+                        }}
+                      >
                         vàng
                       </i>{" "}
                       thiếu / sai
                     </span>
                     <span>
-                      <i style={{ color: "var(--bad)", textDecoration: "line-through" }}>
+                      <i
+                        style={{
+                          color: "var(--bad)",
+                          textDecoration: "line-through",
+                        }}
+                      >
                         đỏ gạch
                       </i>{" "}
                       thừa
@@ -1022,7 +1598,13 @@ export function DictationClient() {
                     <button
                       type="button"
                       className="btn ghost"
-                      onClick={() => say(activeLesson.s[currentIdx], speed)}
+                      onClick={() =>
+                        playSentence(
+                          activeLesson.s[currentIdx],
+                          speed,
+                          activeLesson.sentenceMeta?.[currentIdx],
+                        )
+                      }
                     >
                       Nghe lại
                     </button>
@@ -1043,8 +1625,16 @@ export function DictationClient() {
                       className="btn mk"
                       onClick={handleNext}
                     >
-                      {currentIdx === activeLesson.s.length - 1 ? "Xem kết quả" : "Câu tiếp"}
-                      <span className="kbd" style={{ borderColor: "rgba(0,0,0,.3)", color: "var(--ink)" }}>
+                      {currentIdx === activeLesson.s.length - 1
+                        ? "Xem kết quả"
+                        : "Câu tiếp"}
+                      <span
+                        className="kbd"
+                        style={{
+                          borderColor: "rgba(0,0,0,.3)",
+                          color: "var(--ink)",
+                        }}
+                      >
                         Enter
                       </span>
                     </button>
@@ -1053,12 +1643,12 @@ export function DictationClient() {
               ) : null}
             </div>
           </div>
-        </main>
+        </div>
       ) : null}
 
       {/* VIEW 3: RESULT */}
       {view === "result" && activeLesson ? (
-        <main className="wrap">
+        <div className="wrap dict-main">
           {(() => {
             const sum = results.reduce((acc, r) => acc + r.acc, 0);
             const avg = Math.round(sum / results.length) || 0;
@@ -1066,7 +1656,7 @@ export function DictationClient() {
             results.forEach((r) =>
               r.missed.forEach((w) => {
                 missedMap[w] = (missedMap[w] || 0) + 1;
-              })
+              }),
             );
             const missedWords = Object.keys(missedMap);
             const mm = Math.floor(elapsedSecs / 60);
@@ -1075,7 +1665,11 @@ export function DictationClient() {
             return (
               <div className="pl res">
                 <div className="pl-top">
-                  <button type="button" className="back" onClick={() => setView("lib")}>
+                  <button
+                    type="button"
+                    className="back"
+                    onClick={() => setView("lib")}
+                  >
                     &larr; Thư viện
                   </button>
                   <h2>{activeLesson.title}</h2>
@@ -1087,8 +1681,8 @@ export function DictationClient() {
                     {avg >= 90
                       ? "Rất tốt, tai bạn bắt chuẩn gần hết các chi tiết."
                       : avg >= 70
-                      ? "Khá ổn. Xem lại các câu và từ đánh dấu dưới đây."
-                      : "Cần luyện thêm. Hãy thử nghe chậm ở tốc độ 0.75x."}
+                        ? "Khá ổn. Xem lại các câu và từ đánh dấu dưới đây."
+                        : "Cần luyện thêm. Hãy thử nghe chậm ở tốc độ 0.75x."}
                   </p>
                 </div>
 
@@ -1129,28 +1723,52 @@ export function DictationClient() {
                         <button
                           key={w}
                           type="button"
-                          onClick={() => say(w, 0.8)}
+                          onClick={() => sayWebSpeech(w, 0.8)}
                           title="Nghe từ này"
                         >
                           ♪ {w}
-                          {missedMap[w] > 1 ? <span>&times;{missedMap[w]}</span> : null}
+                          {missedMap[w] > 1 ? (
+                            <span>&times;{missedMap[w]}</span>
+                          ) : null}
                         </button>
                       ))}
                     </div>
-                    <button
-                      type="button"
-                      className="btn ghost"
-                      onClick={() => {
-                        const updatedNotes = { ...notes };
-                        missedWords.forEach((w) => {
-                          updatedNotes[w] = (updatedNotes[w] || 0) + missedMap[w];
-                        });
-                        saveNotes(updatedNotes);
-                        alert(`Đã lưu ${missedWords.length} từ vào Sổ từ nghe sai!`);
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                        flexWrap: "wrap",
                       }}
                     >
-                      Lưu {missedWords.length} từ vào sổ tay
-                    </button>
+                      <button
+                        type="button"
+                        className="btn ghost"
+                        onClick={() => {
+                          const updatedNotes = { ...notes };
+                          missedWords.forEach((w) => {
+                            updatedNotes[w] =
+                              (updatedNotes[w] || 0) + missedMap[w];
+                          });
+                          saveNotes(updatedNotes);
+                          setNotesSavedCount(missedWords.length);
+                        }}
+                      >
+                        Lưu {missedWords.length} từ vào sổ tay
+                      </button>
+                      {notesSavedCount !== null ? (
+                        <span
+                          role="status"
+                          style={{
+                            color: "var(--ok)",
+                            fontWeight: 600,
+                            fontSize: "14px",
+                          }}
+                        >
+                          Đã lưu {notesSavedCount} từ vào Sổ từ nghe sai!
+                        </span>
+                      ) : null}
+                    </div>
                   </>
                 ) : (
                   <p style={{ color: "var(--ok)", fontWeight: 600 }}>
@@ -1162,7 +1780,7 @@ export function DictationClient() {
                   <button
                     type="button"
                     className="btn"
-                    onClick={() => startLesson(activeLesson)}
+                    onClick={() => handleStartLesson(activeLesson)}
                   >
                     Làm lại bài
                   </button>
@@ -1177,15 +1795,21 @@ export function DictationClient() {
               </div>
             );
           })()}
-        </main>
+        </div>
       ) : null}
 
       {/* MODAL 1: TẠO BÀI TỪ VĂN BẢN */}
       {isNewOpen ? (
-        <dialog open aria-modal="true" role="dialog" aria-labelledby="dialog-create-title">
+        <dialog
+          open
+          aria-modal="true"
+          role="dialog"
+          aria-labelledby="dialog-create-title"
+        >
           <h2 id="dialog-create-title">Tạo bài từ văn bản của bạn</h2>
           <p className="s">
-            Dán một đoạn tiếng Anh. Hệ thống sẽ tự động tách thành từng câu để bạn luyện nghe chép.
+            Dán một đoạn tiếng Anh. Hệ thống sẽ tự động tách thành từng câu để
+            bạn luyện nghe chép.
           </p>
           <input
             placeholder="Tên bài (không bắt buộc)"
@@ -1216,13 +1840,19 @@ export function DictationClient() {
 
       {/* MODAL 2: SỔ TỪ NGHE SAI */}
       {isNotesOpen ? (
-        <dialog open aria-modal="true" role="dialog" aria-labelledby="dialog-notes-title">
+        <dialog
+          open
+          aria-modal="true"
+          role="dialog"
+          aria-labelledby="dialog-notes-title"
+        >
           <h2 id="dialog-notes-title">Sổ từ nghe sai</h2>
           <p className="s">Những từ bạn hay gõ sai. Bấm loa để nghe lại.</p>
           <div className="wl">
             {Object.keys(notes).length === 0 ? (
               <p style={{ color: "var(--mute)" }}>
-                Chưa có từ nào. Sau mỗi bài, bạn có thể lưu những từ nghe sai vào đây.
+                Chưa có từ nào. Sau mỗi bài, bạn có thể lưu những từ nghe sai
+                vào đây.
               </p>
             ) : (
               Object.keys(notes)
@@ -1234,7 +1864,7 @@ export function DictationClient() {
                     <button
                       type="button"
                       aria-label={`Nghe ${word}`}
-                      onClick={() => say(word, 0.8)}
+                      onClick={() => sayWebSpeech(word, 0.8)}
                     >
                       ♪
                     </button>

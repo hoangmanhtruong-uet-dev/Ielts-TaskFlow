@@ -1,8 +1,8 @@
-import { createClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
-import path from 'path';
+import { createClient } from "@supabase/supabase-js";
+import dotenv from "dotenv";
+import path from "path";
 
-dotenv.config({ path: path.resolve('.env.local') });
+dotenv.config({ path: path.resolve(".env.local") });
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -19,7 +19,10 @@ async function check() {
   if (error) {
     console.error("Error fetching users:", error);
   } else {
-    console.log("Users:", data.users.map(u => u.email));
+    console.log(
+      "Users:",
+      data.users.map((u) => u.email),
+    );
   }
 }
 

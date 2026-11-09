@@ -51,13 +51,47 @@ export const loginSchema = z.object({
   next: z.string().optional(),
 });
 
-export const forgotPasswordSchema = z.object({
-  identifier: z.string().trim().min(1, "Vui lòng nhập email hoặc số điện thoại."),
-  channel: z.enum(["email", "sms", "whatsapp"]).default("email"),
-});
+const phoneIdentifierSchema = z
+  .string()
+  .trim()
+  .regex(/^\+?[0-9\s\-]{8,20}$/, "Hãy nhập một số điện thoại hợp lệ.");
+
+export const forgotPasswordSchema = z
+  .object({
+    identifier: z
+      .string()
+      .trim()
+      .min(1, "Vui lòng nhập email hoặc số điện thoại."),
+    channel: z.enum(["email", "sms", "whatsapp"]).default("email"),
+  })
+  .superRefine((value, context) => {
+    if (value.channel === "email") {
+      const emailCheck = normalizedEmailSchema.safeParse(value.identifier);
+      if (!emailCheck.success) {
+        context.addIssue({
+          code: "custom",
+          path: ["identifier"],
+          message:
+            emailCheck.error.issues[0]?.message ??
+            "Hãy nhập một địa chỉ email hợp lệ.",
+        });
+      }
+    } else {
+      const phoneCheck = phoneIdentifierSchema.safeParse(value.identifier);
+      if (!phoneCheck.success) {
+        context.addIssue({
+          code: "custom",
+          path: ["identifier"],
+          message:
+            phoneCheck.error.issues[0]?.message ??
+            "Hãy nhập một số điện thoại hợp lệ.",
+        });
+      }
+    }
+  });
 
 export const verifyOtpSchema = z.object({
-  identifier: z.string().trim().min(1, "Thiếu thông tin liên hệ."),
+  identifier: z.string().trim().optional(),
   token: z.string().trim().length(6, "Mã OTP phải gồm 6 chữ số."),
   type: z.enum(["email", "sms", "whatsapp"]).default("email"),
 });

@@ -7,7 +7,7 @@ interface DailyGoalCardProps {
   total?: number;
 }
 
-export function DailyGoalCard({ current = 2, total = 4 }: DailyGoalCardProps) {
+export function DailyGoalCard({ current = 0, total = 4 }: DailyGoalCardProps) {
   const safeTotal = Math.max(1, total);
   const safeCurrent = Math.min(safeTotal, Math.max(0, current));
   const remaining = safeTotal - safeCurrent;

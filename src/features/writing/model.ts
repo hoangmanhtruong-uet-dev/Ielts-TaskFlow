@@ -92,7 +92,11 @@ export const writingPriorityIssuesSchema = z.array(
   z.object({ issue: z.string(), evidence: z.string() }),
 );
 export const writingCorrectedExamplesSchema = z.array(
-  z.object({ source: z.string(), revision: z.string() }),
+  z.object({
+    source: z.string(),
+    revision: z.string(),
+    explanation: z.string().optional(),
+  }),
 );
 export const writingStringListSchema = z.array(z.string());
 

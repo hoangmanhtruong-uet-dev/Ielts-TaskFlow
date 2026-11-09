@@ -6,7 +6,7 @@ import { getRecentAttemptHistory } from "@/features/practice/server/content";
 import { getCurrentLearnerProfile } from "@/features/onboarding/server/learner-profile";
 
 export const metadata: Metadata = {
-  title: "Luyện Nghe IELTS Toàn Diện (Listening Hub) | IELTS Flow",
+  title: "Luyện Nghe IELTS Toàn Diện (Listening Hub) | Indigo Scholar",
   description:
     "Trung tâm luyện nghe IELTS đa cấp độ từ Band 0.0 đến 9.0 với 4 chế độ: Dictation, Speed Run, Luyện giọng Accents và Full Test.",
 };
@@ -21,7 +21,7 @@ export default async function ListeningCatalogPage() {
   const attempts = history.filter((item) => item.domain === "listening");
   const score = attempts.reduce((sum, item) => sum + item.score, 0);
   const maximum = attempts.reduce((sum, item) => sum + item.maxScore, 0);
-  const accuracy = maximum ? Math.round((score / maximum) * 100) : 78;
+  const accuracy = maximum ? Math.round((score / maximum) * 100) : null;
 
   return (
     <ListeningHubClient

@@ -1,8 +1,17 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useSyncExternalStore } from "react";
 import Link from "next/link";
 import "./dashboard.css";
+
+import type {
+  DashboardPlanItem,
+  WeeklyLeagueEntry,
+} from "@/features/dashboard/server/dashboard-data";
+import type {
+  LearningLessonSummary,
+  LearningOverview,
+} from "@/features/learning/server/content";
 
 import { ContinueHeroBanner } from "./components/ContinueHeroBanner";
 import { StatsStrip } from "./components/StatsStrip";
@@ -19,14 +28,23 @@ export interface DashboardClientProps {
   firstName: string;
   level: { code: string; label: string; progress: number };
   dailyMinutes: number;
-  nextLesson: any;
+  nextLesson:
+    | (Pick<
+        LearningLessonSummary,
+        "title" | "summary" | "href" | "slug" | "progressPercent"
+      > & {
+        skillTitle?: string;
+        skillSlug?: string;
+        description?: string;
+      })
+    | null;
   progress: number;
-  overview: any;
+  overview: Pick<LearningOverview, "completedLessons"> | null;
   streak: number;
   xp: number;
   dailyGoal: { current: number; total: number };
   weekData: number[];
-  planItems: any[];
+  planItems: DashboardPlanItem[];
   wordOfTheDay: {
     word: string;
     phonetics: string;
@@ -36,7 +54,17 @@ export interface DashboardClientProps {
     example: string;
   };
   heatData: number[];
+  activeDays?: number;
+  totalTimeFormatted?: string;
+  weeklyLeague?: WeeklyLeagueEntry[];
   hasStreakFreeze?: boolean;
+}
+
+const subscribeNoop = () => () => {};
+const getServerGreeting = () => "Good afternoon";
+function getClientGreeting(): string {
+  const h = new Date().getHours();
+  return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
 }
 
 export function DashboardClient({
@@ -50,40 +78,46 @@ export function DashboardClient({
   xp,
   dailyGoal,
   weekData,
+  planItems,
   wordOfTheDay,
   heatData,
+  activeDays = 0,
+  totalTimeFormatted = "0h 0m",
+  weeklyLeague = [],
 }: DashboardClientProps) {
-  const [greeting, setGreeting] = useState("Good afternoon");
+  const greeting = useSyncExternalStore(
+    subscribeNoop,
+    getClientGreeting,
+    getServerGreeting,
+  );
 
-  useEffect(() => {
-    const h = new Date().getHours();
-    setGreeting(h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening");
-  }, []);
-
-  // Compute total weekly time
+  // Compute total weekly time strictly from real weekData telemetry
   const totalWeeklyMinutes = Array.isArray(weekData)
-    ? weekData.reduce((acc, m) => acc + m, 0)
-    : 175;
+    ? weekData.reduce((acc, m) => acc + (Number.isFinite(m) ? m : 0), 0)
+    : 0;
   const weeklyHours = Math.floor(totalWeeklyMinutes / 60);
   const weeklyMins = totalWeeklyMinutes % 60;
   const thisWeekFormatted = `${weeklyHours}h ${weeklyMins}m`;
 
-  // Lessons completed
   const lessonsDone = overview?.completedLessons ?? 0;
+  const userInitial = (firstName || accountLabel || "Y")
+    .trim()
+    .charAt(0)
+    .toUpperCase();
 
-  // Active user initial for weekly league and avatar
-  const userInitial = (firstName || accountLabel || "H").trim().charAt(0).toUpperCase();
-
-  // Continue banner details
-  const continueTitle = nextLesson?.skillTitle ?? nextLesson?.title ?? "Grammar";
+  // Continue banner details (honest progress without fabricated default)
+  const continueTitle =
+    nextLesson?.skillTitle ?? nextLesson?.title ?? "Start learning";
   const continueDesc =
-    nextLesson?.description ?? "Rules and structure drills. 5 new lessons are waiting.";
+    nextLesson?.description ??
+    nextLesson?.summary ??
+    "Pick your first lesson or practice module to build momentum.";
   const continueHref =
     nextLesson?.href ??
     (nextLesson?.slug
       ? `/learn/${nextLesson.skillSlug ?? "grammar"}/${nextLesson.slug}`
-      : "/learn/grammar");
-  const continueProgress = progress > 0 ? progress : 45;
+      : "/learn");
+  const continueProgress = Math.max(0, Math.min(100, Math.round(progress)));
 
   return (
     <div className="dashboard-scope">
@@ -94,7 +128,11 @@ export function DashboardClient({
             <h1 id="hello">
               {greeting}, {firstName}
             </h1>
-            <p>{streak}-day streak. Keep the momentum going.</p>
+            <p>
+              {streak > 0
+                ? `${streak}-day streak. Keep the momentum going.`
+                : "Complete a lesson or practice exercise today to start your streak."}
+            </p>
           </div>
 
           <div className="pills">
@@ -113,7 +151,6 @@ export function DashboardClient({
         <div className="grid">
           {/* Main Left Column */}
           <div className="col">
-            {/* 1. Continue Hero Banner */}
             <ContinueHeroBanner
               title={continueTitle}
               description={continueDesc}
@@ -121,7 +158,6 @@ export function DashboardClient({
               href={continueHref}
             />
 
-            {/* 2. Stats Strip */}
             <StatsStrip
               lessonsDone={lessonsDone}
               streakDays={streak}
@@ -129,16 +165,19 @@ export function DashboardClient({
               level={level}
             />
 
-            {/* 3. Today's Plan */}
-            <TodaysPlan />
+            <TodaysPlan items={planItems} />
 
-            {/* 4. Duo Section: Study Heatmap & Quick Practice */}
+            {/* Duo Section: Study Heatmap & Quick Practice */}
             <section className="duo" aria-label="Practice and activity">
               <div>
                 <div className="head">
                   <h2>Study heatmap</h2>
                 </div>
-                <StudyHeatmap data={heatData} activeDays={32} totalTime="13h 0m" />
+                <StudyHeatmap
+                  data={heatData}
+                  activeDays={activeDays}
+                  totalTime={totalTimeFormatted}
+                />
               </div>
 
               <div>
@@ -152,23 +191,23 @@ export function DashboardClient({
               </div>
             </section>
 
-            {/* 5. English Theory & Tips Carousel */}
             <TipsCarousel />
           </div>
 
           {/* Right Sticky Sidebar */}
           <aside className="side" aria-label="Goals and community">
-            {/* Daily Goal */}
             <DailyGoalCard
-              current={dailyGoal?.current ?? 2}
+              current={dailyGoal?.current ?? 0}
               total={dailyGoal?.total ?? 4}
             />
 
-            {/* Word of the Day */}
             <WordOfTheDayCard wordInfo={wordOfTheDay} />
 
-            {/* Weekly League */}
-            <WeeklyLeagueCard userXp={xp} userInitial={userInitial} />
+            <WeeklyLeagueCard
+              userXp={xp}
+              userInitial={userInitial}
+              entries={weeklyLeague}
+            />
           </aside>
         </div>
       </div>

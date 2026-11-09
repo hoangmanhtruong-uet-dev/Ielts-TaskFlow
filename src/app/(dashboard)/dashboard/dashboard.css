@@ -1,17 +1,17 @@
 @import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap");
 
 .dashboard-scope {
-  --ink: #0C0E1D;
+  --ink: #0c0e1d;
   --panel: #141731;
-  --panel2: #1B1F40;
-  --line: #2B3060;
-  --text: #EEF0FF;
-  --mute: #98A0CF;
-  --indigo: #5B5FEF;
-  --indigo-hi: #7C80FF;
-  --mark: #F6E85C;
-  --ok: #5EE0A0;
-  --hot: #FF8A5B;
+  --panel2: #1b1f40;
+  --line: #2b3060;
+  --text: #eef0ff;
+  --mute: #98a0cf;
+  --indigo: #5b5fef;
+  --indigo-hi: #7c80ff;
+  --mark: #f6e85c;
+  --ok: #5ee0a0;
+  --hot: #ff8a5b;
   --head: "Bricolage Grotesque", "Be Vietnam Pro", system-ui, sans-serif;
   --body: "Be Vietnam Pro", system-ui, sans-serif;
 
@@ -166,7 +166,9 @@
   border-radius: 14px;
   position: relative;
   z-index: 1;
-  transition: transform 0.15s, box-shadow 0.15s;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -383,14 +385,14 @@
 }
 .dashboard-scope .c-v {
   background: rgba(167, 139, 250, 0.16);
-  color: #B9A4FF;
+  color: #b9a4ff;
 }
 .dashboard-scope .c-v ~ * .t i {
-  background: #A78BFA;
+  background: #a78bfa;
 }
 .dashboard-scope .c-g {
   background: rgba(96, 165, 250, 0.16);
-  color: #7DB4FF;
+  color: #7db4ff;
 }
 .dashboard-scope .c-l {
   background: rgba(94, 224, 160, 0.15);
@@ -398,7 +400,7 @@
 }
 .dashboard-scope .c-d {
   background: rgba(255, 106, 130, 0.15);
-  color: #FF7C93;
+  color: #ff7c93;
 }
 .dashboard-scope .c-m {
   background: rgba(246, 232, 92, 0.14);
@@ -436,10 +438,18 @@
   background: var(--panel2);
   display: block;
 }
-.dashboard-scope .heat i.l1 { background: #2C3170; }
-.dashboard-scope .heat i.l2 { background: #4045B5; }
-.dashboard-scope .heat i.l3 { background: var(--indigo-hi); }
-.dashboard-scope .heat i.l4 { background: var(--mark); }
+.dashboard-scope .heat i.l1 {
+  background: #2c3170;
+}
+.dashboard-scope .heat i.l2 {
+  background: #4045b5;
+}
+.dashboard-scope .heat i.l3 {
+  background: var(--indigo-hi);
+}
+.dashboard-scope .heat i.l4 {
+  background: var(--mark);
+}
 .dashboard-scope .legend {
   display: flex;
   gap: 5px;
@@ -533,7 +543,7 @@
   padding: 3px 12px;
   border-radius: 99px;
   background: rgba(167, 139, 250, 0.16);
-  color: #B9A4FF;
+  color: #b9a4ff;
 }
 .dashboard-scope .tip p {
   color: var(--mute);
@@ -712,7 +722,7 @@
   .dashboard-scope .strip > div:nth-child(3) {
     border-left: 0;
   }
-  .dashboard-scope .strip > div:nth-child(n+3) {
+  .dashboard-scope .strip > div:nth-child(n + 3) {
     border-top: 1px solid var(--line);
   }
   .dashboard-scope .strip > div:nth-child(4) {

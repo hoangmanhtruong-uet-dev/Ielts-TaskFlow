@@ -34,9 +34,9 @@ export function WritingImprovement({
     );
   }
 
-  const score = Math.round((feedback.overallBandEstimate / 9) * 100);
+  const score = feedback.overallBandEstimate;
   const previousScore = data.previous
-    ? Math.round((data.previous.feedback.overallBandEstimate / 9) * 100)
+    ? data.previous.feedback.overallBandEstimate
     : null;
   const improvements = data.previous
     ? criteria.flatMap(([key, label]) => {
@@ -64,7 +64,7 @@ export function WritingImprovement({
         <p className="text-sm font-bold text-[#3823bd]">Your Progress</p>
       </header>
 
-      <main className="space-y-5 px-4 py-6 sm:px-6">
+      <div className="space-y-5 px-4 py-6 sm:px-6">
         <section className="text-center">
           <span className="mx-auto grid size-12 place-items-center rounded-full bg-[#f1edff] text-[#4d32d4]">
             <TrendingUp aria-hidden="true" size={23} />
@@ -152,7 +152,7 @@ export function WritingImprovement({
         >
           Finish Practice <ArrowRight aria-hidden="true" size={17} />
         </Link>
-      </main>
+      </div>
     </div>
   );
 }
@@ -181,8 +181,8 @@ function AttemptCard({
         ) : null}
       </div>
       <strong className="mt-4 block text-3xl text-[#4d32d4]">
-        {score ?? "—"}
-        <span className="text-xs text-[#736c7e]">/100</span>
+        {score === null ? "—" : score.toFixed(1)}
+        <span className="text-xs text-[#736c7e]"> / 9.0</span>
       </strong>
       <p className="mt-3 text-xs text-[#736c7e]">
         {corrections === null

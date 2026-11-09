@@ -8,7 +8,9 @@ import {
 
 describe("dictation model", () => {
   it("normalizes text properly", () => {
-    expect(normalizeText("Hello, World!  How are you?")).toBe("hello world how are you");
+    expect(normalizeText("Hello, World!  How are you?")).toBe(
+      "hello world how are you",
+    );
     expect(normalizeText("I'm fine, thank you.")).toBe("i'm fine thank you");
   });
 

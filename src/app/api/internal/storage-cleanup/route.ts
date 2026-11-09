@@ -9,6 +9,7 @@ import {
 } from "@/lib/api/errors";
 import { REQUEST_ID_HEADER, resolveRequestId } from "@/lib/api/request-id";
 import { getServerEnv } from "@/lib/env";
+import { deleteR2Objects } from "@/lib/r2";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { logServerEvent } from "@/server/observability/logger";
 
@@ -16,7 +17,15 @@ export const dynamic = "force-dynamic";
 
 const BATCH_SIZE = 100;
 
+export async function GET(request: NextRequest) {
+  return runCleanup(request);
+}
+
 export async function POST(request: NextRequest) {
+  return runCleanup(request);
+}
+
+async function runCleanup(request: NextRequest) {
   const requestId = resolveRequestId(request.headers.get(REQUEST_ID_HEADER));
   const runId = createRequestId();
   const batchId = createRequestId();
@@ -30,10 +39,10 @@ export async function POST(request: NextRequest) {
 
   try {
     if (
-      !isAuthorized(
-        request.headers.get("authorization"),
+      !isAuthorized(request.headers.get("authorization"), [
         process.env.STORAGE_CLEANUP_SECRET,
-      )
+        process.env.CRON_SECRET,
+      ])
     ) {
       logServerEvent("warn", {
         event: "storage_cleanup.rejected",
@@ -69,8 +78,9 @@ export async function POST(request: NextRequest) {
     if (expireIntentsResult.error || assetsResult.error)
       throw new Error("cleanup_query_failed");
     stage = "claim records";
-    const claimedAssets = assetsResult.data as Array<{
+    const claimedAssets = (assetsResult.data ?? []) as Array<{
       id: string;
+      bucket_id?: string;
       storage_path: string;
     }>;
 
@@ -82,36 +92,69 @@ export async function POST(request: NextRequest) {
       .order("expires_at")
       .limit(BATCH_SIZE);
     if (intentsResult.error) throw new Error("cleanup_query_failed");
-    metrics.claimedCount = claimedAssets.length + intentsResult.data.length;
+    const expiredIntents = intentsResult.data ?? [];
+    metrics.claimedCount = claimedAssets.length + expiredIntents.length;
 
-    const paths = [
+    const supabaseAssets = claimedAssets.filter(
+      (asset) =>
+        (asset.bucket_id ?? "speaking-recordings") === "speaking-recordings",
+    );
+    const r2Assets = claimedAssets.filter(
+      (asset) => asset.bucket_id === "cloudflare-r2",
+    );
+
+    const supabasePaths = [
       ...new Set(
-        [...intentsResult.data, ...claimedAssets].map(
-          (row) => row.storage_path,
-        ),
+        [...expiredIntents, ...supabaseAssets].map((row) => row.storage_path),
       ),
     ];
+
     stage = "delete storage objects";
-    if (paths.length > 0) {
+    let supabaseDeleteSucceeded = true;
+    if (supabasePaths.length > 0) {
       const { error } = await admin.storage
         .from("speaking-recordings")
-        .remove(paths);
-      if (error) throw new Error("cleanup_storage_failed");
+        .remove(supabasePaths);
+      if (error) {
+        supabaseDeleteSucceeded = false;
+      }
     }
-    metrics.deletedCount = paths.length;
+
+    let deletedR2Keys = new Set<string>();
+    let r2DeleteHadFailures = false;
+    if (r2Assets.length > 0) {
+      const { deletedKeys, failedKeys } = await deleteR2Objects(
+        r2Assets.map((asset) => asset.storage_path),
+      );
+      deletedR2Keys = new Set(deletedKeys);
+      r2DeleteHadFailures = failedKeys.length > 0;
+    }
+
+    const succeededIntents = supabaseDeleteSucceeded ? expiredIntents : [];
+    const succeededAssetIds = [
+      ...(supabaseDeleteSucceeded
+        ? supabaseAssets.map((asset) => asset.id)
+        : []),
+      ...r2Assets
+        .filter((asset) => deletedR2Keys.has(asset.storage_path))
+        .map((asset) => asset.id),
+    ];
+
+    metrics.deletedCount =
+      (supabaseDeleteSucceeded ? supabasePaths.length : 0) + deletedR2Keys.size;
 
     stage = "finalize database records";
     const [intentUpdate, assetUpdate] = await Promise.all([
-      intentsResult.data.length > 0
+      succeededIntents.length > 0
         ? admin
             .from("speaking_upload_intents")
             .update({ storage_deleted_at: now })
             .in(
               "id",
-              intentsResult.data.map((row) => row.id),
+              succeededIntents.map((row) => row.id),
             )
         : Promise.resolve({ error: null }),
-      claimedAssets.length > 0
+      succeededAssetIds.length > 0
         ? admin
             .from("speaking_audio_assets")
             .update({
@@ -120,15 +163,19 @@ export async function POST(request: NextRequest) {
               cleanup_started_at: null,
             })
             .eq("status", "cleanup_pending")
-            .in(
-              "id",
-              claimedAssets.map((row) => row.id),
-            )
+            .in("id", succeededAssetIds)
         : Promise.resolve({ error: null }),
     ]);
+
     if (intentUpdate.error || assetUpdate.error)
       throw new Error("cleanup_finalize_failed");
-    metrics.finalizedCount = intentsResult.data.length + claimedAssets.length;
+
+    metrics.finalizedCount = succeededIntents.length + succeededAssetIds.length;
+
+    if (!supabaseDeleteSucceeded || r2DeleteHadFailures) {
+      throw new Error("cleanup_storage_failed");
+    }
+
     stage = "release lease";
 
     logServerEvent("info", {
@@ -141,7 +188,7 @@ export async function POST(request: NextRequest) {
       metadata: {
         ...metrics,
         batchSize: BATCH_SIZE,
-        leaseReleasedCount: claimedAssets.length,
+        leaseReleasedCount: succeededAssetIds.length,
         staleLeaseRetryWindowMinutes: 15,
       },
     });
@@ -150,8 +197,8 @@ export async function POST(request: NextRequest) {
       createApiSuccess(
         {
           status: "completed",
-          expiredIntents: intentsResult.data.length,
-          deletedAssets: claimedAssets.length,
+          expiredIntents: succeededIntents.length,
+          deletedAssets: succeededAssetIds.length,
         },
         requestId,
       ),
@@ -184,14 +231,25 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function isAuthorized(header: string | null, expected: string | undefined) {
-  if (!header?.startsWith("Bearer ") || !expected) return false;
+function isAuthorized(
+  header: string | null,
+  candidates: Array<string | undefined>,
+) {
+  if (!header?.startsWith("Bearer ")) return false;
   const supplied = Buffer.from(header.slice(7));
-  const configured = Buffer.from(expected);
-  return (
-    supplied.length === configured.length &&
-    timingSafeEqual(supplied, configured)
-  );
+
+  for (const expected of candidates) {
+    const trimmed = expected?.trim();
+    if (!trimmed) continue;
+    const configured = Buffer.from(trimmed);
+    if (
+      supplied.length === configured.length &&
+      timingSafeEqual(supplied, configured)
+    ) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function responseError(

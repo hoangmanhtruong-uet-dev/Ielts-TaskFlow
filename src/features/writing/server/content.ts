@@ -65,7 +65,7 @@ export class WritingReadError extends Error {
 }
 
 export async function getWritingCatalog(): Promise<WritingCatalogItem[]> {
-  await requireCompletedOnboarding();
+  const { account } = await requireCompletedOnboarding();
   const supabase = await createSupabaseServerClient();
   const { data: tasks, error: tasksError } = await supabase
     .from("writing_tasks")
@@ -86,7 +86,9 @@ export async function getWritingCatalog(): Promise<WritingCatalogItem[]> {
       .order("version", { ascending: false }),
     supabase
       .from("writing_submissions")
-      .select("id, writing_task_id, status, created_at")
+      .select("id, writing_task_id, status, is_mock, created_at")
+      .eq("user_id", account.user.id)
+      .eq("is_mock", false)
       .in("writing_task_id", taskIds)
       .order("created_at", { ascending: false }),
   ]);
@@ -122,12 +124,13 @@ export async function getWritingCatalog(): Promise<WritingCatalogItem[]> {
 
 export async function getWritingPracticePage(
   taskSlug: string,
+  options?: { mockSubmissionId?: string },
 ): Promise<WritingPracticePageData | null> {
   const route = writingRouteSchema.pick({ taskSlug: true }).safeParse({
     taskSlug,
   });
   if (!route.success) return null;
-  await requireCompletedOnboarding();
+  const { account } = await requireCompletedOnboarding();
   const supabase = await createSupabaseServerClient();
   const { data: task, error: taskError } = await supabase
     .from("writing_tasks")
@@ -146,14 +149,22 @@ export async function getWritingPracticePage(
     supabase
       .from("writing_submissions")
       .select("*")
+      .eq("user_id", account.user.id)
       .eq("writing_task_id", task.id)
       .order("created_at", { ascending: false }),
   ]);
   if (versionsResult.error || submissionsResult.error)
     throw new WritingReadError();
-  const activeSubmission = submissionsResult.data.find(
-    (item) => item.status === "draft",
-  );
+  const activeSubmission = options?.mockSubmissionId
+    ? submissionsResult.data.find(
+        (item) =>
+          item.id === options.mockSubmissionId &&
+          item.status === "draft" &&
+          Boolean(item.is_mock),
+      )
+    : submissionsResult.data.find(
+        (item) => item.status === "draft" && !item.is_mock,
+      );
   const version =
     versionsResult.data.find(
       (item) => item.id === activeSubmission?.writing_task_version_id,
@@ -201,8 +212,9 @@ export async function getWritingPracticePage(
           }
         : null,
     latestSubmissionId:
-      submissionsResult.data.find((item) => item.status === "submitted")?.id ??
-      null,
+      submissionsResult.data.find(
+        (item) => item.status === "submitted" && !item.is_mock,
+      )?.id ?? null,
   };
 }
 
@@ -366,11 +378,11 @@ type WritingFeedbackSnapshot = {
 
 function parseWritingFeedbackSnapshot(feedback: {
   overall_band_estimate: number;
-  criteria: any;
-  strengths: any;
-  priority_issues: any;
-  revision_plan: any;
-  corrected_examples: any;
+  criteria: unknown;
+  strengths: unknown;
+  priority_issues: unknown;
+  revision_plan: unknown;
+  corrected_examples: unknown;
 }): WritingFeedbackSnapshot {
   return {
     overallBandEstimate: feedback.overall_band_estimate,

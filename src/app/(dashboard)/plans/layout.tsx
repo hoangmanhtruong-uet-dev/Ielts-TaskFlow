@@ -11,5 +11,7 @@ export default function PlansLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <div className="min-h-[100dvh] bg-[#0C0E1D] text-[#EEF0FF]">{children}</div>;
+  return (
+    <div className="min-h-[100dvh] bg-[#0C0E1D] text-[#EEF0FF]">{children}</div>
+  );
 }

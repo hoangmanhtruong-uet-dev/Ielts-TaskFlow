@@ -2,25 +2,16 @@
 
 import Link from "next/link";
 import { useActionState, useEffect, useRef } from "react";
-import { useFormStatus } from "react-dom";
 
 import type { ActionState } from "@/features/auth/action-state";
 import { loginAction } from "@/features/auth/actions";
-import { SocialAuthButtons } from "./social-auth-buttons";
 
-import styles from "./login-form.module.css";
+import { PasswordInput } from "./password-input";
+import { SocialAuthButtons } from "./social-auth-buttons";
+import { AuthSubmitButton } from "./submit-button";
 
 type LoginField = "email" | "password";
 const initialState: ActionState<LoginField> = { status: "idle" };
-
-function SubmitButton() {
-  const { pending } = useFormStatus();
-  return (
-    <button className={styles.sign} disabled={pending}>
-      {pending ? "Đang đăng nhập..." : "Sign in"}
-    </button>
-  );
-}
 
 export function LoginForm({
   next,
@@ -42,22 +33,46 @@ export function LoginForm({
 
   const emailError = state.fieldErrors?.email?.[0];
   const passwordError = state.fieldErrors?.password?.[0];
+  const bannerMessage = state.message ?? initialMessage;
 
   return (
-    <div className={styles.formContainer}>
-      <p className={styles.title}>Login</p>
-
-      {initialMessage ? (
-        <p style={{ marginTop: '1rem', color: '#fbbf24', fontSize: '0.875rem', textAlign: 'center' }}>
-          {initialMessage}
-        </p>
+    <div className="surface-card p-6 sm:p-8">
+      {bannerMessage ? (
+        <div
+          role={
+            state.status === "error" ||
+            Boolean(initialMessage && !state.message)
+              ? "alert"
+              : "status"
+          }
+          className={`mb-5 rounded-xl border p-3.5 text-sm ${
+            state.status === "success"
+              ? "border-[var(--success-soft)] bg-[var(--success-subtle)] text-[var(--success)]"
+              : "border-[var(--destructive-soft)] bg-[var(--destructive-subtle)] text-[var(--destructive)]"
+          }`}
+        >
+          <p className="font-medium">{bannerMessage}</p>
+          {state.requestId ? (
+            <span
+              data-testid="request-id"
+              className="mt-1 block text-xs font-medium opacity-80"
+            >
+              Mã yêu cầu: {state.requestId}
+            </span>
+          ) : null}
+        </div>
       ) : null}
 
-      <form ref={formRef} action={formAction} className={styles.form} noValidate>
+      <form ref={formRef} action={formAction} className="space-y-5" noValidate>
         <input type="hidden" name="next" value={next ?? ""} />
-        
-        <div className={styles.inputGroup}>
-          <label htmlFor="login-email">Email</label>
+
+        <div className="space-y-2">
+          <label
+            htmlFor="login-email"
+            className="block text-sm font-semibold text-[var(--foreground)]"
+          >
+            Email
+          </label>
           <input
             id="login-email"
             name="email"
@@ -69,71 +84,78 @@ export function LoginForm({
             required
             aria-invalid={Boolean(emailError)}
             aria-describedby={emailError ? "login-email-error" : undefined}
-            placeholder=""
+            className="h-12 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--surface)] px-3 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] focus-visible:border-[var(--primary)] focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:outline-none"
+            placeholder="ban@example.com…"
           />
           {emailError ? (
-            <p id="login-email-error" style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '4px' }}>
+            <p
+              id="login-email-error"
+              className="text-sm text-[var(--destructive)]"
+            >
               {emailError}
             </p>
           ) : null}
         </div>
 
-        <div className={styles.inputGroup} style={{ marginTop: '1rem' }}>
-          <label htmlFor="login-password">Password</label>
-          <input
-            id="login-password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            maxLength={72}
-            required
-            aria-invalid={Boolean(passwordError)}
-            aria-describedby={passwordError ? "login-password-error" : undefined}
-            placeholder=""
-          />
-          {passwordError ? (
-            <p id="login-password-error" style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '4px' }}>
-              {passwordError}
-            </p>
-          ) : null}
-          <div className={styles.forgot}>
-            <Link href="/forgot-password">Forgot Password ?</Link>
-          </div>
+        <PasswordInput
+          id="login-password"
+          name="password"
+          label="Mật khẩu"
+          autoComplete="current-password"
+          error={passwordError}
+        />
+
+        <div className="flex justify-end">
+          <Link
+            href="/forgot-password"
+            className="text-sm font-semibold text-[var(--primary)] hover:underline focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:outline-none"
+          >
+            Quên mật khẩu?
+          </Link>
         </div>
 
-        <div aria-live="polite" aria-atomic="true" style={{ marginBottom: '1rem' }}>
-          {state.message ? (
-            <p
-              role={state.status === "error" ? "alert" : "status"}
-              style={{ color: state.status === "error" ? '#ef4444' : '#10b981', fontSize: '0.875rem' }}
-            >
-              {state.message}
-              {state.requestId ? (
-                <span className="mt-1 block text-xs font-medium" style={{ opacity: 0.8 }}>
-                  Mã yêu cầu: {state.requestId}
-                </span>
-              ) : null}
-            </p>
-          ) : null}
-        </div>
-
-        <SubmitButton />
+        <AuthSubmitButton
+          idleLabel="Đăng nhập"
+          pendingLabel="Đang đăng nhập..."
+        />
       </form>
 
-      <div className={styles.socialMessage}>
-        <div className={styles.line}></div>
-        <p className={styles.message}>Login with social accounts</p>
-        <div className={styles.line}></div>
+      <div className="my-5 flex items-center gap-3">
+        <div className="h-px flex-1 bg-[var(--border)]" />
+        <span className="text-xs font-medium text-[var(--muted-foreground)]">
+          Hoặc tiếp tục với
+        </span>
+        <div className="h-px flex-1 bg-[var(--border)]" />
       </div>
 
-      <SocialAuthButtons styles={styles} />
+      <SocialAuthButtons />
 
-      <p style={{ marginTop: '1rem', fontSize: '0.75rem', textAlign: 'center', color: '#9ca3af' }}>
-        Bằng việc đăng nhập, bạn đồng ý với <Link href="/terms" className="underline hover:text-indigo-400">Điều khoản dịch vụ</Link> và <Link href="/privacy" className="underline hover:text-indigo-400">Chính sách bảo mật</Link> của chúng tôi.
+      <p className="mt-5 text-center text-xs leading-5 text-[var(--muted-foreground)]">
+        Bằng việc đăng nhập, bạn đồng ý với{" "}
+        <Link
+          href="/terms"
+          className="font-semibold text-[var(--primary)] underline underline-offset-2"
+        >
+          Điều khoản sử dụng
+        </Link>{" "}
+        và{" "}
+        <Link
+          href="/privacy"
+          className="font-semibold text-[var(--primary)] underline underline-offset-2"
+        >
+          Chính sách quyền riêng tư
+        </Link>
+        .
       </p>
 
-      <p className={styles.signup}>
-        Don't have an account? <Link href="/register">Sign up</Link>
+      <p className="mt-4 text-center text-sm text-[var(--muted-foreground)]">
+        Chưa có tài khoản?{" "}
+        <Link
+          href="/register"
+          className="font-semibold text-[var(--primary)] hover:underline focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:outline-none"
+        >
+          Đăng ký
+        </Link>
       </p>
     </div>
   );

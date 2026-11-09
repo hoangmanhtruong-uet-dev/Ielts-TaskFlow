@@ -2,8 +2,10 @@ import { cache } from "react";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireCompletedOnboarding } from "@/features/onboarding/server/learner-profile";
+import { parseMockRunnerContext } from "@/features/mock-tests/schemas";
 import type { Database } from "@/types/database";
 import type {
+  MockRunnerContext,
   MockSectionType,
   MockSessionStatus,
 } from "@/features/mock-tests/model";
@@ -34,6 +36,7 @@ export type MockSectionView = {
   required: boolean;
   attempt: SectionAttemptRow | null;
   practicePath: string | null;
+  reviewPath: string | null;
 };
 
 export type MockTestDetailData = {
@@ -44,15 +47,96 @@ export type MockTestDetailData = {
   activeSessionStatus: MockSessionStatus | null;
 };
 
+export type MockWritingEvaluation = {
+  submissionId: string;
+  wordCount: number;
+  overallBandEstimate: number | null;
+  taskResponseBand: number | null;
+  coherenceCohesionBand: number | null;
+  lexicalResourceBand: number | null;
+  grammaticalRangeBand: number | null;
+  confidence: string | null;
+  summary: string | null;
+};
+
+export type MockSpeakingEvaluation = {
+  attemptId: string;
+  overallBandEstimate: number | null;
+  fluencyBand: number | null;
+  lexicalBand: number | null;
+  grammarBand: number | null;
+  pronunciationBand: number | null;
+  confidence: string | null;
+  summary: string | null;
+};
+
 export type MockSessionPageData = MockTestDetailData & {
   session: Database["public"]["Tables"]["mock_test_sessions"]["Row"] & {
     status: MockSessionStatus;
   };
   result: Database["public"]["Tables"]["mock_test_results"]["Row"] | null;
+  writingEvaluation?: MockWritingEvaluation | null;
+  speakingEvaluation?: MockSpeakingEvaluation | null;
+};
+
+export type VerifiedMockRunnerRun = {
+  context: MockRunnerContext;
+  learnerAttemptId: string | null;
+  writingSubmissionId: string | null;
+  speakingAttemptId: string | null;
 };
 
 function relation<T>(value: T | T[] | null): T | null {
   return Array.isArray(value) ? (value[0] ?? null) : value;
+}
+
+export async function verifyMockRunnerContext(
+  query: unknown,
+  sectionType: MockSectionType,
+): Promise<VerifiedMockRunnerRun | null> {
+  const parsed = parseMockRunnerContext(query);
+  if (!parsed) return null;
+
+  const { account } = await requireCompletedOnboarding();
+  const supabase = await createSupabaseServerClient();
+
+  const { data: session } = await supabase
+    .from("mock_test_sessions")
+    .select("id, mock_test_id, status")
+    .eq("id", parsed.sessionId)
+    .eq("user_id", account.user.id)
+    .eq("status", "in_progress")
+    .maybeSingle();
+  if (!session) return null;
+
+  const [{ data: mockTest }, { data: sectionAttempt }] = await Promise.all([
+    supabase
+      .from("mock_tests")
+      .select("id")
+      .eq("id", session.mock_test_id)
+      .eq("slug", parsed.mockTestSlug)
+      .maybeSingle(),
+    supabase
+      .from("mock_test_section_attempts")
+      .select(
+        "id, section_type, status, learner_attempt_id, writing_submission_id, speaking_attempt_id",
+      )
+      .eq("id", parsed.sectionAttemptId)
+      .eq("session_id", session.id)
+      .eq("user_id", account.user.id)
+      .eq("section_type", sectionType)
+      .eq("status", "in_progress")
+      .maybeSingle(),
+  ]);
+
+  if (!mockTest || !sectionAttempt) return null;
+
+  return {
+    context: parsed,
+    learnerAttemptId: sectionAttempt.learner_attempt_id,
+    writingSubmissionId: sectionAttempt.writing_submission_id,
+    speakingAttemptId: sectionAttempt.speaking_attempt_id,
+  };
 }
 
 async function resolveSections(
@@ -110,6 +194,27 @@ async function resolveSections(
           ? `/practice/${section.section_type}/${rootSlug}?${params}`
           : null;
 
+      let reviewPath: string | null = null;
+      if (rootSlug && attempt?.status === "submitted") {
+        if (
+          (section.section_type === "reading" ||
+            section.section_type === "listening") &&
+          attempt.learner_attempt_id
+        ) {
+          reviewPath = `/practice/${section.section_type}/${rootSlug}/result/${attempt.learner_attempt_id}`;
+        } else if (
+          section.section_type === "writing" &&
+          attempt.writing_submission_id
+        ) {
+          reviewPath = `/practice/writing/${rootSlug}/submission/${attempt.writing_submission_id}`;
+        } else if (
+          section.section_type === "speaking" &&
+          attempt.speaking_attempt_id
+        ) {
+          reviewPath = `/practice/speaking/${rootSlug}/attempt/${attempt.speaking_attempt_id}`;
+        }
+      }
+
       return {
         id: section.id,
         type: section.section_type as MockSectionType,
@@ -119,6 +224,7 @@ async function resolveSections(
         required: section.required,
         attempt,
         practicePath,
+        reviewPath,
       };
     }),
   );
@@ -263,6 +369,94 @@ export async function getMockSessionPage(
       .maybeSingle(),
   ]);
   if (!test || !version || !sectionRows) return null;
+
+  let writingEvaluation: MockWritingEvaluation | null = null;
+  let speakingEvaluation: MockSpeakingEvaluation | null = null;
+
+  if (result) {
+    const [writingSubRes, writingFeedbackRes, speakingFeedbackRes] =
+      await Promise.all([
+        result.writing_submission_id
+          ? supabase
+              .from("writing_submissions")
+              .select("id, word_count")
+              .eq("id", result.writing_submission_id)
+              .eq("user_id", account.user.id)
+              .maybeSingle()
+          : Promise.resolve({ data: null }),
+        result.writing_submission_id
+          ? supabase
+              .from("writing_feedback")
+              .select(
+                "overall_band_estimate, task_response_band, coherence_cohesion_band, lexical_resource_band, grammatical_range_accuracy_band, confidence, summary",
+              )
+              .eq("submission_id", result.writing_submission_id)
+              .eq("user_id", account.user.id)
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .maybeSingle()
+          : Promise.resolve({ data: null }),
+        result.speaking_attempt_id
+          ? supabase
+              .from("speaking_feedback")
+              .select(
+                "estimated_overall_band, estimated_fluency_band, estimated_lexical_band, estimated_grammar_band, estimated_pronunciation_band, confidence, summary",
+              )
+              .eq("attempt_id", result.speaking_attempt_id)
+              .eq("user_id", account.user.id)
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .maybeSingle()
+          : Promise.resolve({ data: null }),
+      ]);
+
+    if (result.writing_submission_id) {
+      const wf = writingFeedbackRes.data;
+      writingEvaluation = {
+        submissionId: result.writing_submission_id,
+        wordCount: writingSubRes.data?.word_count ?? 0,
+        overallBandEstimate: wf ? Number(wf.overall_band_estimate) : null,
+        taskResponseBand: wf ? Number(wf.task_response_band) : null,
+        coherenceCohesionBand: wf ? Number(wf.coherence_cohesion_band) : null,
+        lexicalResourceBand: wf ? Number(wf.lexical_resource_band) : null,
+        grammaticalRangeBand: wf
+          ? Number(wf.grammatical_range_accuracy_band)
+          : null,
+        confidence: wf?.confidence ?? null,
+        summary: wf?.summary ?? null,
+      };
+    }
+
+    if (result.speaking_attempt_id) {
+      const sf = speakingFeedbackRes.data;
+      speakingEvaluation = {
+        attemptId: result.speaking_attempt_id,
+        overallBandEstimate:
+          sf?.estimated_overall_band != null
+            ? Number(sf.estimated_overall_band)
+            : null,
+        fluencyBand:
+          sf?.estimated_fluency_band != null
+            ? Number(sf.estimated_fluency_band)
+            : null,
+        lexicalBand:
+          sf?.estimated_lexical_band != null
+            ? Number(sf.estimated_lexical_band)
+            : null,
+        grammarBand:
+          sf?.estimated_grammar_band != null
+            ? Number(sf.estimated_grammar_band)
+            : null,
+        pronunciationBand:
+          sf?.estimated_pronunciation_band != null
+            ? Number(sf.estimated_pronunciation_band)
+            : null,
+        confidence: sf?.confidence ?? null,
+        summary: sf?.summary ?? null,
+      };
+    }
+  }
+
   return {
     test: { id: test.id, slug: test.slug, displayOrder: test.display_order },
     version,
@@ -277,5 +471,7 @@ export async function getMockSessionPage(
       status: session.status as MockSessionStatus,
     },
     result: result ?? null,
+    writingEvaluation,
+    speakingEvaluation,
   };
 }

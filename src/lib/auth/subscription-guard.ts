@@ -8,13 +8,11 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
  * (hoặc không set), helper trả về "free cho tất cả" một cách tường minh, không
  * cần truy vấn bảng `subscriptions`.
  */
-const BILLING_ENABLED = process.env.BILLING_ENABLED === "true";
-
 export async function getUserSubscriptionStatus(): Promise<{
   isPremium: boolean;
   userId: string | null;
 }> {
-  const supabase = (await createSupabaseServerClient()) as any;
+  const supabase = await createSupabaseServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

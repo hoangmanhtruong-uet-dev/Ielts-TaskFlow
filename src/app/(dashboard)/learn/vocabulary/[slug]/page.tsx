@@ -4,9 +4,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { recordVocabularyReviewAction } from "@/features/learning/vocabulary-actions";
-import {
-  getPublicVocabularyCatalog,
-} from "@/features/learning/server/foundations";
+import { getPublicVocabularyCatalog } from "@/features/learning/server/foundations";
 
 type PageProps = { params: Promise<{ slug: string }> };
 
@@ -25,18 +23,14 @@ export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  
+
   const supabase = createSupabaseAdminClient();
-  const { data: entry } = await supabase
-    .from("vocabulary_entry_versions")
-    .select("term, definition_vi")
-    .eq("status", "published")
-    .limit(1)
-    .single(); // Actually, I should probably join with vocabulary_entries on slug, but vocabulary_entry_versions doesn't have slug directly.
-    
-  // Let's just fetch it the safe way:
-  const { data: entries } = await supabase.from("vocabulary_entries").select("id").eq("slug", slug).single();
-  
+  const { data: entries } = await supabase
+    .from("vocabulary_entries")
+    .select("id")
+    .eq("slug", slug)
+    .single();
+
   if (!entries) return {};
 
   const { data: version } = await supabase
@@ -47,17 +41,17 @@ export async function generateMetadata({
     .order("version", { ascending: false })
     .limit(1)
     .single();
-  
+
   if (!version) return {};
-  
-  return { 
-    title: `Học từ vựng: ${version.term} | IELTS Self-Study`, 
+
+  return {
+    title: `Học từ vựng: ${version.term} | IELTS Self-Study`,
     description: `Nghĩa của từ ${version.term}: ${version.definition_vi}. Khám phá cách phát âm, ví dụ và các điểm ngữ pháp liên quan.`,
     openGraph: {
       title: `Từ vựng: ${version.term} - IELTS Self-Study`,
       description: version.definition_vi,
       type: "article",
-    }
+    },
   };
 }
 

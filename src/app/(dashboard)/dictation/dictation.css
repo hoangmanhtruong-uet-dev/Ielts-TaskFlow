@@ -1,20 +1,20 @@
-@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap");
-
 .dictation-scope {
-  --ink: #0C0E1D;
+  --ink: #0c0e1d;
   --panel: #141731;
-  --panel2: #1B1F40;
-  --line: #2B3060;
-  --text: #EEF0FF;
-  --mute: #98A0CF;
-  --indigo: #5B5FEF;
-  --indigo-hi: #7C80FF;
-  --mark: #F6E85C;
-  --ok: #5EE0A0;
-  --bad: #FF6A82;
-  --amber: #F5B73D;
-  --head: "Bricolage Grotesque", "Be Vietnam Pro", system-ui, sans-serif;
-  --body: "Be Vietnam Pro", system-ui, sans-serif;
+  --panel2: #1b1f40;
+  --line: #2b3060;
+  --text: #eef0ff;
+  --mute: #98a0cf;
+  --indigo: #5b5fef;
+  --indigo-hi: #7c80ff;
+  --mark: #f6e85c;
+  --ok: #5ee0a0;
+  --bad: #ff6a82;
+  --amber: #f5b73d;
+  --head:
+    var(--font-display), var(--font-sans), "Be Vietnam Pro", system-ui,
+    sans-serif;
+  --body: var(--font-sans), "Be Vietnam Pro", system-ui, sans-serif;
 
   background-color: var(--ink);
   color: var(--text);
@@ -35,7 +35,7 @@
   padding: 0 clamp(16px, 4vw, 48px);
 }
 
-.dictation-scope main {
+.dictation-scope .dict-main {
   padding: 40px 0 80px;
 }
 .dictation-scope .head {
@@ -199,7 +199,9 @@
   background: transparent;
   border: 0;
   cursor: pointer;
-  transition: color 0.15s, background 0.15s;
+  transition:
+    color 0.15s,
+    background 0.15s;
 }
 .dictation-scope .seg button:hover {
   color: var(--text);
@@ -255,7 +257,9 @@
   display: flex;
   flex-direction: column;
   text-align: left;
-  transition: border-color 0.15s, transform 0.15s;
+  transition:
+    border-color 0.15s,
+    transform 0.15s;
   position: relative;
   cursor: pointer;
 }
@@ -406,10 +410,18 @@
   background: var(--line);
   transition: background 0.2s;
 }
-.dictation-scope .prog i.g { background: var(--ok); }
-.dictation-scope .prog i.y { background: var(--amber); }
-.dictation-scope .prog i.r { background: var(--bad); }
-.dictation-scope .prog i.now { background: var(--mark); }
+.dictation-scope .prog i.g {
+  background: var(--ok);
+}
+.dictation-scope .prog i.y {
+  background: var(--amber);
+}
+.dictation-scope .prog i.r {
+  background: var(--bad);
+}
+.dictation-scope .prog i.now {
+  background: var(--mark);
+}
 .dictation-scope .pmeta {
   display: flex;
   justify-content: space-between;
@@ -437,7 +449,9 @@
   background: var(--indigo);
   display: grid;
   place-items: center;
-  transition: transform 0.15s, background 0.15s;
+  transition:
+    transform 0.15s,
+    background 0.15s;
   box-shadow: 0 0 0 10px rgba(91, 95, 239, 0.15);
   border: 0;
   cursor: pointer;
@@ -461,12 +475,23 @@
   background: var(--mark);
   animation: dict-bar 0.8s ease-in-out infinite;
 }
-.dictation-scope .play .bars i:nth-child(2) { animation-delay: 0.15s; }
-.dictation-scope .play .bars i:nth-child(3) { animation-delay: 0.3s; }
-.dictation-scope .play .bars i:nth-child(4) { animation-delay: 0.45s; }
+.dictation-scope .play .bars i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.dictation-scope .play .bars i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+.dictation-scope .play .bars i:nth-child(4) {
+  animation-delay: 0.45s;
+}
 @keyframes dict-bar {
-  0%, 100% { height: 8px; }
-  50% { height: 28px; }
+  0%,
+  100% {
+    height: 8px;
+  }
+  50% {
+    height: 28px;
+  }
 }
 .dictation-scope .play.on svg {
   display: none;
@@ -496,7 +521,9 @@
   color: var(--mute);
   background: transparent;
   cursor: pointer;
-  transition: color 0.15s, border-color 0.15s;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
 }
 .dictation-scope .sp button[aria-pressed="true"] {
   border-color: var(--mark);
@@ -579,8 +606,14 @@
   animation: dict-in 0.25s ease both;
 }
 @keyframes dict-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 .dictation-scope .score {
   display: flex;
@@ -608,7 +641,9 @@
   border-radius: 6px;
   display: inline-block;
 }
-.dictation-scope .w.ok { color: var(--ok); }
+.dictation-scope .w.ok {
+  color: var(--ok);
+}
 .dictation-scope .w.miss {
   background: rgba(246, 232, 92, 0.18);
   color: var(--mark);
@@ -620,8 +655,12 @@
   text-decoration: line-through;
   opacity: 0.85;
 }
-.dictation-scope .w.plain { color: var(--text); }
-.dictation-scope .w.bad { color: var(--bad); }
+.dictation-scope .w.plain {
+  color: var(--text);
+}
+.dictation-scope .w.bad {
+  color: var(--bad);
+}
 .dictation-scope .leg {
   display: flex;
   gap: 16px;
@@ -676,7 +715,9 @@
   padding: 16px 20px;
   border-left: 1px solid var(--line);
 }
-.dictation-scope .kp div:first-child { border: 0; }
+.dictation-scope .kp div:first-child {
+  border: 0;
+}
 .dictation-scope .kp small {
   display: block;
   color: var(--mute);
@@ -706,9 +747,18 @@
   padding: 4px 0;
   border-radius: 10px;
 }
-.dictation-scope .sl b.g { color: var(--ok); background: rgba(94, 224, 160, 0.12); }
-.dictation-scope .sl b.y { color: var(--amber); background: rgba(245, 183, 61, 0.12); }
-.dictation-scope .sl b.r { color: var(--bad); background: rgba(255, 106, 130, 0.12); }
+.dictation-scope .sl b.g {
+  color: var(--ok);
+  background: rgba(94, 224, 160, 0.12);
+}
+.dictation-scope .sl b.y {
+  color: var(--amber);
+  background: rgba(245, 183, 61, 0.12);
+}
+.dictation-scope .sl b.r {
+  color: var(--bad);
+  background: rgba(255, 106, 130, 0.12);
+}
 .dictation-scope .mw {
   display: flex;
   gap: 8px;

@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback } from "react";
 import type {
   DictationSentence,
   DictationSubmitResult,
-} from '@/types/dictation';
+} from "@/types/dictation";
 
 interface UseDictationSessionProps {
   exerciseId: string;
@@ -17,10 +17,9 @@ export function useDictationSession({
 }: UseDictationSessionProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [results, setResults] = useState<Map<string, DictationSubmitResult>>(
-    new Map()
+    new Map(),
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [sessionStartTime, setSessionStartTime] = useState<number>(Date.now);
   const [sentenceStartTime, setSentenceStartTime] = useState<number>(Date.now);
 
   const currentSentence = sentences[currentIndex] ?? null;
@@ -33,7 +32,7 @@ export function useDictationSession({
     results.size > 0
       ? Array.from(results.values()).reduce(
           (sum, r) => sum + r.accuracy_score,
-          0
+          0,
         ) / results.size
       : 0;
 
@@ -45,9 +44,9 @@ export function useDictationSession({
       const timeSpent = Math.round((Date.now() - sentenceStartTime) / 1000);
 
       try {
-        const response = await fetch('/api/dictation/submit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        const response = await fetch("/api/dictation/submit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             exerciseId,
             sentenceId: currentSentence.id,
@@ -57,7 +56,7 @@ export function useDictationSession({
           }),
         });
 
-        if (!response.ok) throw new Error('Submit failed');
+        if (!response.ok) throw new Error("Submit failed");
 
         const result: DictationSubmitResult = await response.json();
 
@@ -69,13 +68,13 @@ export function useDictationSession({
 
         return result;
       } catch (error) {
-        console.error('Submit error:', error);
+        console.error("Submit error:", error);
         return null;
       } finally {
         setIsSubmitting(false);
       }
     },
-    [currentSentence, exerciseId, isSubmitting, sentenceStartTime]
+    [currentSentence, exerciseId, isSubmitting, sentenceStartTime],
   );
 
   const goToNext = useCallback(() => {
@@ -99,13 +98,12 @@ export function useDictationSession({
         setSentenceStartTime(Date.now());
       }
     },
-    [sentences.length]
+    [sentences.length],
   );
 
   const resetSession = useCallback(() => {
     setCurrentIndex(0);
     setResults(new Map());
-    setSessionStartTime(Date.now());
     setSentenceStartTime(Date.now());
   }, []);
 

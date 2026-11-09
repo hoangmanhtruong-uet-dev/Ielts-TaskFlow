@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { LoginForm } from "./login-form";
@@ -13,18 +13,28 @@ describe("authentication forms", () => {
       "autocomplete",
       "email",
     );
-    expect(screen.getByLabelText("Password")).toHaveAttribute(
+    expect(screen.getByLabelText("Mật khẩu")).toHaveAttribute(
       "autocomplete",
       "current-password",
     );
-    expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Đăng nhập" })).toBeEnabled();
   });
 
   it("toggles password visibility accessibly", () => {
     render(<LoginForm />);
-    const password = screen.getByLabelText("Password");
+    const password = screen.getByLabelText("Mật khẩu");
+    const toggle = screen.getByRole("button", { name: "Hiện mật khẩu" });
 
     expect(password).toHaveAttribute("type", "password");
+    expect(toggle).toHaveAttribute("aria-pressed", "false");
+
+    fireEvent.click(toggle);
+
+    expect(password).toHaveAttribute("type", "text");
+    expect(screen.getByRole("button", { name: "Ẩn mật khẩu" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
   });
 
   it("renders all required register fields", () => {
@@ -34,8 +44,9 @@ describe("authentication forms", () => {
 
     expect(screen.getByLabelText("Họ và tên")).toBeRequired();
     expect(screen.getByLabelText("Email")).toBeRequired();
-    expect(screen.getByLabelText("Password")).toBeRequired();
-    expect(screen.getByLabelText("Confirm password")).toBeRequired();
+    expect(screen.getByLabelText("Mật khẩu")).toBeRequired();
+    expect(screen.getByLabelText("Xác nhận mật khẩu")).toBeRequired();
+    expect(screen.getByRole("button", { name: "Tạo tài khoản" })).toBeEnabled();
   });
 
   it("renders the persisted display name in the profile form", () => {

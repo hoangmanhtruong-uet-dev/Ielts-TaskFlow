@@ -14,7 +14,6 @@ import {
   Layers,
   Activity,
   Target,
-  ShieldAlert,
   Search,
   X,
   Compass,
@@ -23,7 +22,7 @@ import {
   Check,
   Radio,
   Gauge,
-  BookA
+  BookA,
 } from "lucide-react";
 
 import type { ReadingCatalogItem } from "@/features/reading/server/content";
@@ -32,7 +31,7 @@ import {
   READING_BAND_STAGES,
   READING_TOPIC_TRACKS,
   type CuratedPassage,
-  type ReadingBandStage
+  type ReadingBandStage,
 } from "./components/reading-curated-data";
 import { LiveReadingLab } from "./components/LiveReadingLab";
 import { QuickReadingModal } from "./components/QuickReadingModal";
@@ -43,21 +42,24 @@ export { READING_BAND_STAGES };
 
 // Dynamic import for Three.js 3D canvas (prevents SSR hydration error)
 const ThreeReadingVisualizer = dynamic(
-  () => import("./components/ThreeReadingVisualizer").then((mod) => mod.ThreeReadingVisualizer),
+  () =>
+    import("./components/ThreeReadingVisualizer").then(
+      (mod) => mod.ThreeReadingVisualizer,
+    ),
   {
     ssr: false,
     loading: () => (
-      <div className="w-full h-full min-h-[260px] flex items-center justify-center text-xs text-emerald-300 font-mono">
-        <Activity className="w-5 h-5 animate-spin mr-2" />
+      <div className="flex h-full min-h-[260px] w-full items-center justify-center font-mono text-xs text-emerald-300">
+        <Activity className="mr-2 h-5 w-5 animate-spin" />
         Đang nạp 3D Lexical Matrix...
       </div>
-    )
-  }
+    ),
+  },
 );
 
 export interface ReadingHubProps {
   items: ReadingCatalogItem[];
-  comprehensionRate: number;
+  comprehensionRate: number | null;
   attemptsCount: number;
   profile: {
     current_band: number | null;
@@ -71,7 +73,7 @@ export function ReadingHubClient({
   items,
   comprehensionRate,
   attemptsCount,
-  profile
+  profile,
 }: ReadingHubProps) {
   // 1. Initial Band Stage
   const userTargetBand = profile?.target_band ?? 6.5;
@@ -86,7 +88,8 @@ export function ReadingHubClient({
     );
   }, [userTargetBand]);
 
-  const [selectedStage, setSelectedStage] = useState<ReadingBandStage>(initialStage);
+  const [selectedStage, setSelectedStage] =
+    useState<ReadingBandStage>(initialStage);
   const [showBandDropdown, setShowBandDropdown] = useState(false);
 
   // 2. 3D Visualizer & Speed States
@@ -98,11 +101,15 @@ export function ReadingHubClient({
   const [activeFilter, setActiveFilter] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [onlyUncompleted, setOnlyUncompleted] = useState(false);
-  const [bookmarkedIds, setBookmarkedIds] = useState<string[]>(["rd-1", "rd-3"]);
+  const [bookmarkedIds, setBookmarkedIds] = useState<string[]>([
+    "rd-1",
+    "rd-3",
+  ]);
   const [vocabPopoverId, setVocabPopoverId] = useState<string | null>(null);
 
   // 4. Quick Reading Modal State
-  const [activePracticePassage, setActivePracticePassage] = useState<CuratedPassage | null>(null);
+  const [activePracticePassage, setActivePracticePassage] =
+    useState<CuratedPassage | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const showToast = useCallback((msg: string) => {
@@ -126,21 +133,32 @@ export function ReadingHubClient({
             title: item.title,
             subtitle: item.summary,
             badge: "OFFICIAL",
-            badgeColor: "from-emerald-500/20 to-teal-500/20 text-emerald-300 border-emerald-500/30",
-            passageNumber: (idx % 3 + 1) as 1 | 2 | 3,
+            badgeColor:
+              "from-emerald-500/20 to-teal-500/20 text-emerald-300 border-emerald-500/30",
+            passageNumber: ((idx % 3) + 1) as 1 | 2 | 3,
             category: item.difficulty || "Academic Reading",
-            bandRange: "6.0 - 7.5",
+            bandRange: item.difficulty || "Academic",
             bandGroup: "Band 6.5 - 7.5",
-            wordCount: 820,
-            estimatedMinutes: 16,
+            estimatedMinutes: Math.max(
+              1,
+              Math.round((item.timeLimitSeconds || 960) / 60),
+            ),
             questionsCount: item.questionCount || 10,
             completed: false,
-            paraphraseTraps: 6,
             paragraphs: [
-              { id: "p1", label: "Paragraph A", text: item.summary || item.title }
+              {
+                id: "p1",
+                label: "Passage Overview",
+                text: item.summary || item.title,
+              },
             ],
             vocab: [
-              { word: "Analysis", meaning: "Sự phân tích chuyên sâu", ipa: "/əˈnæl.ə.sɪs/", context: "in-depth textual analysis" }
+              {
+                word: "Analysis",
+                meaning: "Sự phân tích chuyên sâu",
+                ipa: "/əˈnæl.ə.sɪs/",
+                context: "in-depth textual analysis",
+              },
             ],
             questions: [
               {
@@ -148,9 +166,9 @@ export function ReadingHubClient({
                 type: "true_false_not_given",
                 q: `${item.title}: Information is directly verified in Paragraph A.`,
                 answer: "TRUE",
-                hint: "Xem kỹ nội dung tóm tắt trong đoạn văn mở đầu."
-              }
-            ]
+                hint: "Xem kỹ nội dung tóm tắt trong đoạn văn mở đầu.",
+              },
+            ],
           });
         }
       });
@@ -176,8 +194,10 @@ export function ReadingHubClient({
       if (activeFilter === "PASSAGE_1") return p.passageNumber === 1;
       if (activeFilter === "PASSAGE_2") return p.passageNumber === 2;
       if (activeFilter === "PASSAGE_3") return p.passageNumber === 3;
-      if (activeFilter === "TFNG") return p.questions.some((q) => q.type === "true_false_not_given");
-      if (activeFilter === "MATCHING") return p.questions.some((q) => q.type === "matching_headings");
+      if (activeFilter === "TFNG")
+        return p.questions.some((q) => q.type === "true_false_not_given");
+      if (activeFilter === "MATCHING")
+        return p.questions.some((q) => q.type === "matching_headings");
       if (activeFilter === "BAND_LOW") return p.bandGroup === "Band 4.5 - 6.5";
       if (activeFilter === "BAND_MID") return p.bandGroup === "Band 6.5 - 7.5";
       if (activeFilter === "BAND_HIGH") return p.bandGroup === "Band 7.5 - 9.0";
@@ -187,42 +207,46 @@ export function ReadingHubClient({
 
   const toggleBookmark = (id: string) => {
     setBookmarkedIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
     );
-    showToast(bookmarkedIds.includes(id) ? "Đã gỡ bài đọc" : "Đã lưu bài đọc vào yêu thích");
+    showToast(
+      bookmarkedIds.includes(id)
+        ? "Đã gỡ bài đọc"
+        : "Đã lưu bài đọc vào yêu thích",
+    );
   };
 
   return (
-    <div className="reading-theme-root pb-32 relative overflow-x-hidden selection:bg-emerald-500 selection:text-white">
+    <div className="reading-theme-root relative overflow-x-hidden pb-32 selection:bg-emerald-500 selection:text-white">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed top-20 right-6 z-50 animate-fadeIn bg-emerald-600/90 text-white px-4 py-2.5 rounded-2xl shadow-xl backdrop-blur-md text-xs font-bold border border-emerald-400/40 flex items-center gap-2">
+        <div className="animate-fadeIn fixed top-20 right-6 z-50 flex items-center gap-2 rounded-2xl border border-emerald-400/40 bg-emerald-600/90 px-4 py-2.5 text-xs font-bold text-white shadow-xl backdrop-blur-md">
           <Sparkles size={14} className="text-[#F6E85C]" />
           <span>{toastMessage}</span>
         </div>
       )}
 
       {/* Ambient background glows */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute -top-40 -left-40 w-[500px] h-[500px] bg-emerald-600/10 rounded-full blur-[130px]" />
-        <div className="absolute top-1/4 right-0 w-[450px] h-[450px] bg-teal-600/10 rounded-full blur-[140px]" />
-        <div className="absolute bottom-0 left-1/3 w-[500px] h-[400px] bg-indigo-600/10 rounded-full blur-[150px]" />
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+        <div className="absolute -top-40 -left-40 h-[500px] w-[500px] rounded-full bg-emerald-600/10 blur-[130px]" />
+        <div className="absolute top-1/4 right-0 h-[450px] w-[450px] rounded-full bg-teal-600/10 blur-[140px]" />
+        <div className="absolute bottom-0 left-1/3 h-[400px] w-[500px] rounded-full bg-indigo-600/10 blur-[150px]" />
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 space-y-10 relative z-10">
+      <div className="relative z-10 mx-auto max-w-7xl space-y-10 px-4 pt-4 sm:px-6 lg:px-8">
         {/* =========================================================
             1. HERO SECTION WITH 3D LEXICAL MATRIX SCANNER
         ========================================================= */}
-        <section className="relative rounded-3xl overflow-hidden border border-[#2B3060] bg-gradient-to-br from-[#141731] via-[#0E1528] to-[#122238] shadow-2xl">
-          <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-emerald-400/60 to-transparent" />
+        <section className="relative overflow-hidden rounded-3xl border border-[#2B3060] bg-gradient-to-br from-[#141731] via-[#0E1528] to-[#122238] shadow-2xl">
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/60 to-transparent" />
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 p-6 sm:p-8 lg:p-10 items-center relative">
+          <div className="relative grid grid-cols-1 items-center gap-6 p-6 sm:p-8 lg:grid-cols-12 lg:p-10">
             {/* Left 7 Columns */}
-            <div className="lg:col-span-7 space-y-6 relative z-10">
+            <div className="relative z-10 space-y-6 lg:col-span-7">
               <div className="flex flex-wrap items-center gap-3">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-bold tracking-wider uppercase">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 -ml-4" />
+                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-bold tracking-wider text-emerald-300 uppercase">
+                  <span className="h-2 w-2 animate-ping rounded-full bg-emerald-400" />
+                  <span className="-ml-4 h-2 w-2 rounded-full bg-emerald-400" />
                   READING TRAINING ARENA
                 </div>
 
@@ -230,36 +254,44 @@ export function ReadingHubClient({
                 <div className="relative">
                   <button
                     onClick={() => setShowBandDropdown(!showBandDropdown)}
-                    className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-200 text-xs font-semibold transition-colors"
+                    className="inline-flex items-center gap-2 rounded-full border border-emerald-400/40 bg-emerald-500/20 px-3.5 py-1 text-xs font-semibold text-emerald-200 transition-colors hover:bg-emerald-500/30"
                   >
-                    <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                    <Sparkles className="h-3.5 w-3.5 text-emerald-400" />
                     <span>
                       {selectedStage.name} (Band {selectedStage.bandRange})
                     </span>
-                    <ChevronDown className="w-3.5 h-3.5 opacity-70" />
+                    <ChevronDown className="h-3.5 w-3.5 opacity-70" />
                   </button>
 
                   {showBandDropdown && (
-                    <div className="absolute left-0 mt-2 w-72 rounded-2xl bg-[#141731] border border-[#2B3060] shadow-2xl p-2 z-50 backdrop-blur-xl">
+                    <div className="absolute left-0 z-50 mt-2 w-72 rounded-2xl border border-[#2B3060] bg-[#141731] p-2 shadow-2xl backdrop-blur-xl">
                       {READING_BAND_STAGES.map((b) => (
                         <button
                           key={b.id}
                           onClick={() => {
                             setSelectedStage(b);
                             setShowBandDropdown(false);
-                            showToast(`Đã chọn mục tiêu Reading: ${b.name} (${b.bandRange})`);
+                            showToast(
+                              `Đã chọn mục tiêu Reading: ${b.name} (${b.bandRange})`,
+                            );
                           }}
-                          className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold transition-colors flex items-center justify-between ${
+                          className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-xs font-semibold transition-colors ${
                             selectedStage.id === b.id
                               ? "bg-emerald-600 text-white"
                               : "text-zinc-300 hover:bg-[#1B1F40]"
                           }`}
                         >
                           <div>
-                            <div className="font-bold">{b.name} ({b.bandRange})</div>
-                            <div className="text-[10px] text-zinc-400 font-normal">{b.vietnameseTitle}</div>
+                            <div className="font-bold">
+                              {b.name} ({b.bandRange})
+                            </div>
+                            <div className="text-[10px] font-normal text-zinc-400">
+                              {b.vietnameseTitle}
+                            </div>
                           </div>
-                          {selectedStage.id === b.id && <Check className="w-3.5 h-3.5 shrink-0" />}
+                          {selectedStage.id === b.id && (
+                            <Check className="h-3.5 w-3.5 shrink-0" />
+                          )}
                         </button>
                       ))}
                     </div>
@@ -269,15 +301,26 @@ export function ReadingHubClient({
 
               {/* Headline */}
               <div className="space-y-3">
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-[1.15] text-white">
+                <h1 className="text-3xl leading-[1.15] font-black tracking-tight text-white sm:text-4xl lg:text-5xl">
                   Luyện Đọc IELTS Thực Chiến{" "}
-                  <span className="block mt-1 bg-gradient-to-r from-emerald-400 via-teal-300 to-[#F6E85C] bg-clip-text text-transparent">
+                  <span className="mt-1 block bg-gradient-to-r from-emerald-400 via-teal-300 to-[#F6E85C] bg-clip-text text-transparent">
                     Skimming Nhanh & Bóc Tách Bẫy Logic.
                   </span>
                 </h1>
-                <p className="text-zinc-300 text-sm sm:text-base max-w-2xl leading-relaxed">
-                  Làm chủ kỹ thuật quét thông tin trong <span className="text-emerald-300 font-medium">Passage 1, 2 và 3</span>, giải mã triệt để bẫy{" "}
-                  <span className="text-[#F6E85C] font-medium">True/False/Not Given</span> và nâng tốc độ đọc học thuật lên trên <code className="px-1.5 py-0.5 rounded bg-white/10 text-emerald-300 text-xs">250 WPM</code>.
+                <p className="max-w-2xl text-sm leading-relaxed text-zinc-300 sm:text-base">
+                  Làm chủ kỹ thuật quét thông tin trong{" "}
+                  <span className="font-medium text-emerald-300">
+                    Passage 1, 2 và 3
+                  </span>
+                  , giải mã triệt để bẫy{" "}
+                  <span className="font-medium text-[#F6E85C]">
+                    True/False/Not Given
+                  </span>{" "}
+                  và nâng tốc độ đọc học thuật lên trên{" "}
+                  <code className="rounded bg-white/10 px-1.5 py-0.5 text-xs text-emerald-300">
+                    250 WPM
+                  </code>
+                  .
                 </p>
               </div>
 
@@ -288,9 +331,9 @@ export function ReadingHubClient({
                     const el = document.getElementById("live-reading-lab");
                     el?.scrollIntoView({ behavior: "smooth" });
                   }}
-                  className="inline-flex items-center gap-2.5 px-5 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold text-sm shadow-lg shadow-emerald-500/25 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                  className="inline-flex items-center gap-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-5 py-3 text-sm font-bold text-slate-950 shadow-lg shadow-emerald-500/25 transition-all hover:scale-[1.02] hover:from-emerald-400 hover:to-teal-400 active:scale-[0.98]"
                 >
-                  <Target className="w-4 h-4 stroke-[2.5]" />
+                  <Target className="h-4 w-4 stroke-[2.5]" />
                   <span>Luyện Bẫy True/False/NG Ngay</span>
                 </button>
 
@@ -299,90 +342,111 @@ export function ReadingHubClient({
                     const el = document.getElementById("passage-library");
                     el?.scrollIntoView({ behavior: "smooth" });
                   }}
-                  className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/45 border border-indigo-400/40 text-white font-semibold text-sm backdrop-blur-md transition-colors"
+                  className="inline-flex items-center gap-2 rounded-xl border border-indigo-400/40 bg-indigo-600/30 px-5 py-3 text-sm font-semibold text-white backdrop-blur-md transition-colors hover:bg-indigo-600/45"
                 >
                   <span>Khám phá kho bài đọc</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="h-4 w-4" />
                 </button>
 
                 <button
                   onClick={() => setIsScanning(!isScanning)}
-                  className={`inline-flex items-center gap-2 px-4 py-3 rounded-xl border text-xs font-semibold transition-all ${
+                  className={`inline-flex items-center gap-2 rounded-xl border px-4 py-3 text-xs font-semibold transition-all ${
                     isScanning
-                      ? "bg-emerald-500/20 border-emerald-400/50 text-emerald-300"
-                      : "bg-white/[0.04] hover:bg-white/[0.08] border-white/10 text-zinc-300"
+                      ? "border-emerald-400/50 bg-emerald-500/20 text-emerald-300"
+                      : "border-white/10 bg-white/[0.04] text-zinc-300 hover:bg-white/[0.08]"
                   }`}
                 >
                   <Radio
-                    className={`w-4 h-4 ${
-                      isScanning ? "animate-spin text-emerald-400" : "text-emerald-400"
+                    className={`h-4 w-4 ${
+                      isScanning
+                        ? "animate-spin text-emerald-400"
+                        : "text-emerald-400"
                     }`}
                   />
-                  <span>{isScanning ? "Đang Quét Laser 3D" : "Kích hoạt Quét Laser 3D"}</span>
+                  <span>
+                    {isScanning
+                      ? "Đang Quét Laser 3D"
+                      : "Kích hoạt Quét Laser 3D"}
+                  </span>
                 </button>
               </div>
 
               {/* Mini Metrics */}
-              <div className="grid grid-cols-3 gap-3 pt-2 max-w-xl">
-                <div className="p-3.5 rounded-2xl bg-[#0C0E1D]/80 border border-[#2B3060]">
-                  <div className="text-[11px] text-zinc-400 flex items-center gap-1.5 font-bold uppercase tracking-wider">
-                    <Clock className="w-3.5 h-3.5 text-emerald-400" />
-                    MỤC TIÊU TUẦN
+              <div className="grid max-w-xl grid-cols-3 gap-3 pt-2">
+                <div className="rounded-2xl border border-[#2B3060] bg-[#0C0E1D]/80 p-3.5">
+                  <div className="flex items-center gap-1.5 text-[11px] font-bold tracking-wider text-zinc-400 uppercase">
+                    <Clock className="h-3.5 w-3.5 text-emerald-400" />
+                    TIẾN ĐỘ LUYỆN TẬP
                   </div>
                   <div className="mt-1 flex items-baseline gap-1">
-                    <span className="text-xl font-black text-white">3</span>
+                    <span className="text-xl font-black text-white">
+                      {Math.min(attemptsCount, 5)}
+                    </span>
                     <span className="text-xs text-zinc-400">/ 5 bài</span>
-                    <span className="ml-auto text-[11px] text-emerald-300 font-semibold">
+                    <span className="ml-auto text-[11px] font-semibold text-emerald-300">
                       {attemptsCount} lượt làm
                     </span>
                   </div>
-                  <div className="mt-2 h-1.5 w-full bg-[#1B1F40] rounded-full overflow-hidden">
-                    <div className="h-full w-[60%] bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full" />
-                  </div>
-                </div>
-
-                <div className="p-3.5 rounded-2xl bg-[#0C0E1D]/80 border border-[#2B3060]">
-                  <div className="text-[11px] text-zinc-400 flex items-center gap-1.5 font-bold uppercase tracking-wider">
-                    <Target className="w-3.5 h-3.5 text-teal-400" />
-                    ĐỘ HIỂU BÀI
-                  </div>
-                  <div className="mt-1 flex items-baseline justify-between">
-                    <span className="text-xl font-black text-teal-300">{comprehensionRate}%</span>
-                    <span className="text-[10px] text-teal-300/80 bg-teal-500/15 px-1.5 py-0.5 rounded border border-teal-500/30">
-                      IELTS Target
-                    </span>
-                  </div>
-                  <div className="mt-2 h-1.5 w-full bg-[#1B1F40] rounded-full overflow-hidden">
+                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[#1B1F40]">
                     <div
-                      className="h-full bg-gradient-to-r from-teal-500 to-emerald-400 rounded-full transition-all duration-700"
-                      style={{ width: `${comprehensionRate}%` }}
+                      className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-700"
+                      style={{ width: `${Math.min(100, attemptsCount * 20)}%` }}
                     />
                   </div>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-[#0C0E1D]/80 border border-[#2B3060]">
-                  <div className="text-[11px] text-zinc-400 flex items-center gap-1.5 font-bold uppercase tracking-wider">
-                    <Gauge className="w-3.5 h-3.5 text-amber-400" />
+                <div className="rounded-2xl border border-[#2B3060] bg-[#0C0E1D]/80 p-3.5">
+                  <div className="flex items-center gap-1.5 text-[11px] font-bold tracking-wider text-zinc-400 uppercase">
+                    <Target className="h-3.5 w-3.5 text-teal-400" />
+                    ĐỘ HIỂU BÀI
+                  </div>
+                  <div className="mt-1 flex items-baseline justify-between">
+                    <span className="text-xl font-black text-teal-300">
+                      {comprehensionRate !== null
+                        ? `${comprehensionRate}%`
+                        : "--"}
+                    </span>
+                    <span className="rounded border border-teal-500/30 bg-teal-500/15 px-1.5 py-0.5 text-[10px] text-teal-300/80">
+                      {comprehensionRate !== null
+                        ? "Đã chấm điểm"
+                        : "Chưa có dữ liệu"}
+                    </span>
+                  </div>
+                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[#1B1F40]">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-teal-500 to-emerald-400 transition-all duration-700"
+                      style={{ width: `${comprehensionRate ?? 0}%` }}
+                    />
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-[#2B3060] bg-[#0C0E1D]/80 p-3.5">
+                  <div className="flex items-center gap-1.5 text-[11px] font-bold tracking-wider text-zinc-400 uppercase">
+                    <Gauge className="h-3.5 w-3.5 text-amber-400" />
                     TỐC ĐỘ ĐỌC (WPM)
                   </div>
                   <div className="mt-1">
-                    <span className="text-xl font-black text-amber-300 block truncate">
+                    <span className="block truncate text-xl font-black text-amber-300">
                       {readingSpeedWpm} WPM
                     </span>
-                    <span className="text-[11px] text-zinc-400">Chuẩn IELTS: 240+ WPM</span>
+                    <span className="text-[11px] text-zinc-400">
+                      Chuẩn IELTS: 240+ WPM
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Right 5 Columns: 3D Cybernetic Lexical Matrix */}
-            <div className="lg:col-span-5 flex flex-col gap-4 relative">
-              <div className="relative rounded-2xl bg-[#0C0E1D]/90 border border-emerald-500/30 overflow-hidden shadow-2xl min-h-[300px] flex flex-col justify-between">
-                <div className="p-3.5 flex items-center justify-between border-b border-[#2B3060]/70 relative z-10 bg-[#0C0E1D]/50 backdrop-blur-md">
+            <div className="relative flex flex-col gap-4 lg:col-span-5">
+              <div className="relative flex min-h-[300px] flex-col justify-between overflow-hidden rounded-2xl border border-emerald-500/30 bg-[#0C0E1D]/90 shadow-2xl">
+                <div className="relative z-10 flex items-center justify-between border-b border-[#2B3060]/70 bg-[#0C0E1D]/50 p-3.5 backdrop-blur-md">
                   <div className="flex items-center gap-2">
                     <Activity
-                      className={`w-4 h-4 ${
-                        isScanning ? "text-emerald-400 animate-pulse" : "text-indigo-400"
+                      className={`h-4 w-4 ${
+                        isScanning
+                          ? "animate-pulse text-emerald-400"
+                          : "text-indigo-400"
                       }`}
                     />
                     <span className="text-xs font-bold tracking-wide text-zinc-200">
@@ -391,18 +455,18 @@ export function ReadingHubClient({
                   </div>
 
                   {/* Mode Buttons */}
-                  <div className="flex items-center gap-1 bg-[#141731] p-0.5 rounded-lg border border-[#2B3060]">
+                  <div className="flex items-center gap-1 rounded-lg border border-[#2B3060] bg-[#141731] p-0.5">
                     {(
                       [
                         { id: "matrix" as const, label: "Matrix" },
                         { id: "laser" as const, label: "Laser" },
-                        { id: "cluster" as const, label: "Cluster" }
+                        { id: "cluster" as const, label: "Cluster" },
                       ] as const
                     ).map((m) => (
                       <button
                         key={m.id}
                         onClick={() => setVisualMode(m.id)}
-                        className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-colors ${
+                        className={`rounded-md px-2 py-0.5 text-[10px] font-bold transition-colors ${
                           visualMode === m.id
                             ? "bg-emerald-600 text-white shadow"
                             : "text-zinc-400 hover:text-white"
@@ -415,7 +479,7 @@ export function ReadingHubClient({
                 </div>
 
                 {/* 3D Canvas */}
-                <div className="relative flex-1 flex items-center justify-center">
+                <div className="relative flex flex-1 items-center justify-center">
                   <ThreeReadingVisualizer
                     isScanning={isScanning}
                     visualMode={visualMode}
@@ -423,18 +487,22 @@ export function ReadingHubClient({
                   />
 
                   {/* Overlay Info */}
-                  <div className="absolute bottom-3 inset-x-3 flex items-center justify-between px-3 py-2 rounded-xl bg-[#141731]/85 border border-[#2B3060] backdrop-blur-md text-[11px]">
+                  <div className="absolute inset-x-3 bottom-3 flex items-center justify-between rounded-xl border border-[#2B3060] bg-[#141731]/85 px-3 py-2 text-[11px] backdrop-blur-md">
                     <div className="flex items-center gap-2 truncate">
                       <span
-                        className={`w-2 h-2 rounded-full ${
-                          isScanning ? "bg-emerald-400 animate-ping" : "bg-amber-400"
+                        className={`h-2 w-2 rounded-full ${
+                          isScanning
+                            ? "animate-ping bg-emerald-400"
+                            : "bg-amber-400"
                         }`}
                       />
-                      <span className="text-zinc-300 font-medium truncate">
-                        {isScanning ? "Đang quét trường ngữ nghĩa..." : "Di chuột để xoay ma trận từ vựng"}
+                      <span className="truncate font-medium text-zinc-300">
+                        {isScanning
+                          ? "Đang quét trường ngữ nghĩa..."
+                          : "Di chuột để xoay ma trận từ vựng"}
                       </span>
                     </div>
-                    <span className="text-emerald-300 font-mono font-bold ml-2 shrink-0">
+                    <span className="ml-2 shrink-0 font-mono font-bold text-emerald-300">
                       {readingSpeedWpm} WPM
                     </span>
                   </div>
@@ -453,166 +521,193 @@ export function ReadingHubClient({
             3. 4 CHẾ ĐỘ ĐỌC CHUYÊN SÂU (BENTO GRID)
         ========================================================= */}
         <section className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+          <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-                <Sliders className="w-4 h-4" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-500/30 bg-emerald-500/20 text-emerald-400">
+                <Sliders className="h-4 w-4" />
               </div>
-              <h2 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
+              <h2 className="text-xl font-extrabold tracking-tight text-white sm:text-2xl">
                 4 Chế Độ Luyện Đọc Chuyên Sâu
               </h2>
             </div>
-            <p className="text-xs sm:text-sm text-zinc-400">
+            <p className="text-xs text-zinc-400 sm:text-sm">
               Chọn phương pháp phù hợp với từng giai đoạn ôn luyện
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
             {/* Bento 1: Skimming & Scanning */}
             <div
               onClick={() => {
                 const el = document.getElementById("live-reading-lab");
                 el?.scrollIntoView({ behavior: "smooth" });
               }}
-              className="lg:col-span-5 group cursor-pointer relative rounded-3xl bg-gradient-to-br from-[#141731] via-[#10132B] to-[#132A33] border border-emerald-500/30 hover:border-emerald-400 p-6 flex flex-col justify-between transition-all duration-300 shadow-lg hover:shadow-emerald-500/10 overflow-hidden"
+              className="group relative flex cursor-pointer flex-col justify-between overflow-hidden rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-[#141731] via-[#10132B] to-[#132A33] p-6 shadow-lg transition-all duration-300 hover:border-emerald-400 hover:shadow-emerald-500/10 lg:col-span-5"
             >
-              <div className="space-y-4 relative z-10">
+              <div className="relative z-10 space-y-4">
                 <div className="flex items-center justify-between">
-                  <div className="w-11 h-11 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-                    <Gauge className="w-5 h-5" />
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-500/30 bg-emerald-500/15 text-emerald-400">
+                    <Gauge className="h-5 w-5" />
                   </div>
-                  <span className="px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[11px] font-extrabold tracking-wide uppercase">
+                  <span className="rounded-full border border-emerald-400/40 bg-emerald-500/20 px-3 py-1 text-[11px] font-extrabold tracking-wide text-emerald-300 uppercase">
                     ★ TỐC ĐỘ CAO
                   </span>
                 </div>
 
                 <div>
-                  <h3 className="text-xl font-bold text-white group-hover:text-emerald-200 transition-colors">
+                  <h3 className="text-xl font-bold text-white transition-colors group-hover:text-emerald-200">
                     Skimming & Scanning (Đọc Lướt & Định Vị)
                   </h3>
-                  <p className="mt-2 text-sm text-zinc-300 leading-relaxed">
-                    Luyện mắt quét tìm mốc thời gian, tên riêng, thuật ngữ trong 30 giây để định vị
-                    đoạn chứa đáp án mà không cần đọc từng chữ.
+                  <p className="mt-2 text-sm leading-relaxed text-zinc-300">
+                    Luyện mắt quét tìm mốc thời gian, tên riêng, thuật ngữ trong
+                    30 giây để định vị đoạn chứa đáp án mà không cần đọc từng
+                    chữ.
                   </p>
                 </div>
 
-                <div className="p-3 rounded-2xl bg-[#0C0E1D] border border-[#2B3060] text-xs font-mono space-y-1">
-                  <div className="text-zinc-400">Scanning keywords: "multispectral", "LiDAR", "Guatemala"</div>
-                  <div className="flex items-center gap-1.5 text-emerald-400 font-bold">
+                <div className="space-y-1 rounded-2xl border border-[#2B3060] bg-[#0C0E1D] p-3 font-mono text-xs">
+                  <div className="text-zinc-400">
+                    Scanning keywords: "multispectral", "LiDAR", "Guatemala"
+                  </div>
+                  <div className="flex items-center gap-1.5 font-bold text-emerald-400">
                     <span>✓ Định vị xong trong 12 giây</span>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-6 pt-4 border-t border-[#2B3060]/70 flex items-center justify-between text-xs font-bold text-emerald-400 group-hover:text-emerald-300 transition-colors">
-                <span className="underline underline-offset-4">Thử thách bấm giờ đọc ngay</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              <div className="mt-6 flex items-center justify-between border-t border-[#2B3060]/70 pt-4 text-xs font-bold text-emerald-400 transition-colors group-hover:text-emerald-300">
+                <span className="underline underline-offset-4">
+                  Thử thách bấm giờ đọc ngay
+                </span>
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </div>
             </div>
 
             {/* Bento 2: Deep Academic Passages */}
-            <div className="lg:col-span-4 group relative rounded-3xl bg-[#141731] border border-[#2B3060] hover:border-cyan-500/40 p-6 flex flex-col justify-between transition-all duration-300">
+            <div className="group relative flex flex-col justify-between rounded-3xl border border-[#2B3060] bg-[#141731] p-6 transition-all duration-300 hover:border-cyan-500/40 lg:col-span-4">
               <div className="space-y-4">
-                <div className="w-11 h-11 rounded-2xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
-                  <BookOpen className="w-5 h-5" />
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-500/30 bg-cyan-500/15 text-cyan-400">
+                  <BookOpen className="h-5 w-5" />
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-bold text-white">Deep Academic Passages</h3>
-                  <p className="mt-2 text-sm text-zinc-400 leading-relaxed">
-                    Đọc hiểu sâu các bài nghiên cứu học thuật phức tạp (Passage 2 & 3) về sinh thái,
-                    khảo cổ học và vật lý học.
+                  <h3 className="text-lg font-bold text-white">
+                    Deep Academic Passages
+                  </h3>
+                  <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+                    Đọc hiểu sâu các bài nghiên cứu học thuật phức tạp (Passage
+                    2 & 3) về sinh thái, khảo cổ học và vật lý học.
                   </p>
                 </div>
 
                 <div className="flex flex-wrap gap-1.5 pt-1">
-                  {["Passage 1 (Dễ)", "Passage 2 (Vừa)", "Passage 3 (Khó)"].map((p, idx) => (
-                    <button
-                      key={p}
-                      onClick={() => {
-                        setActiveFilter(`PASSAGE_${idx + 1}`);
-                        document.getElementById("passage-library")?.scrollIntoView({ behavior: "smooth" });
-                      }}
-                      className="px-2.5 py-1.5 rounded-xl text-xs font-bold border border-[#2B3060] bg-[#0C0E1D] text-zinc-300 hover:text-white transition-colors"
-                    >
-                      {p}
-                    </button>
-                  ))}
+                  {["Passage 1 (Dễ)", "Passage 2 (Vừa)", "Passage 3 (Khó)"].map(
+                    (p, idx) => (
+                      <button
+                        key={p}
+                        onClick={() => {
+                          setActiveFilter(`PASSAGE_${idx + 1}`);
+                          document
+                            .getElementById("passage-library")
+                            ?.scrollIntoView({ behavior: "smooth" });
+                        }}
+                        className="rounded-xl border border-[#2B3060] bg-[#0C0E1D] px-2.5 py-1.5 text-xs font-bold text-zinc-300 transition-colors hover:text-white"
+                      >
+                        {p}
+                      </button>
+                    ),
+                  )}
                 </div>
               </div>
 
               <button
                 onClick={() => {
                   setActiveFilter("PASSAGE_3");
-                  document.getElementById("passage-library")?.scrollIntoView({ behavior: "smooth" });
+                  document
+                    .getElementById("passage-library")
+                    ?.scrollIntoView({ behavior: "smooth" });
                 }}
-                className="mt-6 pt-4 border-t border-[#2B3060]/70 flex items-center justify-between text-xs font-bold text-cyan-400 hover:text-cyan-300 transition-colors"
+                className="mt-6 flex items-center justify-between border-t border-[#2B3060]/70 pt-4 text-xs font-bold text-cyan-400 transition-colors hover:text-cyan-300"
               >
                 <span>Xem các bài đọc Passage 3</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </button>
             </div>
 
             {/* Bento 3: Vocabulary in Context */}
-            <div className="lg:col-span-3 group relative rounded-3xl bg-[#141731] border border-[#2B3060] hover:border-indigo-500/40 p-6 flex flex-col justify-between transition-all duration-300">
+            <div className="group relative flex flex-col justify-between rounded-3xl border border-[#2B3060] bg-[#141731] p-6 transition-all duration-300 hover:border-indigo-500/40 lg:col-span-3">
               <div className="space-y-4">
-                <div className="w-11 h-11 rounded-2xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
-                  <BookA className="w-5 h-5" />
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-indigo-500/30 bg-indigo-500/15 text-indigo-400">
+                  <BookA className="h-5 w-5" />
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-bold text-white">Từ Vựng Ngữ Cảnh</h3>
-                  <p className="mt-2 text-sm text-zinc-400 leading-relaxed">
-                    Học từ vựng học thuật C1/C2 trực tiếp trong ngữ cảnh bài đọc thực tế thay vì học thuộc lòng.
+                  <h3 className="text-lg font-bold text-white">
+                    Từ Vựng Ngữ Cảnh
+                  </h3>
+                  <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+                    Học từ vựng học thuật C1/C2 trực tiếp trong ngữ cảnh bài đọc
+                    thực tế thay vì học thuộc lòng.
                   </p>
                 </div>
 
-                <div className="p-2.5 rounded-xl bg-[#0C0E1D] border border-[#2B3060] text-[11px] text-zinc-300 space-y-1">
-                  <div className="font-bold text-indigo-300">Academic Word List (AWL):</div>
-                  <div className="text-zinc-400">• Anthropogenic, Eschew, Periphery...</div>
+                <div className="space-y-1 rounded-xl border border-[#2B3060] bg-[#0C0E1D] p-2.5 text-[11px] text-zinc-300">
+                  <div className="font-bold text-indigo-300">
+                    Academic Word List (AWL):
+                  </div>
+                  <div className="text-zinc-400">
+                    • Anthropogenic, Eschew, Periphery...
+                  </div>
                 </div>
               </div>
 
               <button
                 onClick={() => {
                   setActiveFilter("ALL");
-                  document.getElementById("passage-library")?.scrollIntoView({ behavior: "smooth" });
+                  document
+                    .getElementById("passage-library")
+                    ?.scrollIntoView({ behavior: "smooth" });
                 }}
-                className="mt-6 pt-4 border-t border-[#2B3060]/70 flex items-center justify-between text-xs font-bold text-indigo-400 hover:text-indigo-300 transition-colors"
+                className="mt-6 flex items-center justify-between border-t border-[#2B3060]/70 pt-4 text-xs font-bold text-indigo-400 transition-colors hover:text-indigo-300"
               >
                 <span>Luyện từ vựng theo bài</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </button>
             </div>
           </div>
 
           {/* Bento Banner 4: Full Test Banner */}
-          <div className="rounded-3xl bg-gradient-to-r from-[#141731] via-[#10242E] to-[#123630] border border-emerald-400/30 p-6 sm:p-7 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative overflow-hidden shadow-xl">
-            <div className="flex items-start sm:items-center gap-4 relative z-10">
-              <div className="w-14 h-14 rounded-2xl bg-emerald-500/25 border border-emerald-400/40 flex items-center justify-center text-emerald-300 shrink-0 shadow-lg shadow-emerald-500/20">
-                <Award className="w-7 h-7" />
+          <div className="relative flex flex-col items-start justify-between gap-6 overflow-hidden rounded-3xl border border-emerald-400/30 bg-gradient-to-r from-[#141731] via-[#10242E] to-[#123630] p-6 shadow-xl sm:p-7 lg:flex-row lg:items-center">
+            <div className="relative z-10 flex items-start gap-4 sm:items-center">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-emerald-400/40 bg-emerald-500/25 text-emerald-300 shadow-lg shadow-emerald-500/20">
+                <Award className="h-7 w-7" />
               </div>
               <div className="space-y-1.5">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-lg sm:text-xl font-extrabold text-white">
+                  <h3 className="text-lg font-extrabold text-white sm:text-xl">
                     Full Reading Comprehension Test (Đề Thi Chuẩn 60 Phút)
                   </h3>
-                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/30 border border-emerald-400/40 text-emerald-200 text-[11px] font-bold">
+                  <span className="rounded-full border border-emerald-400/40 bg-emerald-500/30 px-2.5 py-0.5 text-[11px] font-bold text-emerald-200">
                     CAMBRIDGE FORMAT
                   </span>
                 </div>
-                <p className="text-xs sm:text-sm text-zinc-300 max-w-3xl leading-relaxed">
-                  Mô phỏng áp lực phòng thi thật với <strong className="text-white">3 Passages (40 câu hỏi, 60 phút)</strong>. Bấm giờ đếm ngược, giao diện chia đôi cột chuẩn thi máy và chấm điểm thang 9.0.
+                <p className="max-w-3xl text-xs leading-relaxed text-zinc-300 sm:text-sm">
+                  Mô phỏng áp lực phòng thi thật với{" "}
+                  <strong className="text-white">
+                    3 Passages (40 câu hỏi, 60 phút)
+                  </strong>
+                  . Bấm giờ đếm ngược, giao diện chia đôi cột chuẩn thi máy và
+                  chấm điểm thang 9.0.
                 </p>
               </div>
             </div>
 
             <button
               onClick={() => setActivePracticePassage(allPassages[0])}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold text-sm shadow-xl shadow-emerald-600/30 hover:scale-[1.02] active:scale-[0.98] transition-all shrink-0"
+              className="inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 px-6 py-3.5 text-sm font-bold text-slate-950 shadow-xl shadow-emerald-600/30 transition-all hover:scale-[1.02] hover:from-emerald-400 hover:to-teal-400 active:scale-[0.98] sm:w-auto"
             >
               <span>Vào thi thử Full Reading</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="h-4 w-4" />
             </button>
           </div>
         </section>
@@ -620,57 +715,61 @@ export function ReadingHubClient({
         {/* =========================================================
             4. KHO BÀI ĐỌC THỰC CHIẾN (PASSAGE LIBRARY)
         ========================================================= */}
-        <section id="passage-library" className="space-y-6 pt-2 scroll-mt-20">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <section id="passage-library" className="scroll-mt-20 space-y-6 pt-2">
+          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
             <div>
               <div className="flex items-center gap-2.5">
-                <Compass className="w-6 h-6 text-emerald-400" />
-                <h2 className="text-xl sm:text-2xl font-extrabold text-white">
+                <Compass className="h-6 w-6 text-emerald-400" />
+                <h2 className="text-xl font-extrabold text-white sm:text-2xl">
                   Kho Bài Đọc Thực Chiến ({filteredPassages.length})
                 </h2>
               </div>
-              <p className="text-xs sm:text-sm text-zinc-400 mt-1">
-                Đang lọc theo: <strong className="text-emerald-300">{selectedStage.name} (Band {selectedStage.bandRange})</strong> • Tích hợp Split-View & tra cứu từ vựng
+              <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
+                Đang lọc theo:{" "}
+                <strong className="text-emerald-300">
+                  {selectedStage.name} (Band {selectedStage.bandRange})
+                </strong>{" "}
+                • Tích hợp Split-View & tra cứu từ vựng
               </p>
             </div>
 
             {/* Search & Only Uncompleted */}
             <div className="flex flex-wrap items-center gap-3">
               <div className="relative flex-1 sm:w-72">
-                <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Search className="absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-zinc-400" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Tìm bài đọc, chủ đề, Passage..."
-                  className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-[#141731] border border-[#2B3060] focus:border-emerald-400 text-xs sm:text-sm text-white placeholder-zinc-500 outline-none transition-colors"
+                  className="w-full rounded-2xl border border-[#2B3060] bg-[#141731] py-2.5 pr-4 pl-10 text-xs text-white placeholder-zinc-500 transition-colors outline-none focus:border-emerald-400 sm:text-sm"
                 />
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
+                    className="absolute top-1/2 right-3 -translate-y-1/2 text-zinc-400 hover:text-white"
                   >
-                    <X className="w-3.5 h-3.5" />
+                    <X className="h-3.5 w-3.5" />
                   </button>
                 )}
               </div>
 
               <button
                 onClick={() => setOnlyUncompleted(!onlyUncompleted)}
-                className={`px-3.5 py-2.5 rounded-2xl border text-xs font-semibold flex items-center gap-2 transition-colors ${
+                className={`flex items-center gap-2 rounded-2xl border px-3.5 py-2.5 text-xs font-semibold transition-colors ${
                   onlyUncompleted
-                    ? "bg-emerald-600/25 border-emerald-400 text-emerald-200"
-                    : "bg-[#141731] border-[#2B3060] text-zinc-400 hover:text-white"
+                    ? "border-emerald-400 bg-emerald-600/25 text-emerald-200"
+                    : "border-[#2B3060] bg-[#141731] text-zinc-400 hover:text-white"
                 }`}
               >
-                <CheckCircle2 className="w-4 h-4" />
+                <CheckCircle2 className="h-4 w-4" />
                 <span>Chưa đọc</span>
               </button>
             </div>
           </div>
 
           {/* Filter Chips */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+          <div className="flex scrollbar-none items-center gap-2 overflow-x-auto pb-2">
             {[
               { id: "ALL", label: "Tất cả bài đọc" },
               { id: "PASSAGE_1", label: "Passage 1 (Dễ)" },
@@ -680,15 +779,15 @@ export function ReadingHubClient({
               { id: "MATCHING", label: "📑 Matching Headings" },
               { id: "BAND_LOW", label: "Band 4.5 - 6.5" },
               { id: "BAND_MID", label: "Band 6.5 - 7.5" },
-              { id: "BAND_HIGH", label: "Band 7.5 - 9.0" }
+              { id: "BAND_HIGH", label: "Band 7.5 - 9.0" },
             ].map((chip) => (
               <button
                 key={chip.id}
                 onClick={() => setActiveFilter(chip.id)}
-                className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap border transition-all ${
+                className={`rounded-full border px-4 py-2 text-xs font-bold whitespace-nowrap transition-all ${
                   activeFilter === chip.id
-                    ? "bg-emerald-600 border-emerald-400 text-white shadow-lg shadow-emerald-600/30"
-                    : "bg-[#141731] border-[#2B3060] text-zinc-300 hover:bg-[#1B1F40] hover:text-white"
+                    ? "border-emerald-400 bg-emerald-600 text-white shadow-lg shadow-emerald-600/30"
+                    : "border-[#2B3060] bg-[#141731] text-zinc-300 hover:bg-[#1B1F40] hover:text-white"
                 }`}
               >
                 {chip.label}
@@ -698,110 +797,133 @@ export function ReadingHubClient({
 
           {/* Passages Grid */}
           {filteredPassages.length === 0 ? (
-            <div className="rounded-3xl bg-[#141731] border border-[#2B3060] p-12 text-center space-y-3">
-              <BookOpen className="w-10 h-10 text-zinc-500 mx-auto" />
-              <div className="text-base font-bold text-white">Không tìm thấy bài đọc phù hợp</div>
-              <p className="text-xs text-zinc-400">Hãy thử xóa bộ lọc hoặc tìm kiếm bằng từ khóa khác.</p>
+            <div className="space-y-3 rounded-3xl border border-[#2B3060] bg-[#141731] p-12 text-center">
+              <BookOpen className="mx-auto h-10 w-10 text-zinc-500" />
+              <div className="text-base font-bold text-white">
+                Không tìm thấy bài đọc phù hợp
+              </div>
+              <p className="text-xs text-zinc-400">
+                Hãy thử xóa bộ lọc hoặc tìm kiếm bằng từ khóa khác.
+              </p>
               <button
                 onClick={() => {
                   setActiveFilter("ALL");
                   setSearchQuery("");
                   setOnlyUncompleted(false);
                 }}
-                className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold shadow-md hover:bg-emerald-500"
+                className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-md hover:bg-emerald-500"
               >
                 Đặt lại bộ lọc
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
               {filteredPassages.map((passage) => {
                 const isBookmarked = bookmarkedIds.includes(passage.id);
 
                 return (
                   <article
                     key={passage.id}
-                    className="group rounded-3xl p-6 flex flex-col justify-between border border-[#2B3060] bg-[#141731] hover:bg-[#1B1F40] hover:border-emerald-500/40 hover:shadow-xl hover:shadow-emerald-500/10 transition-all duration-300"
+                    className="group flex flex-col justify-between rounded-3xl border border-[#2B3060] bg-[#141731] p-6 transition-all duration-300 hover:border-emerald-500/40 hover:bg-[#1B1F40] hover:shadow-xl hover:shadow-emerald-500/10"
                   >
                     <div>
                       {/* Top Badges & Actions */}
-                      <div className="flex items-center justify-between gap-2 mb-4">
+                      <div className="mb-4 flex items-center justify-between gap-2">
                         <div className="flex flex-wrap items-center gap-1.5">
                           <span
-                            className={`px-2.5 py-0.5 rounded-md text-[10px] font-extrabold uppercase border bg-gradient-to-r ${passage.badgeColor}`}
+                            className={`rounded-md border bg-gradient-to-r px-2.5 py-0.5 text-[10px] font-extrabold uppercase ${passage.badgeColor}`}
                           >
                             Passage {passage.passageNumber}
                           </span>
-                          <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                          <span className="rounded-md border border-emerald-500/30 bg-emerald-500/15 px-2 py-0.5 text-[11px] font-bold text-emerald-300">
                             Band {passage.bandRange}
                           </span>
                         </div>
 
                         <button
                           onClick={() => toggleBookmark(passage.id)}
-                          title={isBookmarked ? "Gỡ khỏi yêu thích" : "Lưu bài đọc"}
+                          title={
+                            isBookmarked ? "Gỡ khỏi yêu thích" : "Lưu bài đọc"
+                          }
                           aria-label="Lưu bài đọc"
-                          className={`w-8 h-8 rounded-xl border flex items-center justify-center transition-colors ${
+                          className={`flex h-8 w-8 items-center justify-center rounded-xl border transition-colors ${
                             isBookmarked
-                              ? "bg-emerald-500/20 border-emerald-400 text-emerald-300"
-                              : "bg-[#0C0E1D] border-[#2B3060] text-zinc-400 hover:text-white"
+                              ? "border-emerald-400 bg-emerald-500/20 text-emerald-300"
+                              : "border-[#2B3060] bg-[#0C0E1D] text-zinc-400 hover:text-white"
                           }`}
                         >
                           <Bookmark
-                            className={`w-3.5 h-3.5 ${isBookmarked ? "fill-emerald-400 text-emerald-400" : ""}`}
+                            className={`h-3.5 w-3.5 ${isBookmarked ? "fill-emerald-400 text-emerald-400" : ""}`}
                           />
                         </button>
                       </div>
 
                       {/* Title & Subtitle */}
                       <div className="space-y-2">
-                        <h3 className="text-lg font-bold text-white group-hover:text-emerald-300 transition-colors flex items-center gap-2">
+                        <h3 className="flex items-center gap-2 text-lg font-bold text-white transition-colors group-hover:text-emerald-300">
                           <span>{passage.title}</span>
                           {passage.completed && (
                             <span title="Đã hoàn thành">
-                              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
                             </span>
                           )}
                         </h3>
-                        <p className="text-xs sm:text-sm text-zinc-400 line-clamp-2 leading-relaxed">
+                        <p className="line-clamp-2 text-xs leading-relaxed text-zinc-400 sm:text-sm">
                           {passage.subtitle}
                         </p>
                       </div>
 
                       {/* Metadata */}
-                      <div className="mt-4 pt-3 border-t border-[#2B3060]/60 flex items-center justify-between text-xs text-zinc-400">
+                      <div className="mt-4 flex items-center justify-between border-t border-[#2B3060]/60 pt-3 text-xs text-zinc-400">
                         <div className="flex items-center gap-3">
                           <span className="flex items-center gap-1">
-                            <Clock className="w-3.5 h-3.5 text-zinc-500" />
-                            ~{passage.estimatedMinutes}m
+                            <Clock className="h-3.5 w-3.5 text-zinc-500" />~
+                            {passage.estimatedMinutes}m
                           </span>
                           <span className="flex items-center gap-1 font-mono">
-                            <Layers className="w-3.5 h-3.5 text-zinc-500" />
-                            {passage.wordCount} từ
+                            <Layers className="h-3.5 w-3.5 text-zinc-500" />
+                            {passage.wordCount
+                              ? `${passage.wordCount} từ`
+                              : `${passage.questionsCount} câu hỏi`}
                           </span>
                         </div>
-                        <span className="text-[11px] font-semibold text-emerald-300/90">{passage.category}</span>
+                        <span className="text-[11px] font-semibold text-emerald-300/90">
+                          {passage.category}
+                        </span>
                       </div>
 
                       {/* Paraphrase & Vocab Trigger */}
-                      <div className="mt-2.5 flex items-center justify-between text-[11px] bg-[#0C0E1D] px-3 py-1.5 rounded-xl border border-[#2B3060]/60">
-                        <span className="text-amber-300/90 font-medium">
-                          🎯 {passage.paraphraseTraps} bẫy Paraphrase
+                      <div className="mt-2.5 flex items-center justify-between rounded-xl border border-[#2B3060]/60 bg-[#0C0E1D] px-3 py-1.5 text-[11px]">
+                        <span className="font-medium text-amber-300/90">
+                          {passage.paraphraseTraps !== undefined
+                            ? `🎯 ${passage.paraphraseTraps} bẫy Paraphrase`
+                            : `📘 ${passage.questionsCount} câu hỏi chuẩn đề`}
                         </span>
                         <button
-                          onClick={() => setVocabPopoverId(vocabPopoverId === passage.id ? null : passage.id)}
-                          className="text-cyan-300 hover:underline font-semibold"
+                          onClick={() =>
+                            setVocabPopoverId(
+                              vocabPopoverId === passage.id ? null : passage.id,
+                            )
+                          }
+                          className="font-semibold text-cyan-300 hover:underline"
                         >
-                          {vocabPopoverId === passage.id ? "Đóng từ vựng" : "+ Xem từ vựng key"}
+                          {vocabPopoverId === passage.id
+                            ? "Đóng từ vựng"
+                            : "+ Xem từ vựng key"}
                         </button>
                       </div>
 
                       {/* Vocab Accordion */}
                       {vocabPopoverId === passage.id && (
-                        <div className="mt-2 p-3 rounded-2xl bg-[#0C0E1D] border border-cyan-500/30 space-y-1.5 text-xs animate-fadeIn">
+                        <div className="animate-fadeIn mt-2 space-y-1.5 rounded-2xl border border-cyan-500/30 bg-[#0C0E1D] p-3 text-xs">
                           {passage.vocab.map((v, idx) => (
-                            <div key={idx} className="flex items-center justify-between">
-                              <span className="font-bold text-white">{v.word}</span>
+                            <div
+                              key={idx}
+                              className="flex items-center justify-between"
+                            >
+                              <span className="font-bold text-white">
+                                {v.word}
+                              </span>
                               <span className="text-zinc-400">{v.meaning}</span>
                             </div>
                           ))}
@@ -813,19 +935,29 @@ export function ReadingHubClient({
                     <div className="mt-5 grid grid-cols-12 gap-2.5 pt-1">
                       <button
                         onClick={() => setActivePracticePassage(passage)}
-                        className="col-span-7 py-2.5 px-4 rounded-xl border border-[#2B3060] bg-[#1B1F40] hover:bg-[#252A56] text-zinc-200 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+                        className="col-span-7 flex items-center justify-center gap-1.5 rounded-xl border border-[#2B3060] bg-[#1B1F40] px-4 py-2.5 text-xs font-bold text-zinc-200 transition-colors hover:bg-[#252A56]"
                       >
                         <BookOpen size={14} className="text-emerald-400" />
                         <span>Đọc thử Split-View</span>
                       </button>
 
-                      <button
-                        onClick={() => setActivePracticePassage(passage)}
-                        className="col-span-5 py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-500/25 to-teal-500/25 hover:from-emerald-500 hover:to-teal-500 border border-emerald-500/40 text-emerald-300 hover:text-slate-950 text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all shadow-sm"
-                      >
-                        <span>Làm bài</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </button>
+                      {passage.id.startsWith("db-") ? (
+                        <Link
+                          href={`/practice/reading/${passage.slug}`}
+                          className="col-span-5 flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/40 bg-gradient-to-r from-emerald-500/25 to-teal-500/25 px-4 py-2.5 text-xs font-extrabold text-emerald-300 shadow-sm transition-all hover:from-emerald-500 hover:to-teal-500 hover:text-slate-950"
+                        >
+                          <span>Làm bài</span>
+                          <ArrowRight className="h-3.5 w-3.5" />
+                        </Link>
+                      ) : (
+                        <button
+                          onClick={() => setActivePracticePassage(passage)}
+                          className="col-span-5 flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/40 bg-gradient-to-r from-emerald-500/25 to-teal-500/25 px-4 py-2.5 text-xs font-extrabold text-emerald-300 shadow-sm transition-all hover:from-emerald-500 hover:to-teal-500 hover:text-slate-950"
+                        >
+                          <span>Làm bài</span>
+                          <ArrowRight className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                     </div>
                   </article>
                 );
@@ -838,58 +970,54 @@ export function ReadingHubClient({
             5. CHUYÊN ĐỀ LUYỆN ĐỌC THEO CHỦ ĐỀ (TOPIC TRACKS)
         ========================================================= */}
         <section className="space-y-5 pt-4">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+          <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
             <div>
               <div className="flex items-center gap-2.5">
-                <BookOpen className="w-6 h-6 text-emerald-400" />
-                <h2 className="text-xl sm:text-2xl font-extrabold text-white">
+                <BookOpen className="h-6 w-6 text-emerald-400" />
+                <h2 className="text-xl font-extrabold text-white sm:text-2xl">
                   Chuyên Đề Luyện Đọc Theo Lĩnh Vực
                 </h2>
               </div>
-              <p className="text-xs sm:text-sm text-zinc-400 mt-1">
+              <p className="mt-1 text-xs text-zinc-400 sm:text-sm">
                 Bao quát toàn diện các chủ đề học thuật Cambridge IELTS
               </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
             {READING_TOPIC_TRACKS.map((track) => {
               const IconComponent = track.icon;
-              const isMastered = track.progress === 100;
 
               return (
                 <div
                   key={track.id}
                   onClick={() => {
                     setSearchQuery(track.title.split(" ")[0]);
-                    document.getElementById("passage-library")?.scrollIntoView({ behavior: "smooth" });
+                    document
+                      .getElementById("passage-library")
+                      ?.scrollIntoView({ behavior: "smooth" });
                     showToast(`Lọc bài đọc theo chủ đề: ${track.title}`);
                   }}
-                  className="group cursor-pointer rounded-3xl bg-[#141731] hover:bg-[#1B1F40] border border-[#2B3060] hover:border-emerald-500/40 p-6 flex flex-col justify-between transition-all duration-300"
+                  className="group flex cursor-pointer flex-col justify-between rounded-3xl border border-[#2B3060] bg-[#141731] p-6 transition-all duration-300 hover:border-emerald-500/40 hover:bg-[#1B1F40]"
                 >
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <div className="w-11 h-11 rounded-2xl bg-[#0C0E1D] border border-[#2B3060] flex items-center justify-center text-emerald-300 group-hover:scale-110 transition-transform">
-                        <IconComponent className="w-5 h-5" />
+                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#2B3060] bg-[#0C0E1D] text-emerald-300 transition-transform group-hover:scale-110">
+                        <IconComponent className="h-5 w-5" />
                       </div>
 
-                      {isMastered ? (
-                        <span className="px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/35 text-emerald-300 text-[11px] font-bold flex items-center gap-1">
-                          <Check className="w-3.5 h-3.5" />
-                          <span>Thành thạo</span>
-                        </span>
-                      ) : (
-                        <span className="px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[11px] font-bold">
-                          {track.status}
-                        </span>
-                      )}
+                      <span className="rounded-full border border-emerald-500/30 bg-emerald-500/15 px-3 py-1 text-[11px] font-bold text-emerald-300">
+                        {track.focusBadge}
+                      </span>
                     </div>
 
                     <div>
-                      <h3 className="text-base sm:text-lg font-bold text-white group-hover:text-emerald-300 transition-colors">
+                      <h3 className="text-base font-bold text-white transition-colors group-hover:text-emerald-300 sm:text-lg">
                         {track.title}
                       </h3>
-                      <p className="text-xs text-zinc-400 mt-1">{track.subtitle}</p>
+                      <p className="mt-1 text-xs text-zinc-400">
+                        {track.subtitle}
+                      </p>
                     </div>
 
                     {/* Skills pills */}
@@ -897,7 +1025,7 @@ export function ReadingHubClient({
                       {track.skills.map((sk, idx) => (
                         <span
                           key={idx}
-                          className="text-[10px] px-2 py-0.5 rounded-md bg-[#0C0E1D] text-zinc-300 border border-[#2B3060]"
+                          className="rounded-md border border-[#2B3060] bg-[#0C0E1D] px-2 py-0.5 text-[10px] text-zinc-300"
                         >
                           {sk}
                         </span>
@@ -905,24 +1033,15 @@ export function ReadingHubClient({
                     </div>
                   </div>
 
-                  {/* Progress bar */}
-                  <div className="mt-6 space-y-2">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-zinc-400 font-medium">{track.passagesCount} bài đọc</span>
-                      <span className={`font-bold ${isMastered ? "text-emerald-400" : "text-white"}`}>
-                        {track.progress}%
-                      </span>
-                    </div>
-                    <div className="h-2 w-full bg-[#0C0E1D] rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-700 ${
-                          isMastered
-                            ? "bg-gradient-to-r from-emerald-500 to-teal-400"
-                            : "bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-400"
-                        }`}
-                        style={{ width: `${track.progress}%` }}
-                      />
-                    </div>
+                  {/* Topic filter footer */}
+                  <div className="mt-6 flex items-center justify-between border-t border-[#2B3060]/60 pt-3 text-xs">
+                    <span className="font-medium text-zinc-400">
+                      {track.passagesCount} bài tham khảo
+                    </span>
+                    <span className="flex items-center gap-1 font-bold text-emerald-300 transition-transform group-hover:translate-x-0.5">
+                      <span>Lọc chủ đề</span>
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </span>
                   </div>
                 </div>
               );
@@ -937,6 +1056,10 @@ export function ReadingHubClient({
       {activePracticePassage && (
         <QuickReadingModal
           passage={activePracticePassage}
+          hasFullRunner={items.some(
+            (item) => item.slug === activePracticePassage.slug,
+          )}
+          fallbackSlug={items[0]?.slug}
           onClose={() => setActivePracticePassage(null)}
         />
       )}

@@ -1,8 +1,17 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { WritingRunner } from "@/features/writing/components/writing-runner";
-import { saveWritingDraftAction } from "@/features/writing/actions";
+import {
+  saveWritingDraftAction,
+  submitWritingAction,
+} from "@/features/writing/actions";
 import type { WritingPracticePageData } from "@/features/writing/server/content";
 
 vi.mock("@/features/writing/actions", () => ({
@@ -26,7 +35,7 @@ const fixture: WritingPracticePageData = {
     minimumWords: 250,
     maximumWords: 1000,
     timeLimitSeconds: 2400,
-    sourceName: "IELTS Flow original content",
+    sourceName: "Indigo Scholar original content",
     licence: "Original educational content",
   },
   submission: {
@@ -113,6 +122,84 @@ describe("WritingRunner", () => {
     expect(editor).toHaveValue("Unsaved network draft.");
     expect(saveWritingDraftAction).toHaveBeenCalledTimes(1);
   });
+
+  it("flushes dirty local text and awaits save completion before submitting", async () => {
+    let resolveSave!: (
+      value: Awaited<ReturnType<typeof saveWritingDraftAction>>,
+    ) => void;
+    vi.mocked(saveWritingDraftAction).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveSave = resolve;
+        }),
+    );
+    vi.mocked(submitWritingAction).mockResolvedValueOnce(undefined as never);
+
+    render(<WritingRunner data={fixture} />);
+    fireEvent.change(screen.getByLabelText("Your writing"), {
+      target: { value: "Final paragraph added right before clicking submit." },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Nộp bài" }));
+    fireEvent.click(screen.getByRole("button", { name: "Nộp bài ngay" }));
+
+    await waitFor(() =>
+      expect(saveWritingDraftAction).toHaveBeenCalledWith({
+        submissionId: fixture.submission!.id,
+        taskSlug: fixture.task.slug,
+        draftText: "Final paragraph added right before clicking submit.",
+        expectedRevision: 0,
+      }),
+    );
+    expect(submitWritingAction).not.toHaveBeenCalled();
+
+    await act(async () => {
+      resolveSave({
+        status: "saved",
+        serverRevision: 1,
+        wordCount: 8,
+        minimumWordsMet: false,
+        savedAt: "2026-07-16T00:01:02Z",
+      });
+    });
+
+    await waitFor(() =>
+      expect(submitWritingAction).toHaveBeenCalledWith(
+        expect.objectContaining({
+          submissionId: fixture.submission!.id,
+          taskSlug: fixture.task.slug,
+        }),
+      ),
+    );
+  });
+
+  it("blocks submission and keeps local text when pre-submit flush detects conflict", async () => {
+    vi.mocked(saveWritingDraftAction).mockResolvedValueOnce({
+      status: "conflict",
+      serverRevision: 3,
+      message: "PostgreSQL có bản nháp mới hơn.",
+    });
+
+    render(<WritingRunner data={fixture} />);
+    const editor = screen.getByLabelText("Your writing");
+    fireEvent.change(editor, {
+      target: { value: "Unsaved conflicting edit at final second." },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Nộp bài" }));
+    fireEvent.click(screen.getByRole("button", { name: "Nộp bài ngay" }));
+
+    await waitFor(() =>
+      expect(saveWritingDraftAction).toHaveBeenCalledTimes(1),
+    );
+
+    const alerts = await screen.findAllByRole("alert");
+    expect(
+      alerts.some((el) =>
+        el.textContent?.includes("Không thể đồng bộ bản nháp lên máy chủ"),
+      ),
+    ).toBe(true);
+    expect(submitWritingAction).not.toHaveBeenCalled();
+    expect(editor).toHaveValue("Unsaved conflicting edit at final second.");
+  });
 });
-
-

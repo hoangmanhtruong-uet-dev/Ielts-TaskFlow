@@ -6,7 +6,7 @@ import { getRecentAttemptHistory } from "@/features/practice/server/content";
 import { getCurrentLearnerProfile } from "@/features/onboarding/server/learner-profile";
 
 export const metadata: Metadata = {
-  title: "Luyện Đọc IELTS Toàn Diện (Reading Hub) | IELTS Flow",
+  title: "Luyện Đọc IELTS Toàn Diện (Reading Hub) | Indigo Scholar",
   description:
     "Trung tâm luyện đọc hiểu IELTS chuẩn format Cambridge từ Band 4.5 đến 9.0 với Speed Reading WPM meter, bóc tách bẫy True/False/Not Given và Split-View Reader.",
 };
@@ -21,7 +21,9 @@ export default async function ReadingCatalogPage() {
   const attempts = history.filter((item) => item.domain === "reading");
   const score = attempts.reduce((sum, item) => sum + item.score, 0);
   const maximum = attempts.reduce((sum, item) => sum + item.maxScore, 0);
-  const comprehensionRate = maximum ? Math.round((score / maximum) * 100) : 84;
+  const comprehensionRate = maximum
+    ? Math.round((score / maximum) * 100)
+    : null;
 
   return (
     <ReadingHubClient

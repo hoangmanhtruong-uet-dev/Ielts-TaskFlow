@@ -107,6 +107,11 @@ p {
   letter-spacing: -0.035em;
 }
 
+.font-display {
+  font-family:
+    var(--font-display), var(--font-geist-sans), system-ui, sans-serif;
+}
+
 /* Stitch uses compact 12–16px surfaces. Normalize legacy utility radii so
    every existing route adopts the same app-like visual language. */
 .rounded-2xl {
@@ -128,10 +133,17 @@ p {
   top: 0.75rem;
   left: 0.75rem;
   z-index: 100;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
   transform: translateY(-160%);
   border-radius: 0.875rem;
   background: var(--foreground);
-  padding: 0.65rem 0.9rem;
+  padding: 0;
   color: white;
   font-size: 0.875rem;
   font-weight: 700;
@@ -139,6 +151,14 @@ p {
 }
 
 .skip-link:focus-visible {
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip-path: none;
+  white-space: normal;
+  opacity: 1;
+  pointer-events: auto;
+  padding: 0.65rem 0.9rem;
   transform: translateY(0);
 }
 
@@ -194,8 +214,20 @@ p {
   }
 }
 
-
-@keyframes bell-fill { 0% { opacity: 0; } 25% { transform: rotate(25deg); } 50% { transform: rotate(-20deg) scale(1.2); } 75% { transform: rotate(15deg); } }
+@keyframes bell-fill {
+  0% {
+    opacity: 0;
+  }
+  25% {
+    transform: rotate(25deg);
+  }
+  50% {
+    transform: rotate(-20deg) scale(1.2);
+  }
+  75% {
+    transform: rotate(15deg);
+  }
+}
 
 /* Zen Mode (P1.2) */
 body.zen-mode {
@@ -220,5 +252,10 @@ body.zen-mode main {
 }
 
 /* Zen Mode Styles */
-body.zen-mode .zen-hidden { display: none !important; }
-body.zen-mode .zen-compact { height: 2px !important; overflow: hidden !important; }
+body.zen-mode .zen-hidden {
+  display: none !important;
+}
+body.zen-mode .zen-compact {
+  height: 2px !important;
+  overflow: hidden !important;
+}

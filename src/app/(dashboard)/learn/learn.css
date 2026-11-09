@@ -1,16 +1,16 @@
 @import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap");
 
 .learn-scope {
-  --ink: #0C0E1D;
+  --ink: #0c0e1d;
   --panel: #141731;
-  --panel2: #1B1F40;
-  --line: #2B3060;
-  --text: #EEF0FF;
-  --mute: #98A0CF;
-  --indigo: #5B5FEF;
-  --indigo-hi: #7C80FF;
-  --mark: #F6E85C;
-  --ok: #5EE0A0;
+  --panel2: #1b1f40;
+  --line: #2b3060;
+  --text: #eef0ff;
+  --mute: #98a0cf;
+  --indigo: #5b5fef;
+  --indigo-hi: #7c80ff;
+  --mark: #f6e85c;
+  --ok: #5ee0a0;
   --head: "Bricolage Grotesque", "Be Vietnam Pro", system-ui, sans-serif;
   --body: "Be Vietnam Pro", system-ui, sans-serif;
 
@@ -108,7 +108,9 @@
   border-radius: 14px;
   position: relative;
   z-index: 1;
-  transition: transform 0.15s, box-shadow 0.15s;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
   white-space: nowrap;
   display: inline-flex;
   align-items: center;
@@ -235,7 +237,9 @@
   border: 0;
   font: inherit;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 .learn-scope .menu button:hover {
   background: var(--panel);
@@ -335,7 +339,9 @@
   padding: 22px;
   display: flex;
   flex-direction: column;
-  transition: border-color 0.15s, transform 0.15s;
+  transition:
+    border-color 0.15s,
+    transform 0.15s;
   animation: learn-card-in 0.25s ease both;
 }
 @keyframes learn-card-in {

@@ -15,7 +15,10 @@ export interface TrueFalseButtonGroupProps {
   selectedOptionIds: string[];
   answerText?: string;
   isYesNo?: boolean;
-  onChange: (value: { selectedOptionIds: string[]; answerText: string }) => void;
+  onChange: (value: {
+    selectedOptionIds: string[];
+    answerText: string;
+  }) => void;
 }
 
 export function TrueFalseButtonGroup({
@@ -40,26 +43,28 @@ export function TrueFalseButtonGroup({
         { label: "NOT GIVEN", icon: HelpCircle, color: "slate", key: "N" },
       ];
 
-  const items = options && options.length > 0
-    ? options.map((opt, idx) => {
-        const std = standardChoices.find(
-          (c) => c.label.toLowerCase() === opt.label.trim().toLowerCase()
-        ) || standardChoices[idx % standardChoices.length];
-        return {
-          id: opt.id,
-          label: opt.label,
-          icon: std.icon,
-          color: std.color,
-          key: std.key,
-        };
-      })
-    : standardChoices.map((c) => ({
-        id: c.label,
-        label: c.label,
-        icon: c.icon,
-        color: c.color,
-        key: c.key,
-      }));
+  const items =
+    options && options.length > 0
+      ? options.map((opt, idx) => {
+          const std =
+            standardChoices.find(
+              (c) => c.label.toLowerCase() === opt.label.trim().toLowerCase(),
+            ) || standardChoices[idx % standardChoices.length];
+          return {
+            id: opt.id,
+            label: opt.label,
+            icon: std.icon,
+            color: std.color,
+            key: std.key,
+          };
+        })
+      : standardChoices.map((c) => ({
+          id: c.label,
+          label: c.label,
+          icon: c.icon,
+          color: c.color,
+          key: c.key,
+        }));
 
   const handleSelect = (item: { id: string; label: string }) => {
     onChange({
@@ -74,7 +79,7 @@ export function TrueFalseButtonGroup({
   };
 
   return (
-    <div className="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+    <div className="mt-4 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
       {items.map((item) => {
         const checked = isSelected(item);
         const Icon = item.icon;
@@ -82,20 +87,24 @@ export function TrueFalseButtonGroup({
         let activeClasses = "";
         if (checked) {
           if (item.color === "emerald") {
-            activeClasses = "border-emerald-600 bg-emerald-50 text-emerald-950 ring-2 ring-emerald-500/20 shadow-sm";
+            activeClasses =
+              "border-emerald-600 bg-emerald-50 text-emerald-950 ring-2 ring-emerald-500/20 shadow-sm";
           } else if (item.color === "rose") {
-            activeClasses = "border-rose-600 bg-rose-50 text-rose-950 ring-2 ring-rose-500/20 shadow-sm";
+            activeClasses =
+              "border-rose-600 bg-rose-50 text-rose-950 ring-2 ring-rose-500/20 shadow-sm";
           } else {
-            activeClasses = "border-slate-600 bg-slate-100 text-slate-900 ring-2 ring-slate-400/20 shadow-sm";
+            activeClasses =
+              "border-slate-600 bg-slate-100 text-slate-900 ring-2 ring-slate-400/20 shadow-sm";
           }
         } else {
-          activeClasses = "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50";
+          activeClasses =
+            "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50";
         }
 
         return (
           <label
             key={item.id}
-            className={`group relative flex flex-1 min-h-14 items-center justify-between rounded-2xl border-2 px-5 py-3.5 transition-all duration-150 cursor-pointer text-left select-none ${activeClasses}`}
+            className={`group relative flex min-h-14 flex-1 cursor-pointer items-center justify-between rounded-2xl border-2 px-5 py-3.5 text-left transition-all duration-150 select-none ${activeClasses}`}
           >
             <input
               type="radio"
@@ -113,17 +122,19 @@ export function TrueFalseButtonGroup({
                     ? item.color === "emerald"
                       ? "border-emerald-600 bg-emerald-600 text-white"
                       : item.color === "rose"
-                      ? "border-rose-600 bg-rose-600 text-white"
-                      : "border-slate-700 bg-slate-700 text-white"
+                        ? "border-rose-600 bg-rose-600 text-white"
+                        : "border-slate-700 bg-slate-700 text-white"
                     : "border-slate-200 bg-slate-100 text-slate-500 group-hover:border-slate-300"
                 }`}
               >
                 <Icon size={16} />
               </div>
-              <span className="font-bold text-sm tracking-wide">{item.label}</span>
+              <span className="text-sm font-bold tracking-wide">
+                {item.label}
+              </span>
             </div>
 
-            <span className="text-[11px] font-mono font-bold text-slate-400 opacity-60 group-hover:opacity-100 uppercase">
+            <span className="font-mono text-[11px] font-bold text-slate-400 uppercase opacity-60 group-hover:opacity-100">
               [{item.key}]
             </span>
           </label>

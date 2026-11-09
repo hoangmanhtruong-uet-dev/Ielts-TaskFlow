@@ -9,14 +9,17 @@ export interface MatchingHeadingsSelectorProps {
   options: QuestionOption[];
   selectedOptionIds: string[];
   answerText?: string;
-  onChange: (value: { selectedOptionIds: string[]; answerText: string }) => void;
+  onChange: (value: {
+    selectedOptionIds: string[];
+    answerText: string;
+  }) => void;
 }
 
 export function MatchingHeadingsSelector({
-  questionId,
+  questionId: _questionId,
   options,
   selectedOptionIds,
-  answerText,
+  answerText: _answerText,
   onChange,
 }: MatchingHeadingsSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -40,8 +43,8 @@ export function MatchingHeadingsSelector({
   };
 
   return (
-    <div className="mt-4 space-y-3 relative">
-      <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
+    <div className="relative mt-4 space-y-3">
+      <label className="text-xs font-bold tracking-wider text-slate-500 uppercase">
         Chọn tiêu đề phù hợp (Heading):
       </label>
 
@@ -49,13 +52,13 @@ export function MatchingHeadingsSelector({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex min-h-14 w-full items-center justify-between rounded-2xl border-2 px-5 py-3 transition-all duration-150 cursor-pointer text-left ${
+        className={`flex min-h-14 w-full cursor-pointer items-center justify-between rounded-2xl border-2 px-5 py-3 text-left transition-all duration-150 ${
           selectedOption
             ? "border-emerald-500 bg-emerald-50/50 text-emerald-950 shadow-sm"
             : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
         }`}
       >
-        <div className="flex items-center gap-3 min-w-0 pr-2">
+        <div className="flex min-w-0 items-center gap-3 pr-2">
           {selectedOption ? (
             <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white">
               <BookmarkCheck size={16} />
@@ -65,16 +68,18 @@ export function MatchingHeadingsSelector({
               ?
             </span>
           )}
-          <span className="font-semibold text-sm truncate">
-            {selectedOption ? selectedOption.label : "-- Chọn tiêu đề từ danh sách --"}
+          <span className="truncate text-sm font-semibold">
+            {selectedOption
+              ? selectedOption.label
+              : "-- Chọn tiêu đề từ danh sách --"}
           </span>
         </div>
 
-        <div className="flex items-center gap-1.5 flex-shrink-0">
+        <div className="flex flex-shrink-0 items-center gap-1.5">
           {selectedOption && (
             <span
               onClick={handleClear}
-              className="p-1 rounded-full text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition-colors"
+              className="rounded-full p-1 text-slate-400 transition-colors hover:bg-slate-200 hover:text-slate-700"
               title="Xóa lựa chọn"
             >
               <X size={15} />
@@ -89,12 +94,12 @@ export function MatchingHeadingsSelector({
 
       {/* Options Dropdown Menu */}
       {isOpen && (
-        <div className="absolute left-0 right-0 top-full mt-2 z-30 max-h-72 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl animate-in fade-in slide-in-from-top-2 duration-150">
-          <div className="px-3 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100">
+        <div className="animate-in fade-in slide-in-from-top-2 absolute top-full right-0 left-0 z-30 mt-2 max-h-72 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl duration-150">
+          <div className="border-b border-slate-100 px-3 py-2 text-[11px] font-bold tracking-wider text-slate-400 uppercase">
             Danh sách Headings ({options.length})
           </div>
 
-          <div className="py-1 space-y-1">
+          <div className="space-y-1 py-1">
             {options.map((opt) => {
               const isChecked = selectedOptionIds.includes(opt.id);
               return (
@@ -104,12 +109,17 @@ export function MatchingHeadingsSelector({
                   onClick={() => handleSelectOption(opt)}
                   className={`flex w-full items-center justify-between rounded-xl px-4 py-3 text-left text-sm font-semibold transition-colors ${
                     isChecked
-                      ? "bg-emerald-50 text-emerald-900 border border-emerald-200"
+                      ? "border border-emerald-200 bg-emerald-50 text-emerald-900"
                       : "text-slate-700 hover:bg-slate-100"
                   }`}
                 >
                   <span className="pr-4 leading-relaxed">{opt.label}</span>
-                  {isChecked && <Check size={16} className="text-emerald-600 flex-shrink-0" />}
+                  {isChecked && (
+                    <Check
+                      size={16}
+                      className="flex-shrink-0 text-emerald-600"
+                    />
+                  )}
                 </button>
               );
             })}

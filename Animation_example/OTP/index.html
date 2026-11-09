@@ -1,781 +1,887 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Modern OTP Verification UI</title>
     <!-- Google Fonts: Outfit & Inter for high-end typography -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
     <style>
-/* ==========================================================================
+      /* ==========================================================================
    MODERN OTP VERIFICATION UI - DARK MODE DESIGN SYSTEM
    ========================================================================== */
 
-/* --- CSS Variables & Design Tokens --- */
-:root {
-    --bg-main: #090d16;
-    --card-bg: rgba(17, 24, 39, 0.78);
-    --card-border: rgba(255, 255, 255, 0.08);
-    --card-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 50px rgba(99, 102, 241, 0.12);
+      /* --- CSS Variables & Design Tokens --- */
+      :root {
+        --bg-main: #090d16;
+        --card-bg: rgba(17, 24, 39, 0.78);
+        --card-border: rgba(255, 255, 255, 0.08);
+        --card-shadow:
+          0 25px 60px -15px rgba(0, 0, 0, 0.7),
+          0 0 50px rgba(99, 102, 241, 0.12);
 
-    --primary: #6366f1;
-    --primary-hover: #4f46e5;
-    --primary-glow: rgba(99, 102, 241, 0.4);
-    
-    --success: #10b981;
-    --success-glow: rgba(16, 185, 129, 0.4);
+        --primary: #6366f1;
+        --primary-hover: #4f46e5;
+        --primary-glow: rgba(99, 102, 241, 0.4);
 
-    --text-main: #f3f4f6;
-    --text-muted: #9ca3af;
-    --text-dim: #6b7280;
+        --success: #10b981;
+        --success-glow: rgba(16, 185, 129, 0.4);
 
-    --input-bg: rgba(30, 41, 59, 0.5);
-    --input-border: rgba(255, 255, 255, 0.12);
-    --input-active: #818cf8;
+        --text-main: #f3f4f6;
+        --text-muted: #9ca3af;
+        --text-dim: #6b7280;
 
-    --font-heading: 'Outfit', -apple-system, sans-serif;
-    --font-body: 'Inter', -apple-system, sans-serif;
+        --input-bg: rgba(30, 41, 59, 0.5);
+        --input-border: rgba(255, 255, 255, 0.12);
+        --input-active: #818cf8;
 
-    --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-smooth: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
+        --font-heading: "Outfit", -apple-system, sans-serif;
+        --font-body: "Inter", -apple-system, sans-serif;
 
-/* --- Base & Reset Rules --- */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent;
-}
+        --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        --transition-smooth: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      }
 
-body {
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: var(--bg-main);
-    color: var(--text-main);
-    font-family: var(--font-body);
-    overflow-x: hidden;
-    position: relative;
-    padding: 20px;
-}
+      /* --- Base & Reset Rules --- */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
 
-/* --- Background Ambient Glows & Grid Pattern --- */
-.bg-glow {
-    position: fixed;
-    border-radius: 50%;
-    filter: blur(120px);
-    z-index: 0;
-    pointer-events: none;
-    opacity: 0.45;
-}
+      body {
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: var(--bg-main);
+        color: var(--text-main);
+        font-family: var(--font-body);
+        overflow-x: hidden;
+        position: relative;
+        padding: 20px;
+      }
 
-.blob-1 {
-    width: 450px;
-    height: 450px;
-    background: radial-gradient(circle, rgba(99, 102, 241, 0.5) 0%, rgba(139, 92, 246, 0.2) 70%, transparent 100%);
-    top: -100px;
-    left: 15%;
-    animation: floatGlow 14s infinite alternate ease-in-out;
-}
+      /* --- Background Ambient Glows & Grid Pattern --- */
+      .bg-glow {
+        position: fixed;
+        border-radius: 50%;
+        filter: blur(120px);
+        z-index: 0;
+        pointer-events: none;
+        opacity: 0.45;
+      }
 
-.blob-2 {
-    width: 400px;
-    height: 400px;
-    background: radial-gradient(circle, rgba(16, 185, 129, 0.4) 0%, rgba(59, 130, 246, 0.2) 70%, transparent 100%);
-    bottom: -80px;
-    right: 15%;
-    animation: floatGlow 12s infinite alternate-reverse ease-in-out;
-}
+      .blob-1 {
+        width: 450px;
+        height: 450px;
+        background: radial-gradient(
+          circle,
+          rgba(99, 102, 241, 0.5) 0%,
+          rgba(139, 92, 246, 0.2) 70%,
+          transparent 100%
+        );
+        top: -100px;
+        left: 15%;
+        animation: floatGlow 14s infinite alternate ease-in-out;
+      }
 
-@keyframes floatGlow {
-    0% { transform: translate(0, 0) scale(1); }
-    100% { transform: translate(40px, -40px) scale(1.1); }
-}
+      .blob-2 {
+        width: 400px;
+        height: 400px;
+        background: radial-gradient(
+          circle,
+          rgba(16, 185, 129, 0.4) 0%,
+          rgba(59, 130, 246, 0.2) 70%,
+          transparent 100%
+        );
+        bottom: -80px;
+        right: 15%;
+        animation: floatGlow 12s infinite alternate-reverse ease-in-out;
+      }
 
-.bg-grid {
-    position: fixed;
-    inset: 0;
-    background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-    background-size: 32px 32px;
-    z-index: 0;
-    pointer-events: none;
-}
+      @keyframes floatGlow {
+        0% {
+          transform: translate(0, 0) scale(1);
+        }
+        100% {
+          transform: translate(40px, -40px) scale(1.1);
+        }
+      }
 
-/* --- Fullscreen Confetti Canvas --- */
-#confetti-canvas {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: 100;
-    pointer-events: none;
-}
+      .bg-grid {
+        position: fixed;
+        inset: 0;
+        background-image: radial-gradient(
+          rgba(255, 255, 255, 0.04) 1px,
+          transparent 1px
+        );
+        background-size: 32px 32px;
+        z-index: 0;
+        pointer-events: none;
+      }
 
-/* --- Toast Notification --- */
-.toast {
-    position: fixed;
-    top: 28px;
-    left: 50%;
-    transform: translateX(-50%) translateY(-20px);
-    background: rgba(30, 41, 59, 0.9);
-    border: 1px solid rgba(99, 102, 241, 0.3);
-    backdrop-filter: blur(12px);
-    padding: 12px 24px;
-    border-radius: 99px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: var(--text-main);
-    font-size: 0.9rem;
-    font-weight: 500;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 20px var(--primary-glow);
-    z-index: 99;
-    opacity: 0;
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
+      /* --- Fullscreen Confetti Canvas --- */
+      #confetti-canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 100;
+        pointer-events: none;
+      }
 
-.toast.show {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-}
-
-.toast-icon {
-    font-size: 1.1rem;
-}
-
-/* --- Main Card Container --- */
-.otp-card-container {
-    position: relative;
-    z-index: 10;
-    width: 100%;
-    max-width: 450px;
-    background: var(--card-bg);
-    border: 1px solid var(--card-border);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border-radius: 28px;
-    padding: 40px 36px;
-    box-shadow: var(--card-shadow);
-    transition: transform 0.4s ease, box-shadow 0.4s ease;
-}
-
-.otp-card-container:hover {
-    box-shadow: 0 30px 70px -15px rgba(0, 0, 0, 0.8), 0 0 60px rgba(99, 102, 241, 0.18);
-}
-
-/* --- Sound Toggle Button --- */
-.sound-btn {
-    position: absolute;
-    top: 24px;
-    right: 24px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: var(--text-muted);
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: var(--transition-fast);
-}
-
-.sound-btn:hover {
-    color: #fff;
-    background: rgba(255, 255, 255, 0.12);
-    transform: scale(1.08);
-}
-
-/* --- Card Header --- */
-.card-header {
-    text-align: center;
-    margin-bottom: 32px;
-}
-
-.badge-icon {
-    width: 60px;
-    height: 60px;
-    margin: 0 auto 20px;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%);
-    border: 1px solid rgba(99, 102, 241, 0.3);
-    border-radius: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #818cf8;
-    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.25);
-    transition: var(--transition-smooth);
-}
-
-.badge-icon.success-mode {
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.2) 100%);
-    border-color: rgba(16, 185, 129, 0.4);
-    color: var(--success);
-    box-shadow: 0 8px 24px var(--success-glow);
-}
-
-.title {
-    font-family: var(--font-heading);
-    font-size: 1.65rem;
-    font-weight: 700;
-    color: #ffffff;
-    letter-spacing: -0.02em;
-    margin-bottom: 10px;
-}
-
-.subtitle {
-    font-size: 0.92rem;
-    color: var(--text-muted);
-    line-height: 1.5;
-}
-
-.phone-highlight {
-    color: var(--text-main);
-    font-weight: 600;
-}
-
-/* --- Stages Visibility Logic --- */
-.stage {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    transition: opacity 0.35s ease, transform 0.35s ease;
-}
-
-.stage.hidden {
-    display: none;
-    opacity: 0;
-    transform: scale(0.96);
-}
-
-.stage.active {
-    display: flex;
-    opacity: 1;
-    transform: scale(1);
-    animation: stageFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-@keyframes stageFadeIn {
-    from {
+      /* --- Toast Notification --- */
+      .toast {
+        position: fixed;
+        top: 28px;
+        left: 50%;
+        transform: translateX(-50%) translateY(-20px);
+        background: rgba(30, 41, 59, 0.9);
+        border: 1px solid rgba(99, 102, 241, 0.3);
+        backdrop-filter: blur(12px);
+        padding: 12px 24px;
+        border-radius: 99px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--text-main);
+        font-size: 0.9rem;
+        font-weight: 500;
+        box-shadow:
+          0 10px 30px rgba(0, 0, 0, 0.4),
+          0 0 20px var(--primary-glow);
+        z-index: 99;
         opacity: 0;
-        transform: translateY(12px) scale(0.97);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-}
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      }
 
-/* ==========================================================================
+      .toast.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+
+      .toast-icon {
+        font-size: 1.1rem;
+      }
+
+      /* --- Main Card Container --- */
+      .otp-card-container {
+        position: relative;
+        z-index: 10;
+        width: 100%;
+        max-width: 450px;
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        border-radius: 28px;
+        padding: 40px 36px;
+        box-shadow: var(--card-shadow);
+        transition:
+          transform 0.4s ease,
+          box-shadow 0.4s ease;
+      }
+
+      .otp-card-container:hover {
+        box-shadow:
+          0 30px 70px -15px rgba(0, 0, 0, 0.8),
+          0 0 60px rgba(99, 102, 241, 0.18);
+      }
+
+      /* --- Sound Toggle Button --- */
+      .sound-btn {
+        position: absolute;
+        top: 24px;
+        right: 24px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: var(--text-muted);
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: var(--transition-fast);
+      }
+
+      .sound-btn:hover {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.12);
+        transform: scale(1.08);
+      }
+
+      /* --- Card Header --- */
+      .card-header {
+        text-align: center;
+        margin-bottom: 32px;
+      }
+
+      .badge-icon {
+        width: 60px;
+        height: 60px;
+        margin: 0 auto 20px;
+        background: linear-gradient(
+          135deg,
+          rgba(99, 102, 241, 0.2) 0%,
+          rgba(139, 92, 246, 0.2) 100%
+        );
+        border: 1px solid rgba(99, 102, 241, 0.3);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #818cf8;
+        box-shadow: 0 8px 24px rgba(99, 102, 241, 0.25);
+        transition: var(--transition-smooth);
+      }
+
+      .badge-icon.success-mode {
+        background: linear-gradient(
+          135deg,
+          rgba(16, 185, 129, 0.2) 0%,
+          rgba(5, 150, 105, 0.2) 100%
+        );
+        border-color: rgba(16, 185, 129, 0.4);
+        color: var(--success);
+        box-shadow: 0 8px 24px var(--success-glow);
+      }
+
+      .title {
+        font-family: var(--font-heading);
+        font-size: 1.65rem;
+        font-weight: 700;
+        color: #ffffff;
+        letter-spacing: -0.02em;
+        margin-bottom: 10px;
+      }
+
+      .subtitle {
+        font-size: 0.92rem;
+        color: var(--text-muted);
+        line-height: 1.5;
+      }
+
+      .phone-highlight {
+        color: var(--text-main);
+        font-weight: 600;
+      }
+
+      /* --- Stages Visibility Logic --- */
+      .stage {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        transition:
+          opacity 0.35s ease,
+          transform 0.35s ease;
+      }
+
+      .stage.hidden {
+        display: none;
+        opacity: 0;
+        transform: scale(0.96);
+      }
+
+      .stage.active {
+        display: flex;
+        opacity: 1;
+        transform: scale(1);
+        animation: stageFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+
+      @keyframes stageFadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(12px) scale(0.97);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      /* ==========================================================================
    STAGE 1: INPUT BOXES STYLING
    ========================================================================== */
 
-.otp-inputs-wrapper {
-    display: flex;
-    gap: 14px;
-    justify-content: center;
-    margin-bottom: 18px;
-    width: 100%;
-}
+      .otp-inputs-wrapper {
+        display: flex;
+        gap: 14px;
+        justify-content: center;
+        margin-bottom: 18px;
+        width: 100%;
+      }
 
-.otp-input {
-    width: 64px;
-    height: 70px;
-    background: var(--input-bg);
-    border: 1.5px solid var(--input-border);
-    border-radius: 18px;
-    font-family: var(--font-heading);
-    font-size: 2rem;
-    font-weight: 700;
-    color: #ffffff;
-    text-align: center;
-    outline: none;
-    cursor: text;
-    position: relative;
-    z-index: 5;
-    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
-}
+      .otp-input {
+        width: 64px;
+        height: 70px;
+        background: var(--input-bg);
+        border: 1.5px solid var(--input-border);
+        border-radius: 18px;
+        font-family: var(--font-heading);
+        font-size: 2rem;
+        font-weight: 700;
+        color: #ffffff;
+        text-align: center;
+        outline: none;
+        cursor: text;
+        position: relative;
+        z-index: 5;
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
 
-.otp-input:hover {
-    border-color: rgba(255, 255, 255, 0.25);
-    background: rgba(30, 41, 59, 0.7);
-}
+      .otp-input:hover {
+        border-color: rgba(255, 255, 255, 0.25);
+        background: rgba(30, 41, 59, 0.7);
+      }
 
-.otp-input:focus,
-.otp-input.focused {
-    border-color: var(--input-active);
-    background: rgba(49, 65, 96, 0.8);
-    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.25), 0 0 20px rgba(99, 102, 241, 0.35);
-    transform: translateY(-4px) scale(1.03);
-}
+      .otp-input:focus,
+      .otp-input.focused {
+        border-color: var(--input-active);
+        background: rgba(49, 65, 96, 0.8);
+        box-shadow:
+          0 0 0 4px rgba(99, 102, 241, 0.25),
+          0 0 20px rgba(99, 102, 241, 0.35);
+        transform: translateY(-4px) scale(1.03);
+      }
 
-.otp-input.filled {
-    border-color: rgba(99, 102, 241, 0.5);
-    background: rgba(99, 102, 241, 0.12);
-    animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
+      .otp-input.filled {
+        border-color: rgba(99, 102, 241, 0.5);
+        background: rgba(99, 102, 241, 0.12);
+        animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      }
 
-@keyframes popIn {
-    0% { transform: scale(0.9); }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); }
-}
+      @keyframes popIn {
+        0% {
+          transform: scale(0.9);
+        }
+        50% {
+          transform: scale(1.1);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
 
-.input-hint {
-    font-size: 0.8rem;
-    color: var(--text-dim);
-    margin-bottom: 28px;
-    text-align: center;
-}
+      .input-hint {
+        font-size: 0.8rem;
+        color: var(--text-dim);
+        margin-bottom: 28px;
+        text-align: center;
+      }
 
-.resend-wrapper {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    font-size: 0.88rem;
-    color: var(--text-muted);
-}
+      .resend-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-size: 0.88rem;
+        color: var(--text-muted);
+      }
 
-.resend-btn {
-    background: none;
-    border: none;
-    color: #818cf8;
-    font-family: inherit;
-    font-size: 0.88rem;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 8px;
-    border-radius: 8px;
-    transition: var(--transition-fast);
-}
+      .resend-btn {
+        background: none;
+        border: none;
+        color: #818cf8;
+        font-family: inherit;
+        font-size: 0.88rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 8px;
+        border-radius: 8px;
+        transition: var(--transition-fast);
+      }
 
-.resend-btn:hover:not(:disabled) {
-    color: #a5b4fc;
-    background: rgba(99, 102, 241, 0.1);
-}
+      .resend-btn:hover:not(:disabled) {
+        color: #a5b4fc;
+        background: rgba(99, 102, 241, 0.1);
+      }
 
-.resend-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
+      .resend-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
 
-.timer-badge {
-    background: rgba(255, 255, 255, 0.08);
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 0.78rem;
-    color: var(--text-muted);
-}
+      .timer-badge {
+        background: rgba(255, 255, 255, 0.08);
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.78rem;
+        color: var(--text-muted);
+      }
 
-/* ==========================================================================
+      /* ==========================================================================
    STAGE 2: VERIFYING ORBIT SPIN ANIMATION STYLING
    ========================================================================== */
 
-.orbit-container {
-    position: relative;
-    width: 200px;
-    height: 200px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 10px 0 28px;
-}
+      .orbit-container {
+        position: relative;
+        width: 200px;
+        height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 10px 0 28px;
+      }
 
-/* Glowing Track Rings */
-.orbit-ring {
-    position: absolute;
-    border-radius: 50%;
-    pointer-events: none;
-}
+      /* Glowing Track Rings */
+      .orbit-ring {
+        position: absolute;
+        border-radius: 50%;
+        pointer-events: none;
+      }
 
-.orbit-ring-outer {
-    inset: 0;
-    border: 2px dashed rgba(99, 102, 241, 0.25);
-    animation: rotateClockwise 20s linear infinite;
-}
+      .orbit-ring-outer {
+        inset: 0;
+        border: 2px dashed rgba(99, 102, 241, 0.25);
+        animation: rotateClockwise 20s linear infinite;
+      }
 
-.orbit-ring-inner {
-    inset: 22px;
-    border: 1px solid rgba(139, 92, 246, 0.2);
-    box-shadow: inset 0 0 20px rgba(99, 102, 241, 0.1);
-}
+      .orbit-ring-inner {
+        inset: 22px;
+        border: 1px solid rgba(139, 92, 246, 0.2);
+        box-shadow: inset 0 0 20px rgba(99, 102, 241, 0.1);
+      }
 
-/* Center Glowing Core Shield */
-.orbit-core {
-    position: relative;
-    width: 58px;
-    height: 58px;
-    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #ffffff;
-    box-shadow: 0 0 30px var(--primary-glow);
-    z-index: 2;
-}
+      /* Center Glowing Core Shield */
+      .orbit-core {
+        position: relative;
+        width: 58px;
+        height: 58px;
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #ffffff;
+        box-shadow: 0 0 30px var(--primary-glow);
+        z-index: 2;
+      }
 
-.core-pulse {
-    position: absolute;
-    inset: -8px;
-    border-radius: 50%;
-    background: rgba(99, 102, 241, 0.3);
-    animation: corePulse 1.8s ease-out infinite;
-    z-index: -1;
-}
+      .core-pulse {
+        position: absolute;
+        inset: -8px;
+        border-radius: 50%;
+        background: rgba(99, 102, 241, 0.3);
+        animation: corePulse 1.8s ease-out infinite;
+        z-index: -1;
+      }
 
-@keyframes corePulse {
-    0% { transform: scale(0.8); opacity: 0.8; }
-    100% { transform: scale(1.6); opacity: 0; }
-}
+      @keyframes corePulse {
+        0% {
+          transform: scale(0.8);
+          opacity: 0.8;
+        }
+        100% {
+          transform: scale(1.6);
+          opacity: 0;
+        }
+      }
 
-.lock-spin-icon {
-    width: 26px;
-    height: 26px;
-    animation: subtleBounce 2s ease-in-out infinite;
-}
+      .lock-spin-icon {
+        width: 26px;
+        height: 26px;
+        animation: subtleBounce 2s ease-in-out infinite;
+      }
 
-@keyframes subtleBounce {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.12); }
-}
+      @keyframes subtleBounce {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.12);
+        }
+      }
 
-/* Orbiting Nodes Wrapper - Continuous 360 Spin */
-.orbit-nodes-wrapper {
-    position: absolute;
-    inset: 0;
-    animation: spinOrbit 2.4s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
-}
+      /* Orbiting Nodes Wrapper - Continuous 360 Spin */
+      .orbit-nodes-wrapper {
+        position: absolute;
+        inset: 0;
+        animation: spinOrbit 2.4s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+      }
 
-@keyframes spinOrbit {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
+      @keyframes spinOrbit {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
+      }
 
-@keyframes rotateClockwise {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
+      @keyframes rotateClockwise {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
+      }
 
-/* Individual Orbiting Digit Badges */
-.orbit-node {
-    position: absolute;
-    width: 48px;
-    height: 48px;
-    background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(17, 24, 39, 0.95) 100%);
-    border: 2px solid var(--primary);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: var(--font-heading);
-    font-weight: 800;
-    font-size: 1.3rem;
-    color: #ffffff;
-    box-shadow: 0 0 16px var(--primary-glow), inset 0 2px 4px rgba(255, 255, 255, 0.2);
-    /* Node placement math on 200px circle radius = 80px offset */
-}
+      /* Individual Orbiting Digit Badges */
+      .orbit-node {
+        position: absolute;
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(
+          135deg,
+          rgba(30, 41, 59, 0.95) 0%,
+          rgba(17, 24, 39, 0.95) 100%
+        );
+        border: 2px solid var(--primary);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--font-heading);
+        font-weight: 800;
+        font-size: 1.3rem;
+        color: #ffffff;
+        box-shadow:
+          0 0 16px var(--primary-glow),
+          inset 0 2px 4px rgba(255, 255, 255, 0.2);
+        /* Node placement math on 200px circle radius = 80px offset */
+      }
 
-/* Positioning 4 nodes at 0deg, 90deg, 180deg, 270deg */
-.node-0 {
-    top: 0;
-    left: 50%;
-    transform: translate(-50%, -50%);
-}
+      /* Positioning 4 nodes at 0deg, 90deg, 180deg, 270deg */
+      .node-0 {
+        top: 0;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
 
-.node-1 {
-    top: 50%;
-    right: 0;
-    transform: translate(50%, -50%);
-}
+      .node-1 {
+        top: 50%;
+        right: 0;
+        transform: translate(50%, -50%);
+      }
 
-.node-2 {
-    bottom: 0;
-    left: 50%;
-    transform: translate(-50%, 50%);
-}
+      .node-2 {
+        bottom: 0;
+        left: 50%;
+        transform: translate(-50%, 50%);
+      }
 
-.node-3 {
-    top: 50%;
-    left: 0;
-    transform: translate(-50%, -50%);
-}
+      .node-3 {
+        top: 50%;
+        left: 0;
+        transform: translate(-50%, -50%);
+      }
 
-/* Counter-rotation so text digits remain vertically upright! */
-.orbit-node span {
-    display: inline-block;
-    animation: counterSpin 2.4s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
-}
+      /* Counter-rotation so text digits remain vertically upright! */
+      .orbit-node span {
+        display: inline-block;
+        animation: counterSpin 2.4s cubic-bezier(0.45, 0.05, 0.55, 0.95)
+          infinite;
+      }
 
-@keyframes counterSpin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(-360deg); }
-}
+      @keyframes counterSpin {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(-360deg);
+        }
+      }
 
-/* Verifying Status & Progress Bar */
-.verifying-status {
-    text-align: center;
-    width: 100%;
-}
+      /* Verifying Status & Progress Bar */
+      .verifying-status {
+        text-align: center;
+        width: 100%;
+      }
 
-.status-title {
-    font-family: var(--font-heading);
-    font-size: 1.3rem;
-    font-weight: 700;
-    color: #ffffff;
-    margin-bottom: 6px;
-}
+      .status-title {
+        font-family: var(--font-heading);
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #ffffff;
+        margin-bottom: 6px;
+      }
 
-.status-desc {
-    font-size: 0.85rem;
-    color: var(--text-muted);
-    margin-bottom: 16px;
-}
+      .status-desc {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-bottom: 16px;
+      }
 
-.progress-bar-track {
-    width: 100%;
-    height: 6px;
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 99px;
-    overflow: hidden;
-    position: relative;
-}
+      .progress-bar-track {
+        width: 100%;
+        height: 6px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 99px;
+        overflow: hidden;
+        position: relative;
+      }
 
-.progress-bar-fill {
-    height: 100%;
-    width: 0%;
-    background: linear-gradient(90deg, #6366f1, #10b981);
-    border-radius: 99px;
-    animation: progressFill 1.8s ease-in-out forwards;
-}
+      .progress-bar-fill {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #6366f1, #10b981);
+        border-radius: 99px;
+        animation: progressFill 1.8s ease-in-out forwards;
+      }
 
-@keyframes progressFill {
-    0% { width: 0%; }
-    50% { width: 65%; }
-    100% { width: 100%; }
-}
+      @keyframes progressFill {
+        0% {
+          width: 0%;
+        }
+        50% {
+          width: 65%;
+        }
+        100% {
+          width: 100%;
+        }
+      }
 
-/* ==========================================================================
+      /* ==========================================================================
    STAGE 3: SUCCESS CHECKMARK STYLING
    ========================================================================== */
 
-.success-badge-wrapper {
-    position: relative;
-    width: 110px;
-    height: 110px;
-    margin: 10px auto 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
+      .success-badge-wrapper {
+        position: relative;
+        width: 110px;
+        height: 110px;
+        margin: 10px auto 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
 
-.success-ring-bg {
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(16, 185, 129, 0.3) 0%, transparent 70%);
-    animation: pulseRing 2s infinite ease-in-out;
-}
+      .success-ring-bg {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle,
+          rgba(16, 185, 129, 0.3) 0%,
+          transparent 70%
+        );
+        animation: pulseRing 2s infinite ease-in-out;
+      }
 
-@keyframes pulseRing {
-    0%, 100% { transform: scale(1); opacity: 0.6; }
-    50% { transform: scale(1.3); opacity: 1; }
-}
+      @keyframes pulseRing {
+        0%,
+        100% {
+          transform: scale(1);
+          opacity: 0.6;
+        }
+        50% {
+          transform: scale(1.3);
+          opacity: 1;
+        }
+      }
 
-.success-icon-box {
-    position: relative;
-    width: 90px;
-    height: 90px;
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 0 40px var(--success-glow);
-    animation: popSuccess 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-}
+      .success-icon-box {
+        position: relative;
+        width: 90px;
+        height: 90px;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 0 40px var(--success-glow);
+        animation: popSuccess 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)
+          forwards;
+      }
 
-@keyframes popSuccess {
-    0% { transform: scale(0.3); opacity: 0; }
-    80% { transform: scale(1.1); }
-    100% { transform: scale(1); opacity: 1; }
-}
+      @keyframes popSuccess {
+        0% {
+          transform: scale(0.3);
+          opacity: 0;
+        }
+        80% {
+          transform: scale(1.1);
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
 
-/* SVG Checkmark Drawing Animation */
-.checkmark-svg {
-    width: 56px;
-    height: 56px;
-    stroke: #ffffff;
-    stroke-width: 4;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-}
+      /* SVG Checkmark Drawing Animation */
+      .checkmark-svg {
+        width: 56px;
+        height: 56px;
+        stroke: #ffffff;
+        stroke-width: 4;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
 
-.checkmark-circle {
-    stroke-dasharray: 166;
-    stroke-dashoffset: 166;
-    stroke: rgba(255, 255, 255, 0.3);
-    animation: strokeCircle 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards 0.2s;
-}
+      .checkmark-circle {
+        stroke-dasharray: 166;
+        stroke-dashoffset: 166;
+        stroke: rgba(255, 255, 255, 0.3);
+        animation: strokeCircle 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards
+          0.2s;
+      }
 
-.checkmark-check {
-    stroke-dasharray: 48;
-    stroke-dashoffset: 48;
-    animation: strokeCheck 0.4s cubic-bezier(0.65, 0, 0.45, 1) forwards 0.6s;
-}
+      .checkmark-check {
+        stroke-dasharray: 48;
+        stroke-dashoffset: 48;
+        animation: strokeCheck 0.4s cubic-bezier(0.65, 0, 0.45, 1) forwards 0.6s;
+      }
 
-@keyframes strokeCircle {
-    to { stroke-dashoffset: 0; }
-}
+      @keyframes strokeCircle {
+        to {
+          stroke-dashoffset: 0;
+        }
+      }
 
-@keyframes strokeCheck {
-    to { stroke-dashoffset: 0; }
-}
+      @keyframes strokeCheck {
+        to {
+          stroke-dashoffset: 0;
+        }
+      }
 
-.success-content {
-    text-align: center;
-    width: 100%;
-}
+      .success-content {
+        text-align: center;
+        width: 100%;
+      }
 
-.success-title {
-    font-family: var(--font-heading);
-    font-size: 1.6rem;
-    font-weight: 700;
-    color: #ffffff;
-    margin-bottom: 8px;
-}
-
-.success-desc {
-    font-size: 0.9rem;
-    color: var(--text-muted);
-    margin-bottom: 24px;
-    line-height: 1.4;
-}
-
-.success-details-card {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 16px 20px;
-    margin-bottom: 28px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.detail-row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.85rem;
-}
-
-.detail-label {
-    color: var(--text-dim);
-}
-
-.detail-value {
-    color: var(--text-main);
-    font-weight: 600;
-}
-
-/* Button Group */
-.action-buttons {
-    display: flex;
-    gap: 12px;
-    width: 100%;
-}
-
-.btn {
-    flex: 1;
-    padding: 14px 18px;
-    border-radius: 14px;
-    font-family: var(--font-body);
-    font-size: 0.9rem;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    transition: all 0.25s ease;
-    border: none;
-    outline: none;
-}
-
-.btn-secondary {
-    background: rgba(255, 255, 255, 0.08);
-    color: var(--text-main);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.14);
-    transform: translateY(-2px);
-}
-
-.btn-primary {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    color: #ffffff;
-    box-shadow: 0 4px 16px var(--success-glow);
-}
-
-.btn-primary:hover {
-    box-shadow: 0 6px 24px var(--success-glow);
-    transform: translateY(-2px);
-}
-
-.btn:active {
-    transform: translateY(0);
-}
-
-/* --- Footer --- */
-.app-footer {
-    position: absolute;
-    bottom: 20px;
-    font-size: 0.8rem;
-    color: var(--text-dim);
-    text-align: center;
-    z-index: 10;
-}
-
-/* --- Responsive Adjustments --- */
-@media (max-width: 480px) {
-    .otp-card-container {
-        padding: 30px 20px;
-        border-radius: 22px;
-    }
-
-    .otp-inputs-wrapper {
-        gap: 8px;
-    }
-
-    .otp-input {
-        width: 52px;
-        height: 60px;
+      .success-title {
+        font-family: var(--font-heading);
         font-size: 1.6rem;
+        font-weight: 700;
+        color: #ffffff;
+        margin-bottom: 8px;
+      }
+
+      .success-desc {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        margin-bottom: 24px;
+        line-height: 1.4;
+      }
+
+      .success-details-card {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 16px 20px;
+        margin-bottom: 28px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .detail-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.85rem;
+      }
+
+      .detail-label {
+        color: var(--text-dim);
+      }
+
+      .detail-value {
+        color: var(--text-main);
+        font-weight: 600;
+      }
+
+      /* Button Group */
+      .action-buttons {
+        display: flex;
+        gap: 12px;
+        width: 100%;
+      }
+
+      .btn {
+        flex: 1;
+        padding: 14px 18px;
         border-radius: 14px;
-    }
+        font-family: var(--font-body);
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.25s ease;
+        border: none;
+        outline: none;
+      }
 
-    .title {
-        font-size: 1.4rem;
-    }
-}
+      .btn-secondary {
+        background: rgba(255, 255, 255, 0.08);
+        color: var(--text-main);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
 
-</style>
-</head>
-<body>
+      .btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.14);
+        transform: translateY(-2px);
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: #ffffff;
+        box-shadow: 0 4px 16px var(--success-glow);
+      }
+
+      .btn-primary:hover {
+        box-shadow: 0 6px 24px var(--success-glow);
+        transform: translateY(-2px);
+      }
+
+      .btn:active {
+        transform: translateY(0);
+      }
+
+      /* --- Footer --- */
+      .app-footer {
+        position: absolute;
+        bottom: 20px;
+        font-size: 0.8rem;
+        color: var(--text-dim);
+        text-align: center;
+        z-index: 10;
+      }
+
+      /* --- Responsive Adjustments --- */
+      @media (max-width: 480px) {
+        .otp-card-container {
+          padding: 30px 20px;
+          border-radius: 22px;
+        }
+
+        .otp-inputs-wrapper {
+          gap: 8px;
+        }
+
+        .otp-input {
+          width: 52px;
+          height: 60px;
+          font-size: 1.6rem;
+          border-radius: 14px;
+        }
+
+        .title {
+          font-size: 1.4rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
     <!-- Background Ambient Glow Effects -->
     <div class="bg-glow blob-1"></div>
     <div class="bg-glow blob-2"></div>
@@ -786,623 +892,761 @@ body {
 
     <!-- Toast Notification Overlay -->
     <div id="toast" class="toast hidden">
-        <span class="toast-icon">✨</span>
-        <span id="toast-message">Mã OTP mới đã được gửi!</span>
+      <span class="toast-icon">✨</span>
+      <span id="toast-message">Mã OTP mới đã được gửi!</span>
     </div>
 
     <!-- Main Verification Card Component -->
     <main class="otp-card-container">
-        <!-- Sound Toggle Button -->
-        <button id="sound-toggle-btn" class="sound-btn" title="Bật/Tắt Âm Thanh">
-            <svg id="sound-icon-on" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
-                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+      <!-- Sound Toggle Button -->
+      <button id="sound-toggle-btn" class="sound-btn" title="Bật/Tắt Âm Thanh">
+        <svg
+          id="sound-icon-on"
+          viewBox="0 0 24 24"
+          width="18"
+          height="18"
+          stroke="currentColor"
+          stroke-width="2"
+          fill="none"
+        >
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+          <path
+            d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"
+          ></path>
+        </svg>
+        <svg
+          id="sound-icon-off"
+          class="hidden"
+          viewBox="0 0 24 24"
+          width="18"
+          height="18"
+          stroke="currentColor"
+          stroke-width="2"
+          fill="none"
+        >
+          <line x1="1" y1="1" x2="23" y2="23"></line>
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+        </svg>
+      </button>
+
+      <!-- Card Header Icon & Title -->
+      <header class="card-header">
+        <div id="header-badge" class="badge-icon">
+          <svg
+            width="28"
+            height="28"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+        </div>
+        <h1 id="card-title" class="title">Let's verify your number</h1>
+        <p id="card-subtitle" class="subtitle">
+          Chúng tôi đã gửi mã xác thực 4 chữ số đến số điện thoại
+          <span class="phone-highlight">+84 988 *** 888</span>
+        </p>
+      </header>
+
+      <!-- STAGE 1: OTP DIGIT INPUT STAGE -->
+      <section id="stage-input" class="stage active">
+        <div class="otp-inputs-wrapper" id="otp-inputs-group">
+          <input
+            type="text"
+            maxlength="2"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            class="otp-input"
+            data-index="0"
+            autocomplete="off"
+            aria-label="Digit 1"
+            autofocus
+          />
+          <input
+            type="text"
+            maxlength="2"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            class="otp-input"
+            data-index="1"
+            autocomplete="off"
+            aria-label="Digit 2"
+          />
+          <input
+            type="text"
+            maxlength="2"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            class="otp-input"
+            data-index="2"
+            autocomplete="off"
+            aria-label="Digit 3"
+          />
+          <input
+            type="text"
+            maxlength="2"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            class="otp-input"
+            data-index="3"
+            autocomplete="off"
+            aria-label="Digit 4"
+          />
+        </div>
+        <div class="input-hint">
+          <span>Dán hoặc nhập 4 chữ số để tự động xác thực</span>
+        </div>
+
+        <footer class="resend-wrapper">
+          <span>Bạn không nhận được mã?</span>
+          <button id="resend-btn" class="resend-btn" type="button">
+            <span id="resend-text">Gửi lại mã</span>
+            <span id="resend-timer" class="timer-badge">30s</span>
+          </button>
+        </footer>
+      </section>
+
+      <!-- STAGE 2: VERIFYING SPINNING ORBIT ANIMATION STAGE -->
+      <section id="stage-verifying" class="stage hidden">
+        <div class="orbit-container">
+          <!-- Outer Glowing Orbit Ring -->
+          <div class="orbit-ring orbit-ring-outer"></div>
+          <div class="orbit-ring orbit-ring-inner"></div>
+
+          <!-- Center Pulsing Core -->
+          <div class="orbit-core">
+            <div class="core-pulse"></div>
+            <svg
+              class="lock-spin-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+            >
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
             </svg>
-            <svg id="sound-icon-off" class="hidden" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
-                <line x1="1" y1="1" x2="23" y2="23"></line>
-                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+          </div>
+
+          <!-- Orbiting Digit Badges Container -->
+          <div class="orbit-nodes-wrapper" id="orbit-nodes">
+            <div class="orbit-node node-0" id="node-0">
+              <span id="digit-val-0">1</span>
+            </div>
+            <div class="orbit-node node-1" id="node-1">
+              <span id="digit-val-1">2</span>
+            </div>
+            <div class="orbit-node node-2" id="node-2">
+              <span id="digit-val-2">3</span>
+            </div>
+            <div class="orbit-node node-3" id="node-3">
+              <span id="digit-val-3">4</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="verifying-status">
+          <h3 class="status-title">Verifying...</h3>
+          <p class="status-desc">Đang đối soát mã OTP với hệ thống an toàn</p>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- STAGE 3: SUCCESS CHECKMARK & CONGRATS STAGE -->
+      <section id="stage-success" class="stage hidden">
+        <div class="success-badge-wrapper">
+          <div class="success-ring-bg"></div>
+          <div class="success-icon-box">
+            <svg class="checkmark-svg" viewBox="0 0 52 52">
+              <circle
+                class="checkmark-circle"
+                cx="26"
+                cy="26"
+                r="23"
+                fill="none"
+              />
+              <path
+                class="checkmark-check"
+                fill="none"
+                d="M14.1 27.2l7.1 7.2 16.7-16.8"
+              />
             </svg>
-        </button>
+          </div>
+        </div>
 
-        <!-- Card Header Icon & Title -->
-        <header class="card-header">
-            <div id="header-badge" class="badge-icon">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                </svg>
+        <div class="success-content">
+          <h2 class="success-title">Verified Successfully!</h2>
+          <p class="success-desc">
+            Xác thực thành công. Tài khoản của bạn đã được bảo vệ an toàn.
+          </p>
+
+          <div class="success-details-card">
+            <div class="detail-row">
+              <span class="detail-label">Phương thức:</span>
+              <span class="detail-value">Mã OTP SMS</span>
             </div>
-            <h1 id="card-title" class="title">Let's verify your number</h1>
-            <p id="card-subtitle" class="subtitle">
-                Chúng tôi đã gửi mã xác thực 4 chữ số đến số điện thoại <span class="phone-highlight">+84 988 *** 888</span>
-            </p>
-        </header>
-
-        <!-- STAGE 1: OTP DIGIT INPUT STAGE -->
-        <section id="stage-input" class="stage active">
-            <div class="otp-inputs-wrapper" id="otp-inputs-group">
-                <input type="text" maxlength="2" inputmode="numeric" pattern="[0-9]*" class="otp-input" data-index="0" autocomplete="off" aria-label="Digit 1" autofocus>
-                <input type="text" maxlength="2" inputmode="numeric" pattern="[0-9]*" class="otp-input" data-index="1" autocomplete="off" aria-label="Digit 2">
-                <input type="text" maxlength="2" inputmode="numeric" pattern="[0-9]*" class="otp-input" data-index="2" autocomplete="off" aria-label="Digit 3">
-                <input type="text" maxlength="2" inputmode="numeric" pattern="[0-9]*" class="otp-input" data-index="3" autocomplete="off" aria-label="Digit 4">
+            <div class="detail-row">
+              <span class="detail-label">Thời gian:</span>
+              <span id="success-time" class="detail-value">Vừa xong</span>
             </div>
-            <div class="input-hint">
-                <span>Dán hoặc nhập 4 chữ số để tự động xác thực</span>
-            </div>
+          </div>
 
-            <footer class="resend-wrapper">
-                <span>Bạn không nhận được mã?</span>
-                <button id="resend-btn" class="resend-btn" type="button">
-                    <span id="resend-text">Gửi lại mã</span>
-                    <span id="resend-timer" class="timer-badge">30s</span>
-                </button>
-            </footer>
-        </section>
-
-        <!-- STAGE 2: VERIFYING SPINNING ORBIT ANIMATION STAGE -->
-        <section id="stage-verifying" class="stage hidden">
-            <div class="orbit-container">
-                <!-- Outer Glowing Orbit Ring -->
-                <div class="orbit-ring orbit-ring-outer"></div>
-                <div class="orbit-ring orbit-ring-inner"></div>
-
-                <!-- Center Pulsing Core -->
-                <div class="orbit-core">
-                    <div class="core-pulse"></div>
-                    <svg class="lock-spin-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                    </svg>
-                </div>
-
-                <!-- Orbiting Digit Badges Container -->
-                <div class="orbit-nodes-wrapper" id="orbit-nodes">
-                    <div class="orbit-node node-0" id="node-0"><span id="digit-val-0">1</span></div>
-                    <div class="orbit-node node-1" id="node-1"><span id="digit-val-1">2</span></div>
-                    <div class="orbit-node node-2" id="node-2"><span id="digit-val-2">3</span></div>
-                    <div class="orbit-node node-3" id="node-3"><span id="digit-val-3">4</span></div>
-                </div>
-            </div>
-
-            <div class="verifying-status">
-                <h3 class="status-title">Verifying...</h3>
-                <p class="status-desc">Đang đối soát mã OTP với hệ thống an toàn</p>
-                <div class="progress-bar-track">
-                    <div class="progress-bar-fill"></div>
-                </div>
-            </div>
-        </section>
-
-        <!-- STAGE 3: SUCCESS CHECKMARK & CONGRATS STAGE -->
-        <section id="stage-success" class="stage hidden">
-            <div class="success-badge-wrapper">
-                <div class="success-ring-bg"></div>
-                <div class="success-icon-box">
-                    <svg class="checkmark-svg" viewBox="0 0 52 52">
-                        <circle class="checkmark-circle" cx="26" cy="26" r="23" fill="none"/>
-                        <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
-                    </svg>
-                </div>
-            </div>
-
-            <div class="success-content">
-                <h2 class="success-title">Verified Successfully!</h2>
-                <p class="success-desc">Xác thực thành công. Tài khoản của bạn đã được bảo vệ an toàn.</p>
-                
-                <div class="success-details-card">
-                    <div class="detail-row">
-                        <span class="detail-label">Phương thức:</span>
-                        <span class="detail-value">Mã OTP SMS</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Thời gian:</span>
-                        <span id="success-time" class="detail-value">Vừa xong</span>
-                    </div>
-                </div>
-
-                <div class="action-buttons">
-                    <button id="reset-btn" class="btn btn-secondary" type="button">
-                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none">
-                            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
-                        </svg>
-                        <span>Thử lại Animation</span>
-                    </button>
-                    <button id="continue-btn" class="btn btn-primary" type="button">
-                        <span>Tiếp tục</span>
-                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none">
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                            <polyline points="12 5 19 12 12 19"></polyline>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        </section>
+          <div class="action-buttons">
+            <button id="reset-btn" class="btn btn-secondary" type="button">
+              <svg
+                viewBox="0 0 24 24"
+                width="16"
+                height="16"
+                stroke="currentColor"
+                stroke-width="2.5"
+                fill="none"
+              >
+                <path
+                  d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"
+                />
+              </svg>
+              <span>Thử lại Animation</span>
+            </button>
+            <button id="continue-btn" class="btn btn-primary" type="button">
+              <span>Tiếp tục</span>
+              <svg
+                viewBox="0 0 24 24"
+                width="16"
+                height="16"
+                stroke="currentColor"
+                stroke-width="2.5"
+                fill="none"
+              >
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </section>
     </main>
 
     <!-- Footer Copyright / Branding -->
     <footer class="app-footer">
-        <p>Modern OTP Verification UI &bull; Dark Mode Animation Experience</p>
+      <p>Modern OTP Verification UI &bull; Dark Mode Animation Experience</p>
     </footer>
 
     <script>
-/**
- * ==========================================================================
- * MODERN OTP VERIFICATION UI - JAVASCRIPT ENGINE
- * Full state machine, digit input handling, orbit animation, canvas confetti,
- * synthesized sound FX, resend timer, and reset capabilities.
- * ==========================================================================
- */
+      /**
+       * ==========================================================================
+       * MODERN OTP VERIFICATION UI - JAVASCRIPT ENGINE
+       * Full state machine, digit input handling, orbit animation, canvas confetti,
+       * synthesized sound FX, resend timer, and reset capabilities.
+       * ==========================================================================
+       */
 
-document.addEventListener('DOMContentLoaded', () => {
-    // --- DOM Elements Reference ---
-    const inputs = document.querySelectorAll('.otp-input');
-    const stageInput = document.getElementById('stage-input');
-    const stageVerifying = document.getElementById('stage-verifying');
-    const stageSuccess = document.getElementById('stage-success');
+      document.addEventListener("DOMContentLoaded", () => {
+        // --- DOM Elements Reference ---
+        const inputs = document.querySelectorAll(".otp-input");
+        const stageInput = document.getElementById("stage-input");
+        const stageVerifying = document.getElementById("stage-verifying");
+        const stageSuccess = document.getElementById("stage-success");
 
-    const cardTitle = document.getElementById('card-title');
-    const cardSubtitle = document.getElementById('card-subtitle');
-    const headerBadge = document.getElementById('header-badge');
+        const cardTitle = document.getElementById("card-title");
+        const cardSubtitle = document.getElementById("card-subtitle");
+        const headerBadge = document.getElementById("header-badge");
 
-    const resendBtn = document.getElementById('resend-btn');
-    const resendText = document.getElementById('resend-text');
-    const resendTimer = document.getElementById('resend-timer');
+        const resendBtn = document.getElementById("resend-btn");
+        const resendText = document.getElementById("resend-text");
+        const resendTimer = document.getElementById("resend-timer");
 
-    const resetBtn = document.getElementById('reset-btn');
-    const continueBtn = document.getElementById('continue-btn');
+        const resetBtn = document.getElementById("reset-btn");
+        const continueBtn = document.getElementById("continue-btn");
 
-    const soundToggleBtn = document.getElementById('sound-toggle-btn');
-    const soundIconOn = document.getElementById('sound-icon-on');
-    const soundIconOff = document.getElementById('sound-icon-off');
+        const soundToggleBtn = document.getElementById("sound-toggle-btn");
+        const soundIconOn = document.getElementById("sound-icon-on");
+        const soundIconOff = document.getElementById("sound-icon-off");
 
-    const toast = document.getElementById('toast');
-    const toastMessage = document.getElementById('toast-message');
+        const toast = document.getElementById("toast");
+        const toastMessage = document.getElementById("toast-message");
 
-    // --- State Variables ---
-    let soundEnabled = true;
-    let resendCountdown = 30;
-    let timerInterval = null;
-    let audioCtx = null;
+        // --- State Variables ---
+        let soundEnabled = true;
+        let resendCountdown = 30;
+        let timerInterval = null;
+        let audioCtx = null;
 
-    // Default header text back-up
-    const originalTitle = "Let's verify your number";
-    const originalSubtitleHtml = `Chúng tôi đã gửi mã xác thực 4 chữ số đến số điện thoại <span class="phone-highlight">+84 988 *** 888</span>`;
+        // Default header text back-up
+        const originalTitle = "Let's verify your number";
+        const originalSubtitleHtml = `Chúng tôi đã gửi mã xác thực 4 chữ số đến số điện thoại <span class="phone-highlight">+84 988 *** 888</span>`;
 
-    // ==========================================================================
-    // 1. SOUND FX SYNTHESIZER (Web Audio API - No external audio files required)
-    // ==========================================================================
+        // ==========================================================================
+        // 1. SOUND FX SYNTHESIZER (Web Audio API - No external audio files required)
+        // ==========================================================================
 
-    function initAudio() {
-        if (!audioCtx) {
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
+        function initAudio() {
+          if (!audioCtx) {
+            const AudioContext =
+              window.AudioContext || window.webkitAudioContext;
             if (AudioContext) {
-                audioCtx = new AudioContext();
+              audioCtx = new AudioContext();
             }
-        }
-        if (audioCtx && audioCtx.state === 'suspended') {
+          }
+          if (audioCtx && audioCtx.state === "suspended") {
             audioCtx.resume();
+          }
         }
-    }
 
-    // Play a soft high-frequency click on key entry
-    function playClickSound() {
-        if (!soundEnabled) return;
-        initAudio();
-        if (!audioCtx) return;
+        // Play a soft high-frequency click on key entry
+        function playClickSound() {
+          if (!soundEnabled) return;
+          initAudio();
+          if (!audioCtx) return;
 
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
 
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(600, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.04);
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(
+            200,
+            audioCtx.currentTime + 0.04,
+          );
 
-        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.04);
+          gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(
+            0.01,
+            audioCtx.currentTime + 0.04,
+          );
 
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
 
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.04);
-    }
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.04);
+        }
 
-    // Play a pleasant 3-note harmonic chime on success
-    function playSuccessSound() {
-        if (!soundEnabled) return;
-        initAudio();
-        if (!audioCtx) return;
+        // Play a pleasant 3-note harmonic chime on success
+        function playSuccessSound() {
+          if (!soundEnabled) return;
+          initAudio();
+          if (!audioCtx) return;
 
-        const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
-        notes.forEach((freq, idx) => {
+          const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
+          notes.forEach((freq, idx) => {
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
 
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(freq, audioCtx.currentTime + idx * 0.12);
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(
+              freq,
+              audioCtx.currentTime + idx * 0.12,
+            );
 
             gain.gain.setValueAtTime(0, audioCtx.currentTime + idx * 0.12);
-            gain.gain.linearRampToValueAtTime(0.18, audioCtx.currentTime + idx * 0.12 + 0.02);
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + idx * 0.12 + 0.4);
+            gain.gain.linearRampToValueAtTime(
+              0.18,
+              audioCtx.currentTime + idx * 0.12 + 0.02,
+            );
+            gain.gain.exponentialRampToValueAtTime(
+              0.001,
+              audioCtx.currentTime + idx * 0.12 + 0.4,
+            );
 
             osc.connect(gain);
             gain.connect(audioCtx.destination);
 
             osc.start(audioCtx.currentTime + idx * 0.12);
             osc.stop(audioCtx.currentTime + idx * 0.12 + 0.4);
-        });
-    }
+          });
+        }
 
-    // Sound toggle listener
-    soundToggleBtn.addEventListener('click', () => {
-        soundEnabled = !soundEnabled;
-        if (soundEnabled) {
-            soundIconOn.classList.remove('hidden');
-            soundIconOff.classList.add('hidden');
+        // Sound toggle listener
+        soundToggleBtn.addEventListener("click", () => {
+          soundEnabled = !soundEnabled;
+          if (soundEnabled) {
+            soundIconOn.classList.remove("hidden");
+            soundIconOff.classList.add("hidden");
             showToast("Đã bật âm thanh hiệu ứng 🔊");
             playClickSound();
-        } else {
-            soundIconOn.classList.add('hidden');
-            soundIconOff.classList.remove('hidden');
+          } else {
+            soundIconOn.classList.add("hidden");
+            soundIconOff.classList.remove("hidden");
             showToast("Đã tắt âm thanh 🔇");
-        }
-    });
-
-    // ==========================================================================
-    // 2. OTP DIGIT INPUT LOGIC (Auto advance, Backspace, Paste)
-    // ==========================================================================
-
-    inputs.forEach((input, index) => {
-        // Focus & Blur visual style state
-        input.addEventListener('focus', () => {
-            input.classList.add('focused');
+          }
         });
 
-        input.addEventListener('blur', () => {
-            input.classList.remove('focused');
-        });
+        // ==========================================================================
+        // 2. OTP DIGIT INPUT LOGIC (Auto advance, Backspace, Paste)
+        // ==========================================================================
 
-        // Input digit handling
-        input.addEventListener('input', (e) => {
+        inputs.forEach((input, index) => {
+          // Focus & Blur visual style state
+          input.addEventListener("focus", () => {
+            input.classList.add("focused");
+          });
+
+          input.addEventListener("blur", () => {
+            input.classList.remove("focused");
+          });
+
+          // Input digit handling
+          input.addEventListener("input", (e) => {
             // Extract numeric digits
             const rawValue = e.target.value;
-            const digitsOnly = rawValue.replace(/\D/g, '');
+            const digitsOnly = rawValue.replace(/\D/g, "");
 
             if (digitsOnly.length === 0) {
-                input.value = '';
-                input.classList.remove('filled');
-                return;
+              input.value = "";
+              input.classList.remove("filled");
+              return;
             }
 
             // Always take the newest typed character (last digit)
             const singleDigit = digitsOnly.slice(-1);
             input.value = singleDigit;
-            input.classList.add('filled');
+            input.classList.add("filled");
             playClickSound();
 
             // Auto-advance focus to next input box
             if (index < inputs.length - 1) {
-                inputs[index + 1].focus();
+              inputs[index + 1].focus();
             }
 
             // Check if all 4 digits are completed
             checkOTPCompletion();
-        });
+          });
 
-        // Keydown handling for Backspace & Arrow Navigation
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Backspace') {
-                if (input.value === '') {
-                    // Backspace on empty input -> step back to previous box and clear it
-                    if (index > 0) {
-                        inputs[index - 1].value = '';
-                        inputs[index - 1].classList.remove('filled');
-                        inputs[index - 1].focus();
-                    }
-                } else {
-                    // Clear current input value
-                    input.value = '';
-                    input.classList.remove('filled');
+          // Keydown handling for Backspace & Arrow Navigation
+          input.addEventListener("keydown", (e) => {
+            if (e.key === "Backspace") {
+              if (input.value === "") {
+                // Backspace on empty input -> step back to previous box and clear it
+                if (index > 0) {
+                  inputs[index - 1].value = "";
+                  inputs[index - 1].classList.remove("filled");
+                  inputs[index - 1].focus();
                 }
-            } else if (e.key === 'ArrowLeft' && index > 0) {
-                inputs[index - 1].focus();
-            } else if (e.key === 'ArrowRight' && index < inputs.length - 1) {
-                inputs[index + 1].focus();
+              } else {
+                // Clear current input value
+                input.value = "";
+                input.classList.remove("filled");
+              }
+            } else if (e.key === "ArrowLeft" && index > 0) {
+              inputs[index - 1].focus();
+            } else if (e.key === "ArrowRight" && index < inputs.length - 1) {
+              inputs[index + 1].focus();
             }
-        });
+          });
 
-        // Paste event handling (e.g., user pastes "4829")
-        input.addEventListener('paste', (e) => {
+          // Paste event handling (e.g., user pastes "4829")
+          input.addEventListener("paste", (e) => {
             e.preventDefault();
-            const pastedData = (e.clipboardData || window.clipboardData).getData('text');
-            const digits = pastedData.replace(/\D/g, '').slice(0, 4);
+            const pastedData = (
+              e.clipboardData || window.clipboardData
+            ).getData("text");
+            const digits = pastedData.replace(/\D/g, "").slice(0, 4);
 
             if (digits.length > 0) {
-                digits.split('').forEach((char, idx) => {
-                    if (idx < inputs.length) {
-                        inputs[idx].value = char;
-                        inputs[idx].classList.add('filled');
-                    }
-                });
+              digits.split("").forEach((char, idx) => {
+                if (idx < inputs.length) {
+                  inputs[idx].value = char;
+                  inputs[idx].classList.add("filled");
+                }
+              });
 
-                playClickSound();
+              playClickSound();
 
-                // Focus last filled input or next available
-                const nextFocus = Math.min(digits.length, inputs.length - 1);
-                inputs[nextFocus].focus();
+              // Focus last filled input or next available
+              const nextFocus = Math.min(digits.length, inputs.length - 1);
+              inputs[nextFocus].focus();
 
-                checkOTPCompletion();
+              checkOTPCompletion();
             }
+          });
         });
-    });
 
-    // Verify if all inputs have numeric values
-    function checkOTPCompletion() {
-        const otpCode = Array.from(inputs).map(i => i.value).join('');
-        if (otpCode.length === 4) {
+        // Verify if all inputs have numeric values
+        function checkOTPCompletion() {
+          const otpCode = Array.from(inputs)
+            .map((i) => i.value)
+            .join("");
+          if (otpCode.length === 4) {
             // Trigger transition to Verifying stage automatically
             setTimeout(() => {
-                startVerifying(otpCode);
+              startVerifying(otpCode);
             }, 180);
+          }
         }
-    }
 
-    // ==========================================================================
-    // 3. STAGE TRANSITIONS & ORBIT SPINNING ANIMATION
-    // ==========================================================================
+        // ==========================================================================
+        // 3. STAGE TRANSITIONS & ORBIT SPINNING ANIMATION
+        // ==========================================================================
 
-    // Step 2: Verifying State
-    function startVerifying(code) {
-        initAudio();
+        // Step 2: Verifying State
+        function startVerifying(code) {
+          initAudio();
 
-        // 1. Populate digits into orbiting node elements
-        const codeDigits = code.split('');
-        codeDigits.forEach((digit, idx) => {
+          // 1. Populate digits into orbiting node elements
+          const codeDigits = code.split("");
+          codeDigits.forEach((digit, idx) => {
             const digitValElem = document.getElementById(`digit-val-${idx}`);
             if (digitValElem) {
-                digitValElem.textContent = digit;
+              digitValElem.textContent = digit;
             }
-        });
+          });
 
-        // 2. Hide Input Stage and Show Verifying Orbit Stage
-        stageInput.classList.remove('active');
-        stageInput.classList.add('hidden');
+          // 2. Hide Input Stage and Show Verifying Orbit Stage
+          stageInput.classList.remove("active");
+          stageInput.classList.add("hidden");
 
-        stageVerifying.classList.remove('hidden');
-        stageVerifying.classList.add('active');
+          stageVerifying.classList.remove("hidden");
+          stageVerifying.classList.add("active");
 
-        // Update header subtitle
-        cardSubtitle.textContent = "Đang xác thực mã OTP...";
+          // Update header subtitle
+          cardSubtitle.textContent = "Đang xác thực mã OTP...";
 
-        // 3. Simulate API Verification delay (1.8s) then transition to Success Stage
-        setTimeout(() => {
+          // 3. Simulate API Verification delay (1.8s) then transition to Success Stage
+          setTimeout(() => {
             showSuccessState();
-        }, 1800);
-    }
+          }, 1800);
+        }
 
-    // Step 3: Success State
-    function showSuccessState() {
-        // 1. Hide Verifying Stage & Show Success Stage
-        stageVerifying.classList.remove('active');
-        stageVerifying.classList.add('hidden');
+        // Step 3: Success State
+        function showSuccessState() {
+          // 1. Hide Verifying Stage & Show Success Stage
+          stageVerifying.classList.remove("active");
+          stageVerifying.classList.add("hidden");
 
-        stageSuccess.classList.remove('hidden');
-        stageSuccess.classList.add('active');
+          stageSuccess.classList.remove("hidden");
+          stageSuccess.classList.add("active");
 
-        // 2. Update Header styling & badge icon to Emerald Green Success mode
-        cardTitle.textContent = "Xác Thực Thành Công";
-        cardSubtitle.textContent = "Mã OTP hợp lệ. Chào mừng bạn trở lại!";
-        
-        headerBadge.classList.add('success-mode');
-        headerBadge.innerHTML = `
+          // 2. Update Header styling & badge icon to Emerald Green Success mode
+          cardTitle.textContent = "Xác Thực Thành Công";
+          cardSubtitle.textContent = "Mã OTP hợp lệ. Chào mừng bạn trở lại!";
+
+          headerBadge.classList.add("success-mode");
+          headerBadge.innerHTML = `
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                 <polyline points="22 4 12 14.01 9 11.01"></polyline>
             </svg>
         `;
 
-        // 3. Update Success Time timestamp
-        const now = new Date();
-        const timeStr = now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        const timeElem = document.getElementById('success-time');
-        if (timeElem) timeElem.textContent = timeStr;
+          // 3. Update Success Time timestamp
+          const now = new Date();
+          const timeStr = now.toLocaleTimeString("vi-VN", {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          });
+          const timeElem = document.getElementById("success-time");
+          if (timeElem) timeElem.textContent = timeStr;
 
-        // 4. Play success audio chime & launch Confetti particles
-        playSuccessSound();
-        triggerConfetti();
-        showToast("Xác thực thành công! 🎉");
-    }
-
-    // ==========================================================================
-    // 4. CANVAS CONFETTI PARTICLE SYSTEM
-    // ==========================================================================
-
-    function triggerConfetti() {
-        const canvas = document.getElementById('confetti-canvas');
-        if (!canvas) return;
-
-        const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-
-        const particles = [];
-        const colors = ['#10b981', '#6366f1', '#8b5cf6', '#3b82f6', '#f59e0b', '#ec4899'];
-        const particleCount = 110;
-
-        for (let i = 0; i < particleCount; i++) {
-            particles.push({
-                x: canvas.width / 2 + (Math.random() - 0.5) * 120,
-                y: canvas.height / 2 - 40 + (Math.random() - 0.5) * 60,
-                vx: (Math.random() - 0.5) * 14,
-                vy: (Math.random() - 0.8) * 15 - 3,
-                size: Math.random() * 8 + 6,
-                color: colors[Math.floor(Math.random() * colors.length)],
-                rotation: Math.random() * 360,
-                vRot: (Math.random() - 0.5) * 10,
-                shape: Math.random() > 0.4 ? 'rect' : 'circle',
-                alpha: 1,
-                decay: Math.random() * 0.015 + 0.008
-            });
+          // 4. Play success audio chime & launch Confetti particles
+          playSuccessSound();
+          triggerConfetti();
+          showToast("Xác thực thành công! 🎉");
         }
 
-        let animationFrame;
+        // ==========================================================================
+        // 4. CANVAS CONFETTI PARTICLE SYSTEM
+        // ==========================================================================
 
-        function render() {
+        function triggerConfetti() {
+          const canvas = document.getElementById("confetti-canvas");
+          if (!canvas) return;
+
+          const ctx = canvas.getContext("2d");
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
+
+          const particles = [];
+          const colors = [
+            "#10b981",
+            "#6366f1",
+            "#8b5cf6",
+            "#3b82f6",
+            "#f59e0b",
+            "#ec4899",
+          ];
+          const particleCount = 110;
+
+          for (let i = 0; i < particleCount; i++) {
+            particles.push({
+              x: canvas.width / 2 + (Math.random() - 0.5) * 120,
+              y: canvas.height / 2 - 40 + (Math.random() - 0.5) * 60,
+              vx: (Math.random() - 0.5) * 14,
+              vy: (Math.random() - 0.8) * 15 - 3,
+              size: Math.random() * 8 + 6,
+              color: colors[Math.floor(Math.random() * colors.length)],
+              rotation: Math.random() * 360,
+              vRot: (Math.random() - 0.5) * 10,
+              shape: Math.random() > 0.4 ? "rect" : "circle",
+              alpha: 1,
+              decay: Math.random() * 0.015 + 0.008,
+            });
+          }
+
+          let animationFrame;
+
+          function render() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             let activeParticles = 0;
 
             particles.forEach((p) => {
-                if (p.alpha <= 0) return;
-                activeParticles++;
+              if (p.alpha <= 0) return;
+              activeParticles++;
 
-                p.x += p.vx;
-                p.y += p.vy;
-                p.vy += 0.35; // Gravity
-                p.vx *= 0.98; // Air resistance
-                p.rotation += p.vRot;
-                p.alpha -= p.decay;
+              p.x += p.vx;
+              p.y += p.vy;
+              p.vy += 0.35; // Gravity
+              p.vx *= 0.98; // Air resistance
+              p.rotation += p.vRot;
+              p.alpha -= p.decay;
 
-                ctx.save();
-                ctx.globalAlpha = Math.max(0, p.alpha);
-                ctx.translate(p.x, p.y);
-                ctx.rotate((p.rotation * Math.PI) / 180);
-                ctx.fillStyle = p.color;
+              ctx.save();
+              ctx.globalAlpha = Math.max(0, p.alpha);
+              ctx.translate(p.x, p.y);
+              ctx.rotate((p.rotation * Math.PI) / 180);
+              ctx.fillStyle = p.color;
 
-                if (p.shape === 'rect') {
-                    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
-                } else {
-                    ctx.beginPath();
-                    ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
-                    ctx.fill();
-                }
+              if (p.shape === "rect") {
+                ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+              } else {
+                ctx.beginPath();
+                ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
+                ctx.fill();
+              }
 
-                ctx.restore();
+              ctx.restore();
             });
 
             if (activeParticles > 0) {
-                animationFrame = requestAnimationFrame(render);
+              animationFrame = requestAnimationFrame(render);
             } else {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                cancelAnimationFrame(animationFrame);
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
+              cancelAnimationFrame(animationFrame);
             }
+          }
+
+          render();
         }
 
-        render();
-    }
-
-    // Handle canvas resize
-    window.addEventListener('resize', () => {
-        const canvas = document.getElementById('confetti-canvas');
-        if (canvas) {
+        // Handle canvas resize
+        window.addEventListener("resize", () => {
+          const canvas = document.getElementById("confetti-canvas");
+          if (canvas) {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-        }
-    });
+          }
+        });
 
-    // ==========================================================================
-    // 5. RESEND COUNTDOWN TIMER & TOAST SYSTEM
-    // ==========================================================================
+        // ==========================================================================
+        // 5. RESEND COUNTDOWN TIMER & TOAST SYSTEM
+        // ==========================================================================
 
-    function startResendTimer() {
-        resendCountdown = 30;
-        resendBtn.disabled = true;
-        resendTimer.textContent = `${resendCountdown}s`;
+        function startResendTimer() {
+          resendCountdown = 30;
+          resendBtn.disabled = true;
+          resendTimer.textContent = `${resendCountdown}s`;
 
-        if (timerInterval) clearInterval(timerInterval);
+          if (timerInterval) clearInterval(timerInterval);
 
-        timerInterval = setInterval(() => {
+          timerInterval = setInterval(() => {
             resendCountdown--;
             resendTimer.textContent = `${resendCountdown}s`;
 
             if (resendCountdown <= 0) {
-                clearInterval(timerInterval);
-                resendBtn.disabled = false;
-                resendTimer.textContent = "Sẵn sàng";
+              clearInterval(timerInterval);
+              resendBtn.disabled = false;
+              resendTimer.textContent = "Sẵn sàng";
             }
-        }, 1000);
-    }
+          }, 1000);
+        }
 
-    resendBtn.addEventListener('click', () => {
-        if (resendCountdown > 0 && resendBtn.disabled) return;
+        resendBtn.addEventListener("click", () => {
+          if (resendCountdown > 0 && resendBtn.disabled) return;
 
-        // Reset inputs
-        inputs.forEach(input => {
-            input.value = '';
-            input.classList.remove('filled');
-        });
-        inputs[0].focus();
+          // Reset inputs
+          inputs.forEach((input) => {
+            input.value = "";
+            input.classList.remove("filled");
+          });
+          inputs[0].focus();
 
-        playClickSound();
-        showToast("Mã OTP mới đã được gửi đến thiết bị của bạn!");
-        startResendTimer();
-    });
-
-    function showToast(message) {
-        toastMessage.textContent = message;
-        toast.classList.remove('hidden');
-        toast.classList.add('show');
-
-        setTimeout(() => {
-            toast.classList.remove('show');
-            setTimeout(() => toast.classList.add('hidden'), 300);
-        }, 3000);
-    }
-
-    // ==========================================================================
-    // 6. RESET & REPLAY ACTION CONTROLLERS
-    // ==========================================================================
-
-    function resetToInitialState() {
-        // Reset inputs
-        inputs.forEach(input => {
-            input.value = '';
-            input.classList.remove('filled', 'focused');
+          playClickSound();
+          showToast("Mã OTP mới đã được gửi đến thiết bị của bạn!");
+          startResendTimer();
         });
 
-        // Reset stage visibility
-        stageSuccess.classList.remove('active');
-        stageSuccess.classList.add('hidden');
+        function showToast(message) {
+          toastMessage.textContent = message;
+          toast.classList.remove("hidden");
+          toast.classList.add("show");
 
-        stageVerifying.classList.remove('active');
-        stageVerifying.classList.add('hidden');
+          setTimeout(() => {
+            toast.classList.remove("show");
+            setTimeout(() => toast.classList.add("hidden"), 300);
+          }, 3000);
+        }
 
-        stageInput.classList.remove('hidden');
-        stageInput.classList.add('active');
+        // ==========================================================================
+        // 6. RESET & REPLAY ACTION CONTROLLERS
+        // ==========================================================================
 
-        // Reset Header
-        cardTitle.textContent = originalTitle;
-        cardSubtitle.innerHTML = originalSubtitleHtml;
+        function resetToInitialState() {
+          // Reset inputs
+          inputs.forEach((input) => {
+            input.value = "";
+            input.classList.remove("filled", "focused");
+          });
 
-        headerBadge.classList.remove('success-mode');
-        headerBadge.innerHTML = `
+          // Reset stage visibility
+          stageSuccess.classList.remove("active");
+          stageSuccess.classList.add("hidden");
+
+          stageVerifying.classList.remove("active");
+          stageVerifying.classList.add("hidden");
+
+          stageInput.classList.remove("hidden");
+          stageInput.classList.add("active");
+
+          // Reset Header
+          cardTitle.textContent = originalTitle;
+          cardSubtitle.innerHTML = originalSubtitleHtml;
+
+          headerBadge.classList.remove("success-mode");
+          headerBadge.innerHTML = `
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                 <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
             </svg>
         `;
 
-        // Focus first input box
-        setTimeout(() => {
+          // Focus first input box
+          setTimeout(() => {
             inputs[0].focus();
-        }, 100);
+          }, 100);
 
-        playClickSound();
-        showToast("Đã làm mới giao diện OTP");
-    }
+          playClickSound();
+          showToast("Đã làm mới giao diện OTP");
+        }
 
-    resetBtn.addEventListener('click', resetToInitialState);
+        resetBtn.addEventListener("click", resetToInitialState);
 
-    continueBtn.addEventListener('click', () => {
-        showToast("Đang chuyển về màn hình đăng nhập...");
-        setTimeout(() => {
-            window.location.href = '../../Login_UI/index.html';
-        }, 1000);
-    });
+        continueBtn.addEventListener("click", () => {
+          showToast("Đang chuyển về màn hình đăng nhập...");
+          setTimeout(() => {
+            window.location.href = "../../Login_UI/index.html";
+          }, 1000);
+        });
 
-    // Init resend timer on page load
-    startResendTimer();
-});
-
-</script>
-</body>
+        // Init resend timer on page load
+        startResendTimer();
+      });
+    </script>
+  </body>
 </html>

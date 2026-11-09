@@ -1,27 +1,30 @@
 /* Dark Navy Theme for Reading Hub */
 
 .reading-theme-root {
-  background-color: #0C0E1D;
-  color: #EEF0FF;
+  background-color: #0c0e1d;
+  color: #eef0ff;
   min-height: 100dvh;
 }
 
 .reading-card {
   background-color: #141731;
-  border: 1px solid #2B3060;
+  border: 1px solid #2b3060;
   border-radius: 1.5rem;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .reading-card:hover {
-  background-color: #1B1F40;
-  border-color: #3F478C;
+  background-color: #1b1f40;
+  border-color: #3f478c;
   transform: translateY(-2px);
-  box-shadow: 0 16px 32px -12px rgba(0, 0, 0, 0.6), 0 0 24px -5px rgba(16, 185, 129, 0.2);
+  box-shadow:
+    0 16px 32px -12px rgba(0, 0, 0, 0.6),
+    0 0 24px -5px rgba(16, 185, 129, 0.2);
 }
 
 @keyframes laser-sweep {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(-100%);
     opacity: 0.2;
   }
@@ -56,12 +59,12 @@
   height: 6px;
 }
 .reading-theme-root ::-webkit-scrollbar-track {
-  background: #0C0E1D;
+  background: #0c0e1d;
 }
 .reading-theme-root ::-webkit-scrollbar-thumb {
-  background: #2B3060;
+  background: #2b3060;
   border-radius: 9999px;
 }
 .reading-theme-root ::-webkit-scrollbar-thumb:hover {
-  background: #434C94;
+  background: #434c94;
 }

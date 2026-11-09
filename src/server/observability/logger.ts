@@ -10,7 +10,7 @@ type ServerLogInput = {
   errorCode?: string;
   runId?: string;
   batchId?: string;
-  error?: any;
+  error?: unknown;
   metadata?: Record<string, unknown>;
 };
 
@@ -43,7 +43,7 @@ export function logServerEvent(level: LogLevel, input: ServerLogInput) {
   else console.info(serialized);
 }
 
-function redactValue(value: Error | unknown, key = "", depth = 0): any {
+function redactValue(value: unknown, key = "", depth = 0): unknown {
   if (SENSITIVE_FIELD_PATTERN.test(key)) return "[REDACTED]";
   if (depth > 6) return "[TRUNCATED]";
   if (value === null || typeof value === "boolean" || typeof value === "number")
@@ -64,7 +64,7 @@ function redactValue(value: Error | unknown, key = "", depth = 0): any {
   return String(value);
 }
 
-function serializeError(error: any) {
+function serializeError(error: unknown) {
   if (!(error instanceof Error)) return undefined;
   return {
     name: sanitizeText(error.name),

@@ -16,11 +16,19 @@ export default async function LoginPage({
   const params = await searchParams;
 
   return (
-    <div className="flex w-full items-center justify-center">
-      <LoginForm
-        next={params.next}
-        initialMessage={getConfirmationMessage(params.authError)}
-      />
+    <div className="w-full">
+      <h1 className="text-3xl font-bold tracking-tight text-pretty text-[var(--foreground)]">
+        Đăng nhập
+      </h1>
+      <p className="mt-3 leading-7 text-[var(--muted-foreground)]">
+        Tiếp tục lộ trình học bằng tài khoản đã xác minh của bạn.
+      </p>
+      <div className="mt-8">
+        <LoginForm
+          next={params.next}
+          initialMessage={getConfirmationMessage(params.authError)}
+        />
+      </div>
     </div>
   );
 }

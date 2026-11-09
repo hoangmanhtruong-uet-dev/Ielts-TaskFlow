@@ -4,7 +4,8 @@ export const DICTATION_CATALOG: DictationExercise[] = [
   {
     slug: "community-library-visit",
     title: "Community Library Registration",
-    description: "Luyện nghe dialogue hội thoại đăng ký thẻ thư viện cộng đồng (IELTS Listening Section 1).",
+    description:
+      "Luyện nghe dialogue hội thoại đăng ký thẻ thư viện cộng đồng (IELTS Listening Section 1).",
     category: "Campus & Daily Life",
     difficulty: "intermediate",
     audioUrl: "/audio/listening/community-library-visit.wav",
@@ -43,7 +44,8 @@ export const DICTATION_CATALOG: DictationExercise[] = [
         text: "Certainly. I'll just need to see some proof of address.",
         startTime: 14.5,
         endTime: 20,
-        translation: "Chắc chắn rồi. Tôi sẽ cần xem giấy tờ chứng minh địa chỉ.",
+        translation:
+          "Chắc chắn rồi. Tôi sẽ cần xem giấy tờ chứng minh địa chỉ.",
         hint: "Librarian requesting document",
       },
       {
@@ -69,7 +71,8 @@ export const DICTATION_CATALOG: DictationExercise[] = [
   {
     slug: "daily-greetings-breakfast",
     title: "Morning Routine & Breakfast",
-    description: "Luyện chép chính tả hội thoại ngắn hàng ngày về thói quen buổi sáng.",
+    description:
+      "Luyện chép chính tả hội thoại ngắn hàng ngày về thói quen buổi sáng.",
     category: "Daily Life",
     difficulty: "beginner",
     audioUrl: "/audio/listening/community-library-visit.wav",
@@ -112,7 +115,8 @@ export const DICTATION_CATALOG: DictationExercise[] = [
   {
     slug: "job-interview-prep",
     title: "Professional Job Interview",
-    description: "Chép chính tả hội thoại phỏng vấn xin việc tiếng Anh môi trường công sở.",
+    description:
+      "Chép chính tả hội thoại phỏng vấn xin việc tiếng Anh môi trường công sở.",
     category: "Business & Work",
     difficulty: "intermediate",
     audioUrl: "/audio/listening/community-library-visit.wav",
@@ -124,7 +128,8 @@ export const DICTATION_CATALOG: DictationExercise[] = [
         text: "Could you tell me a little bit about your background experience?",
         startTime: 0,
         endTime: 6,
-        translation: "Bạn có thể chia sẻ một chút về kinh nghiệm làm việc của bạn không?",
+        translation:
+          "Bạn có thể chia sẻ một chút về kinh nghiệm làm việc của bạn không?",
       },
       {
         id: "j2",
@@ -140,7 +145,8 @@ export const DICTATION_CATALOG: DictationExercise[] = [
         text: "My core strength is solving complex technical challenges efficiently.",
         startTime: 12.5,
         endTime: 19,
-        translation: "Thế mạnh cốt lõi của tôi là giải quyết các thách thức kỹ thuật phức tạp một cách hiệu quả.",
+        translation:
+          "Thế mạnh cốt lõi của tôi là giải quyết các thách thức kỹ thuật phức tạp một cách hiệu quả.",
       },
       {
         id: "j4",
@@ -148,14 +154,16 @@ export const DICTATION_CATALOG: DictationExercise[] = [
         text: "We are looking for someone who communicates well in a team.",
         startTime: 19.5,
         endTime: 25,
-        translation: "Chúng tôi đang tìm kiếm người có khả năng giao tiếp tốt trong đội ngũ.",
+        translation:
+          "Chúng tôi đang tìm kiếm người có khả năng giao tiếp tốt trong đội ngũ.",
       },
     ],
   },
   {
     slug: "academic-climate-change",
     title: "Renewable Energy & Climate Action",
-    description: "Luyện nghe chép chính tả bài giảng học thuật chủ đề năng lượng tái tạo.",
+    description:
+      "Luyện nghe chép chính tả bài giảng học thuật chủ đề năng lượng tái tạo.",
     category: "Academic & IELTS",
     difficulty: "advanced",
     audioUrl: "/audio/listening/community-library-visit.wav",
@@ -167,7 +175,8 @@ export const DICTATION_CATALOG: DictationExercise[] = [
         text: "Global climate initiatives require rapid transition toward renewable energy sources.",
         startTime: 0,
         endTime: 7,
-        translation: "Các sáng kiến khí hậu toàn cầu đòi hỏi sự chuyển dịch nhanh chóng sang năng lượng tái tạo.",
+        translation:
+          "Các sáng kiến khí hậu toàn cầu đòi hỏi sự chuyển dịch nhanh chóng sang năng lượng tái tạo.",
       },
       {
         id: "a2",
@@ -175,7 +184,8 @@ export const DICTATION_CATALOG: DictationExercise[] = [
         text: "Solar and wind infrastructure reduced greenhouse gas emissions significantly.",
         startTime: 7.5,
         endTime: 14,
-        translation: "Cơ sở hạ tầng điện mặt trời và gió đã làm giảm đáng kể lượng khí thải nhà kính.",
+        translation:
+          "Cơ sở hạ tầng điện mặt trời và gió đã làm giảm đáng kể lượng khí thải nhà kính.",
       },
       {
         id: "a3",
@@ -183,7 +193,8 @@ export const DICTATION_CATALOG: DictationExercise[] = [
         text: "Researchers suggest policy makers incentivize clean technology investments nationwide.",
         startTime: 14.5,
         endTime: 22,
-        translation: "Các nhà nghiên cứu kiến nghị các nhà chính sách nên khuyến khích đầu tư công nghệ sạch toàn quốc.",
+        translation:
+          "Các nhà nghiên cứu kiến nghị các nhà chính sách nên khuyến khích đầu tư công nghệ sạch toàn quốc.",
       },
     ],
   },

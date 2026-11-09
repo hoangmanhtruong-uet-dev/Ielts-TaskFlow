@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import React, { useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./verify-otp-form.module.css";
@@ -9,19 +10,38 @@ import type { ActionState } from "@/features/auth/action-state";
 type VerifyOtpField = "identifier" | "token" | "type";
 const initialState: ActionState<VerifyOtpField> = { status: "idle" };
 
+interface ConfettiParticle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  size: number;
+  color: string;
+  rotation: number;
+  vRot: number;
+  shape: "rect" | "circle";
+  alpha: number;
+  decay: number;
+}
+
 export function VerifyOtpForm({
-  identifier,
+  maskedIdentifier,
   channel,
+  hasContext = true,
 }: {
-  identifier: string;
+  maskedIdentifier: string;
   channel: string;
+  hasContext?: boolean;
 }) {
   const router = useRouter();
-  const [state, formAction, isPending] = useActionState(verifyOtpAction, initialState);
+  const [state, formAction, isPending] = useActionState(
+    verifyOtpAction,
+    initialState,
+  );
   const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const formRef = useRef<HTMLFormElement>(null);
-  
+
   // Confetti canvas ref
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -34,8 +54,15 @@ export function VerifyOtpForm({
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    const particles: any[] = [];
-    const colors = ["#10b981", "#6366f1", "#8b5cf6", "#3b82f6", "#f59e0b", "#ec4899"];
+    const particles: ConfettiParticle[] = [];
+    const colors = [
+      "#10b981",
+      "#6366f1",
+      "#8b5cf6",
+      "#3b82f6",
+      "#f59e0b",
+      "#ec4899",
+    ];
     for (let i = 0; i < 110; i++) {
       particles.push({
         x: canvas.width / 2 + (Math.random() - 0.5) * 120,
@@ -102,7 +129,10 @@ export function VerifyOtpForm({
     }
   }, [state.status, router]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    index: number,
+  ) => {
     const value = e.target.value.replace(/\D/g, "");
     if (!value) {
       const newOtp = [...otp];
@@ -110,18 +140,21 @@ export function VerifyOtpForm({
       setOtp(newOtp);
       return;
     }
-    
+
     const singleDigit = value.slice(-1);
     const newOtp = [...otp];
     newOtp[index] = singleDigit;
     setOtp(newOtp);
-    
+
     if (index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, index: number) => {
+  const handleKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    index: number,
+  ) => {
     if (e.key === "Backspace") {
       if (!otp[index] && index > 0) {
         inputRefs.current[index - 1]?.focus();
@@ -142,7 +175,10 @@ export function VerifyOtpForm({
 
   const handlePaste = (e: React.ClipboardEvent) => {
     e.preventDefault();
-    const pastedData = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    const pastedData = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, 6);
     if (pastedData) {
       const newOtp = [...otp];
       pastedData.split("").forEach((char, idx) => {
@@ -155,7 +191,7 @@ export function VerifyOtpForm({
   };
 
   useEffect(() => {
-    if (otp.every(val => val !== "")) {
+    if (otp.every((val) => val !== "")) {
       // Auto submit when 6 digits are entered
       if (formRef.current) {
         formRef.current.requestSubmit();
@@ -163,17 +199,15 @@ export function VerifyOtpForm({
     }
   }, [otp]);
 
-
-
   const showInput = !isPending && state.status !== "success";
   const showVerifying = isPending;
   const showSuccess = !isPending && state.status === "success";
 
   return (
     <div className={styles.container}>
-      <div className={`${styles['bg-glow']} ${styles['blob-1']}`}></div>
-      <div className={`${styles['bg-glow']} ${styles['blob-2']}`}></div>
-      <div className={styles['bg-grid']}></div>
+      <div className={`${styles["bg-glow"]} ${styles["blob-1"]}`}></div>
+      <div className={`${styles["bg-glow"]} ${styles["blob-2"]}`}></div>
+      <div className={styles["bg-grid"]}></div>
       <canvas
         ref={canvasRef}
         id="confetti-canvas"
@@ -188,98 +222,180 @@ export function VerifyOtpForm({
         }}
       ></canvas>
 
-      <main className={styles['otp-card-container']}>
+      <div className={styles["otp-card-container"]}>
         {/* Input Stage */}
-        <div className={`${styles.stage} ${showInput ? styles.active : styles.hidden}`}>
-          <div className={styles['card-header']}>
-            <div className={styles['badge-icon']}>
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <div
+          className={`${styles.stage} ${showInput ? styles.active : styles.hidden}`}
+        >
+          <div className={styles["card-header"]}>
+            <div className={styles["badge-icon"]}>
+              <svg
+                aria-hidden="true"
+                width="28"
+                height="28"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                 <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
               </svg>
             </div>
-            <h2 className={styles.title}>Nhập mã xác thực</h2>
+            <h1 className={styles.title}>Nhập mã xác thực</h1>
             <p className={styles.subtitle}>
-              Chúng tôi đã gửi mã xác thực 6 chữ số đến <span className={styles['phone-highlight']}>{identifier}</span>
+              Chúng tôi đã gửi mã xác thực 6 chữ số đến{" "}
+              <span className={styles["phone-highlight"]}>
+                {maskedIdentifier}
+              </span>
             </p>
           </div>
 
-          <form ref={formRef} action={formAction} className="w-full">
-            <input type="hidden" name="identifier" value={identifier} />
-            <input type="hidden" name="type" value={channel} />
-            <input type="hidden" name="token" value={otp.join("")} />
-            
-            <div className={styles['otp-inputs-wrapper']} style={{ gap: '8px' }}>
-              {otp.map((digit, i) => (
-                <input
-                  key={i}
-                  ref={(el) => { inputRefs.current[i] = el; }}
-                  type="text"
-                  inputMode="numeric"
-                  className={`${styles['otp-input']} ${digit ? styles.filled : ""}`}
-                  style={{ width: '48px', height: '56px', fontSize: '1.5rem' }}
-                  value={digit}
-                  onChange={(e) => handleChange(e, i)}
-                  onKeyDown={(e) => handleKeyDown(e, i)}
-                  onPaste={handlePaste}
-                  maxLength={1}
-                />
-              ))}
+          {!hasContext ? (
+            <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-center text-sm text-amber-200">
+              <p>Phiên xác thực OTP chưa khởi tạo hoặc đã hết hạn.</p>
+              <Link
+                href="/forgot-password"
+                className="mt-2 inline-block font-semibold text-indigo-300 underline hover:text-indigo-200"
+              >
+                Quay lại yêu cầu mã OTP mới
+              </Link>
             </div>
-            {state.status === "error" && (
-              <p className="mt-2 text-center text-sm text-red-500">{state.message}</p>
-            )}
-          </form>
+          ) : (
+            <form ref={formRef} action={formAction} className="w-full">
+              <input type="hidden" name="type" value={channel} />
+              <input type="hidden" name="token" value={otp.join("")} />
+
+              <div
+                className={styles["otp-inputs-wrapper"]}
+                style={{ gap: "8px" }}
+              >
+                {otp.map((digit, i) => (
+                  <input
+                    key={i}
+                    ref={(el) => {
+                      inputRefs.current[i] = el;
+                    }}
+                    type="text"
+                    inputMode="numeric"
+                    aria-label={`Chữ số OTP thứ ${i + 1}`}
+                    className={`${styles["otp-input"]} ${digit ? styles.filled : ""}`}
+                    style={{
+                      width: "48px",
+                      height: "56px",
+                      fontSize: "1.5rem",
+                    }}
+                    value={digit}
+                    onChange={(e) => handleChange(e, i)}
+                    onKeyDown={(e) => handleKeyDown(e, i)}
+                    onPaste={handlePaste}
+                    maxLength={1}
+                  />
+                ))}
+              </div>
+              {state.status === "error" && (
+                <p
+                  role="alert"
+                  className="mt-2 text-center text-sm text-red-300"
+                >
+                  {state.message}
+                </p>
+              )}
+            </form>
+          )}
         </div>
 
         {/* Verifying Stage */}
-        <div className={`${styles.stage} ${showVerifying ? styles.active : styles.hidden}`}>
-           <div className={styles['card-header']} style={{ marginBottom: 0 }}>
-              <h2 className={styles.title}>Đang xác thực</h2>
-              <p className={styles.subtitle}>Vui lòng chờ trong giây lát...</p>
-           </div>
-           <div className={styles['orbit-container']}>
-              <div className={`${styles['orbit-ring']} ${styles['orbit-ring-outer']}`}></div>
-              <div className={`${styles['orbit-ring']} ${styles['orbit-ring-inner']}`}></div>
-              <div className={styles['orbit-core']}>
-                  <div className={styles['core-pulse']}></div>
-                  <svg className={styles['lock-spin-icon']} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                  </svg>
+        <div
+          className={`${styles.stage} ${showVerifying ? styles.active : styles.hidden}`}
+        >
+          <div className={styles["card-header"]} style={{ marginBottom: 0 }}>
+            <h1 className={styles.title}>Đang xác thực</h1>
+            <p className={styles.subtitle}>Vui lòng chờ trong giây lát...</p>
+          </div>
+          <div className={styles["orbit-container"]}>
+            <div
+              className={`${styles["orbit-ring"]} ${styles["orbit-ring-outer"]}`}
+            ></div>
+            <div
+              className={`${styles["orbit-ring"]} ${styles["orbit-ring-inner"]}`}
+            ></div>
+            <div className={styles["orbit-core"]}>
+              <div className={styles["core-pulse"]}></div>
+              <svg
+                aria-hidden="true"
+                className={styles["lock-spin-icon"]}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+            </div>
+            <div className={styles["orbit-nodes-wrapper"]}>
+              <div className={`${styles["orbit-node"]} ${styles["node-0"]}`}>
+                <span>{otp[0] || "1"}</span>
               </div>
-              <div className={styles['orbit-nodes-wrapper']}>
-                  <div className={`${styles['orbit-node']} ${styles['node-0']}`}><span>{otp[0] || '1'}</span></div>
-                  <div className={`${styles['orbit-node']} ${styles['node-1']}`}><span>{otp[1] || '2'}</span></div>
-                  <div className={`${styles['orbit-node']} ${styles['node-2']}`}><span>{otp[2] || '3'}</span></div>
-                  <div className={`${styles['orbit-node']} ${styles['node-3']}`}><span>{otp[3] || '4'}</span></div>
+              <div className={`${styles["orbit-node"]} ${styles["node-1"]}`}>
+                <span>{otp[1] || "2"}</span>
               </div>
-           </div>
-           <div className={styles['verifying-status']}>
-              <h3 className={styles['status-title']}>Đang kết nối</h3>
-              <div className={styles['progress-bar-track']}>
-                  <div className={styles['progress-bar-fill']}></div>
+              <div className={`${styles["orbit-node"]} ${styles["node-2"]}`}>
+                <span>{otp[2] || "3"}</span>
               </div>
-           </div>
+              <div className={`${styles["orbit-node"]} ${styles["node-3"]}`}>
+                <span>{otp[3] || "4"}</span>
+              </div>
+            </div>
+          </div>
+          <div className={styles["verifying-status"]}>
+            <h2 className={styles["status-title"]}>Đang kết nối</h2>
+            <div className={styles["progress-bar-track"]}>
+              <div className={styles["progress-bar-fill"]}></div>
+            </div>
+          </div>
         </div>
 
         {/* Success Stage */}
-        <div className={`${styles.stage} ${showSuccess ? styles.active : styles.hidden}`}>
-            <div className={styles['success-badge-wrapper']}>
-                <div className={styles['success-ring-bg']}></div>
-                <div className={styles['success-icon-box']}>
-                    <svg className={styles['checkmark-svg']} viewBox="0 0 64 64">
-                        <circle className={styles['checkmark-circle']} cx="32" cy="32" r="28" fill="none"></circle>
-                        <path className={styles['checkmark-check']} fill="none" d="M18 32l10 10 20-20"></path>
-                    </svg>
-                </div>
+        <div
+          className={`${styles.stage} ${showSuccess ? styles.active : styles.hidden}`}
+        >
+          <div className={styles["success-badge-wrapper"]}>
+            <div className={styles["success-ring-bg"]}></div>
+            <div className={styles["success-icon-box"]}>
+              <svg
+                aria-hidden="true"
+                className={styles["checkmark-svg"]}
+                viewBox="0 0 64 64"
+              >
+                <circle
+                  className={styles["checkmark-circle"]}
+                  cx="32"
+                  cy="32"
+                  r="28"
+                  fill="none"
+                ></circle>
+                <path
+                  className={styles["checkmark-check"]}
+                  fill="none"
+                  d="M18 32l10 10 20-20"
+                ></path>
+              </svg>
             </div>
-            <div className={styles['success-content']}>
-                <h2 className={styles['success-title']}>Xác Thực Thành Công</h2>
-                <p className={styles['success-desc']}>Mã OTP hợp lệ. Đang chuyển hướng...</p>
-            </div>
+          </div>
+          <div className={styles["success-content"]}>
+            <h1 className={styles["success-title"]}>Xác Thực Thành Công</h1>
+            <p className={styles["success-desc"]}>
+              Mã OTP hợp lệ. Đang chuyển hướng...
+            </p>
+          </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

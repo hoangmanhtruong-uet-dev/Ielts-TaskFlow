@@ -1,26 +1,41 @@
-import { MetadataRoute } from "next";
+import type { MetadataRoute } from "next";
+
+import { siteConfig } from "@/config/site";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://app-hoc-tieng-anh.vercel.app";
+  const baseUrl = siteConfig.url.replace(/\/$/, "");
+  const lastModified = new Date();
 
   return [
     {
       url: `${baseUrl}`,
-      lastModified: new Date(),
+      lastModified,
       changeFrequency: "weekly",
       priority: 1,
     },
     {
-      url: `${baseUrl}/learn/vocabulary`,
-      lastModified: new Date(),
-      changeFrequency: "daily",
-      priority: 0.8,
+      url: `${baseUrl}/pricing`,
+      lastModified,
+      changeFrequency: "weekly",
+      priority: 0.85,
     },
     {
-      url: `${baseUrl}/plans`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.7,
+      url: `${baseUrl}/privacy`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.4,
+    },
+    {
+      url: `${baseUrl}/terms`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.4,
+    },
+    {
+      url: `${baseUrl}/refund`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.4,
     },
   ];
 }

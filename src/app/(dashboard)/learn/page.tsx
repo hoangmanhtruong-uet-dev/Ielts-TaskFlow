@@ -18,8 +18,11 @@ export default async function LearnPage() {
   const continueLessonData = overview.continueLesson ?? overview.nextLesson;
   const continueLesson = continueLessonData
     ? {
-        title: continueLessonData.title || continueLessonData.moduleTitle || "Listening Section 2: Campus Accommodation",
-        progressPercent: Math.round(continueLessonData.progressPercent ?? 0) || 60,
+        title:
+          continueLessonData.title ||
+          continueLessonData.moduleTitle ||
+          "Tiếp tục lộ trình IELTS",
+        progressPercent: Math.round(continueLessonData.progressPercent ?? 0),
         href:
           continueLessonData.slug && continueLessonData.moduleSlug
             ? `/learn/${continueLessonData.moduleSlug}/${continueLessonData.slug}`

@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React, { memo } from 'react';
+import React, { memo } from "react";
 
 interface Props {
   current: number;
@@ -17,7 +17,8 @@ export const DictationProgressBar = memo(function DictationProgressBar({
   sentenceIds,
   onSentenceClick,
 }: Props) {
-  const percentage = total > 0 ? Math.round((completedSentenceIds.size / total) * 100) : 0;
+  const percentage =
+    total > 0 ? Math.round((completedSentenceIds.size / total) * 100) : 0;
 
   return (
     <div className="space-y-2">
@@ -29,9 +30,9 @@ export const DictationProgressBar = memo(function DictationProgressBar({
       </div>
 
       {/* Overall progress bar */}
-      <div className="w-full bg-gray-200 rounded-full h-2">
+      <div className="h-2 w-full rounded-full bg-gray-200">
         <div
-          className="bg-green-500 h-2 rounded-full transition-all duration-300"
+          className="h-2 rounded-full bg-green-500 transition-all duration-300"
           style={{ width: `${percentage}%` }}
         />
       </div>
@@ -42,12 +43,12 @@ export const DictationProgressBar = memo(function DictationProgressBar({
           <button
             key={id}
             onClick={() => onSentenceClick(index)}
-            className={`w-6 h-6 rounded-full text-xs font-medium transition-all ${
+            className={`h-6 w-6 rounded-full text-xs font-medium transition-all ${
               index === current
-                ? 'bg-blue-600 text-white ring-2 ring-blue-300'
+                ? "bg-blue-600 text-white ring-2 ring-blue-300"
                 : completedSentenceIds.has(id)
-                ? 'bg-green-500 text-white'
-                : 'bg-gray-200 text-gray-500 hover:bg-gray-300'
+                  ? "bg-green-500 text-white"
+                  : "bg-gray-200 text-gray-500 hover:bg-gray-300"
             }`}
           >
             {index + 1}

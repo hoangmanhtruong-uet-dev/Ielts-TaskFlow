@@ -8,11 +8,14 @@ const { Client } = pg;
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
-const MIGRATION_PATH = resolve(ROOT, "supabase/migrations/20261025000000_seed_mvp_learning_curriculum.sql");
+const MIGRATION_PATH = resolve(
+  ROOT,
+  "supabase/migrations/20261025000000_seed_mvp_learning_curriculum.sql",
+);
 
 const client = new Client({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
+  ssl: { rejectUnauthorized: false },
 });
 
 async function main() {
@@ -22,7 +25,9 @@ async function main() {
   console.log("Connecting to Supabase PostgreSQL database...");
   await client.connect();
 
-  console.log("Executing 20261025000000_seed_mvp_learning_curriculum.sql on remote database...");
+  console.log(
+    "Executing 20261025000000_seed_mvp_learning_curriculum.sql on remote database...",
+  );
   const startTime = Date.now();
   await client.query(sql);
   console.log(`Executed successfully in ${Date.now() - startTime}ms!`);
@@ -34,16 +39,26 @@ async function main() {
       VALUES ('20261025000000')
       ON CONFLICT DO NOTHING;
     `);
-    console.log("Recorded migration 20261025000000 in schema_migrations table.");
-  } catch(e) {
+    console.log(
+      "Recorded migration 20261025000000 in schema_migrations table.",
+    );
+  } catch (e) {
     console.log("schema_migrations table note:", e.message);
   }
 
   // Verify row counts after execution
-  const modRes = await client.query("SELECT count(*)::int as count FROM public.learning_modules;");
-  const lesRes = await client.query("SELECT count(*)::int as count FROM public.lessons;");
-  const qRes = await client.query("SELECT count(*)::int as count FROM public.exercise_questions;");
-  const gRes = await client.query("SELECT count(*)::int as count FROM public.grammar_topics;");
+  const modRes = await client.query(
+    "SELECT count(*)::int as count FROM public.learning_modules;",
+  );
+  const lesRes = await client.query(
+    "SELECT count(*)::int as count FROM public.lessons;",
+  );
+  const qRes = await client.query(
+    "SELECT count(*)::int as count FROM public.exercise_questions;",
+  );
+  const gRes = await client.query(
+    "SELECT count(*)::int as count FROM public.grammar_topics;",
+  );
 
   console.log("=== UPDATED REMOTE DATABASE STATS ===");
   console.log(` - Learning Modules: ${modRes.rows[0].count}`);
@@ -55,7 +70,7 @@ async function main() {
   console.log("Database update completed!");
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error("Migration execution failed:", err);
   client.end();
   process.exit(1);

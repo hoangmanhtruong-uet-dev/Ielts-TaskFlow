@@ -54,13 +54,17 @@ export async function saveVocabAction(input: { term: string }) {
 
   await requireCompletedOnboarding();
   const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   if (!user) {
     return { success: false, error: "Unauthorized" };
   }
 
-  const { success: rateLimitSuccess } = await saveDraftRateLimit.limit(`save_vocab_${user.id}`);
+  const { success: rateLimitSuccess } = await saveDraftRateLimit.limit(
+    `save_vocab_${user.id}`,
+  );
   if (!rateLimitSuccess) {
     return { success: false, error: "Too many requests. Please slow down." };
   }
@@ -85,7 +89,9 @@ export async function saveVocabAction(input: { term: string }) {
 export async function checkWordInVaultAction(term: string) {
   try {
     const supabase = await createSupabaseServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) return { success: false, inVault: false };
 
     const { data } = await supabase
@@ -104,7 +110,9 @@ export async function checkWordInVaultAction(term: string) {
 export async function getSavedVaultTermsAction() {
   try {
     const supabase = await createSupabaseServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) return { success: true, terms: [] };
 
     const { data } = await supabase
@@ -114,7 +122,7 @@ export async function getSavedVaultTermsAction() {
       .order("created_at", { ascending: false })
       .limit(30);
 
-    return { success: true, terms: data ? data.map(r => r.term) : [] };
+    return { success: true, terms: data ? data.map((r) => r.term) : [] };
   } catch {
     return { success: false, terms: [] };
   }

@@ -9,8 +9,16 @@ export const metadata: Metadata = {
 
 export default function RegisterPage() {
   return (
-    <div className="flex w-full items-center justify-center">
-      <RegisterForm />
+    <div className="w-full">
+      <h1 className="text-3xl font-bold tracking-tight text-pretty text-[var(--foreground)]">
+        Tạo tài khoản
+      </h1>
+      <p className="mt-3 leading-7 text-[var(--muted-foreground)]">
+        Tạo tài khoản bằng email. Bạn sẽ cần xác minh hộp thư trước khi bắt đầu.
+      </p>
+      <div className="mt-8">
+        <RegisterForm />
+      </div>
     </div>
   );
 }

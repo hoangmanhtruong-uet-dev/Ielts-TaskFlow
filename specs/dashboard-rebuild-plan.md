@@ -1,7 +1,9 @@
 # Kế Hoạch Tái Cấu Trúc & Xây Dựng Lại Dashboard (Command Center)
 
 ## 1. Tầm nhìn & Mục tiêu (Goal Description)
+
 Dashboard hiện tại đang chủ yếu sử dụng dữ liệu giả lập (mock data) và được gộp chung trong một file `client.tsx` khá lớn (gần 700 dòng). Mục tiêu của kế hoạch này là "đập đi xây lại" kiến trúc của trang Dashboard để biến nó thành một **Trung tâm chỉ huy (Command Center)** thực thụ, chuẩn Production cho một ứng dụng học tiếng Anh/IELTS:
+
 - **Modular hóa**: Chia nhỏ các UI components.
 - **Data-driven**: Kết nối dữ liệu thật từ database (Supabase).
 - **Gamification mạnh mẽ**: Tạo động lực học tập qua Streak, XP, League.
@@ -10,6 +12,7 @@ Dashboard hiện tại đang chủ yếu sử dụng dữ liệu giả lập (mo
 ---
 
 ## 2. Luồng & Logic Dữ Liệu (Logic & Data Flow)
+
 Sử dụng mô hình Server Components kết hợp với Client Components để tối ưu SEO và Performance.
 
 1. **Server Fetching (Page.tsx):**
@@ -24,6 +27,7 @@ Sử dụng mô hình Server Components kết hợp với Client Components đ�
 ---
 
 ## 3. Bảo mật & Quản lý truy cập (Security)
+
 1. **Xác thực (Authentication):** Require JWT token từ Supabase Auth. Trả về `redirect('/login')` nếu chưa đăng nhập.
 2. **Phân quyền (Authorization) & RLS:**
    - Bật **Row Level Security (RLS)** trên tất cả các bảng (UserStats, Progress, DailyGoals). Đảm bảo query từ Client hay Server đều chỉ lấy được dữ liệu của chính `auth.uid()`.
@@ -32,6 +36,7 @@ Sử dụng mô hình Server Components kết hợp với Client Components đ�
 ---
 
 ## 4. UI/UX, Bố cục & Component Architecture
+
 Tách file `client.tsx` khổng lồ thành cấu trúc thư mục feature-based:
 
 ```text
@@ -51,11 +56,13 @@ src/app/(dashboard)/dashboard/
 ```
 
 ### 4.1. Responsive Layout (Bố cục)
+
 - **Desktop (>= lg):** Giữ nguyên tỷ lệ Grid 70/30 (7 columns cho Main Content, 3 columns cho Right Sidebar). Áp dụng `sticky top-24` cho cột phải nếu cần thiết để widget luôn hiển thị khi scroll.
 - **Tablet (md):** Chia cột 50/50 hoặc hiển thị dạng thẻ lưới (Grid card).
 - **Mobile (< sm):** Đưa toàn bộ về 1 cột (Stacking). Cột Main Content hiển thị trước, cột Sidebar (Daily Goal, Plan) đẩy xuống dưới. Cần ưu tiên hiển thị "Continue Learning" và "Today's Plan" lên đầu trên Mobile.
 
 ### 4.2. UI Design & Micro-interactions
+
 - Giữ nguyên triết lý thiết kế: bo góc mềm mại (`rounded-3xl`, `rounded-2xl`), shadow mượt (`shadow-sm`, hover shadow), Glassmorphism nhẹ cho Header.
 - Bổ sung hiệu ứng **Confetti** khi user hoàn thành Daily Goal.
 - Thêm Hover states rõ ràng cho "Word of the Day" (lật thẻ hoặc trượt chữ).
@@ -65,12 +72,14 @@ src/app/(dashboard)/dashboard/
 ## 5. Tính năng & Nội dung Chi tiết (Features Breakdown)
 
 ### 5.1. Khối nội dung chính (Left Column)
+
 - **Header & Stats:** Hiển thị thời lượng học thật (tính tổng từ bảng study_sessions).
 - **Continue Learning:** Logic tự động tìm bài học cuối cùng user đang dở dang. Trạng thái thanh progress bar phải lấy từ DB.
 - **Features Overview:** Cần disable hoặc gắn tag "Pro" nếu tính năng yêu cầu trả phí (ví dụ: Dictation VIP).
 - **Quick Practice & Heatmap:** Heatmap phải lấy history thật của 365 ngày qua. Quick Quiz lấy ngẫu nhiên 1 câu hỏi grammar mà user từng sai (Error review loop).
 
 ### 5.2. Khối điều hướng & Mục tiêu (Right Sidebar)
+
 - **Daily Goals:** Thiết kế hệ thống tính điểm linh hoạt. Ví dụ mục tiêu: 3 bài học + 1 bài nghe.
 - **Today's Plan:** Danh sách TODO thông minh, tự động gạch bỏ (strike-through) khi user hoàn thành module trong ngày.
 - **Word of the Day:** Logic Server tính toán "Từ của ngày" đồng bộ cho tất cả user (dựa trên seed là ngày tháng) hoặc cá nhân hóa dựa trên band điểm mục tiêu của user (A2 vs IELTS 7.0 sẽ có từ khác nhau).
@@ -101,15 +110,18 @@ src/app/(dashboard)/dashboard/
 > Để tránh các lỗi ẩn trên Production, cần đặc biệt lưu ý và implement các Test Cases sau trong quá trình code:
 
 ### 7.1. Xử lý Múi giờ (Timezone)
+
 - **Vấn đề:** Các chỉ số như Streak, Daily Goal, Heatmap phụ thuộc vào ngày hiện tại. Múi giờ của Server (thường là UTC) có thể khác với múi giờ của thiết bị User.
 - **Giải pháp:** Cần lưu timestamp theo dạng UTC trong Supabase. Khi hiển thị hoặc tính toán logic ngày mới (reset daily goals), phải dùng múi giờ của Client (`Intl.DateTimeFormat().resolvedOptions().timeZone`) để tính. Viết Test case thử thay đổi múi giờ để kiểm chứng Streak không bị sập.
 
 ### 7.2. Edge Cases (Biên dữ liệu & UI)
+
 - **Tràn Text (Text Overflow):** Tên user hoặc tên bài học quá dài phải được xử lý bằng `truncate` hoặc `line-clamp` để không làm vỡ Grid/Flex.
 - **Extreme Data:** User có Streak 9,999 ngày, hoặc XP > 1,000,000 thì badge chứa số trên header vẫn phải hiển thị gọn gàng (có thể format thành `1M` hoặc `1.2M`).
 - **Lỗi Mạng (Network Issues):** Triển khai file `error.tsx` riêng cho khu vực Dashboard làm Error Boundary, hiển thị UI thân thiện kèm nút "Thử lại" thay vì để vỡ trang khi gọi Supabase bị timeout.
 
 ### 7.3. Testing Strategy
+
 - **Unit Tests:** Viết các Unit tests (dùng Vitest/Jest) tập trung vào logic lõi: hàm tính điểm XP, hàm tính chuỗi Streak liên tiếp, hàm format ngày giờ.
 - **E2E Tests:** Sử dụng Playwright để mô phỏng một end-to-end user flow: `Đăng nhập -> Vào Dashboard -> Xem hiển thị mặc định -> Click vào "Continue Learning"`.
 - **Security Tests:** Kiểm thử trực tiếp bằng code để chứng minh Row Level Security (RLS) hoạt động: API gọi bằng Token của User A không thể read/write data của User B.
@@ -117,8 +129,9 @@ src/app/(dashboard)/dashboard/
 ---
 
 ## Ý kiến phản hồi (User Review Required)
+
 > [!IMPORTANT]
 > **Về Word of The Day:** Bạn muốn từ vựng này giống nhau cho tất cả mọi người, hay cá nhân hóa dựa trên trình độ bài test đầu vào của user?
 > **Về Heatmap:** Bạn có muốn tích hợp Github-style Heatmap thành một component thư viện riêng (như `react-activity-calendar`) hay tiếp tục dùng bản custom tự build?
 
-*Vui lòng duyệt qua bản kế hoạch đã được bổ sung này. Nếu mọi thứ đã rõ ràng và đúng định hướng của bạn, chúng ta sẽ bắt đầu chuyển sang bước thực thi (Giai đoạn 1 & 2).*
+_Vui lòng duyệt qua bản kế hoạch đã được bổ sung này. Nếu mọi thứ đã rõ ràng và đúng định hướng của bạn, chúng ta sẽ bắt đầu chuyển sang bước thực thi (Giai đoạn 1 & 2)._

@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
-import { Mic, Square, Trash2, UploadCloud } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { CheckCircle2, Mic, Square, Trash2, UploadCloud } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { GenericPracticeEngine } from "@/features/core-practice";
@@ -23,6 +23,13 @@ type Recording = {
   mimeType: "audio/webm" | "audio/mp4" | "audio/mpeg";
 };
 
+const MAX_AUDIO_BYTES = 15 * 1024 * 1024;
+const EXTENSION_BY_MIME: Record<Recording["mimeType"], string> = {
+  "audio/webm": "webm",
+  "audio/mp4": "m4a",
+  "audio/mpeg": "mp3",
+};
+
 export function SpeakingRunner({
   data,
   mockContext,
@@ -33,9 +40,14 @@ export function SpeakingRunner({
   const router = useRouter();
   const [activePrompt, setActivePrompt] = useState<string | null>(null);
   const [recordings, setRecordings] = useState<Record<string, Recording>>({});
+  const [uploadedPrompts, setUploadedPrompts] = useState<
+    Record<string, boolean>
+  >({});
   const [message, setMessage] = useState("");
   const [recordingSeconds, setRecordingSeconds] = useState(0);
-  const [pending, startTransition] = useTransition();
+  const [uploadingPromptId, setUploadingPromptId] = useState<string | null>(
+    null,
+  );
 
   const recorderRef = useRef<MediaRecorder | null>(null);
   const recordingsRef = useRef<Record<string, Recording>>({});
@@ -46,6 +58,7 @@ export function SpeakingRunner({
   const elapsedTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const attempt = data.attempt;
+  const attemptId = attempt?.id ?? "";
 
   useEffect(
     () => () => {
@@ -59,16 +72,37 @@ export function SpeakingRunner({
     [],
   );
 
-  const attemptId = attempt?.id ?? "";
+  // Warn user if leaving with an active recording or un-uploaded local recordings
+  useEffect(() => {
+    const hasPendingAudio =
+      activePrompt !== null ||
+      Object.keys(recordings).length > 0 ||
+      uploadingPromptId !== null;
+    if (!hasPendingAudio) return;
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [activePrompt, recordings, uploadingPromptId]);
+
+  const stopRecording = useCallback(() => {
+    if (stopTimerRef.current) clearTimeout(stopTimerRef.current);
+    if (elapsedTimerRef.current) clearInterval(elapsedTimerRef.current);
+    if (recorderRef.current?.state === "recording") recorderRef.current.stop();
+  }, []);
 
   const startRecording = async (promptId: string, maximumSeconds: number) => {
     if (
       !navigator.mediaDevices?.getUserMedia ||
       typeof MediaRecorder === "undefined"
     ) {
-      setMessage("This browser does not support secure audio recording.");
+      setMessage("Trình duyệt hiện tại không hỗ trợ ghi âm an toàn.");
       return;
     }
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const preferred = [
@@ -78,9 +112,10 @@ export function SpeakingRunner({
       ].find((type) => MediaRecorder.isTypeSupported(type));
       if (!preferred) {
         stream.getTracks().forEach((track) => track.stop());
-        setMessage("No supported audio format was found.");
+        setMessage("Không tìm thấy định dạng âm thanh được hỗ trợ.");
         return;
       }
+
       const recorder = new MediaRecorder(stream, { mimeType: preferred });
       chunksRef.current = [];
       recorder.ondataavailable = (event) => {
@@ -111,9 +146,10 @@ export function SpeakingRunner({
         stream.getTracks().forEach((track) => track.stop());
         setActivePrompt(null);
         setMessage(
-          "Recording saved on this device. Upload it for verification.",
+          "Bản ghi âm đã lưu tạm trên thiết bị. Hãy tải lên để xác minh.",
         );
       };
+
       recorderRef.current = recorder;
       streamRef.current = stream;
       recorder.start(250);
@@ -123,109 +159,144 @@ export function SpeakingRunner({
         1000,
       );
       setActivePrompt(promptId);
-      setMessage("Recording...");
+      setMessage("Đang ghi âm...");
       stopTimerRef.current = setTimeout(stopRecording, maximumSeconds * 1000);
     } catch {
-      setMessage("Microphone access failed. Check your browser permission.");
+      setMessage("Không thể truy cập micro. Hãy kiểm tra quyền trình duyệt.");
     }
   };
 
-  const stopRecording = () => {
-    if (stopTimerRef.current) clearTimeout(stopTimerRef.current);
-    if (elapsedTimerRef.current) clearInterval(elapsedTimerRef.current);
-    if (recorderRef.current?.state === "recording") recorderRef.current.stop();
-  };
-
-  const upload = (promptId: string) => {
-    const recording = recordings[promptId];
-    if (!recording) return;
-
-    if (recording.blob.size > 5 * 1024 * 1024) {
-      setMessage("Dung lượng audio vượt quá giới hạn 5MB.");
-      return;
-    }
-    if (recording.duration < 2 || recording.duration > 120) {
-      setMessage("Thời lượng audio phải từ 2 giây đến 2 phút.");
-      return;
-    }
-
-    startTransition(async () => {
-      setMessage("Đang tải audio lên R2...");
-      const result = await getR2UploadUrlAction(recording.mimeType);
-
-      if (result.status !== "success") {
-        setMessage(result.message);
-        return;
+  const uploadRecordingToServer = useCallback(
+    async (promptId: string, recording: Recording): Promise<boolean> => {
+      if (recording.blob.size < 1 || recording.blob.size > MAX_AUDIO_BYTES) {
+        setMessage("Dung lượng audio phải trong khoảng 1 byte đến 15MB.");
+        return false;
+      }
+      if (recording.duration < 1 || recording.duration > 180) {
+        setMessage("Thời lượng audio hợp lệ là từ 1 giây đến 3 phút.");
+        return false;
       }
 
+      setUploadingPromptId(promptId);
+      setMessage("Đang tải audio lên hệ thống lưu trữ...");
+
       try {
-        const uploadRes = await fetch(result.uploadUrl, {
-          method: "PUT",
-          body: recording.blob,
-          headers: {
-            "Content-Type": recording.mimeType,
-          },
-        });
-
-        if (!uploadRes.ok) throw new Error("HTTP error " + uploadRes.status);
-
-        const saveRes = await saveR2AudioAction(
+        const result = await getR2UploadUrlAction(
+          recording.mimeType,
           attemptId,
           promptId,
-          result.fileKey,
-          recording.mimeType,
-          recording.blob.size,
-          recording.duration,
         );
-        if (saveRes.status === "error") {
-          setMessage(saveRes.message);
-          return;
+
+        if (result.status !== "success") {
+          setMessage(result.message);
+          return false;
         }
 
-        setMessage("Audio đã được ghi nhận thành công!");
-        router.refresh();
-      } catch {
-        setMessage("Đang thử tải lên qua máy chủ dự phòng...");
         try {
+          const uploadRes = await fetch(result.uploadUrl, {
+            method: "PUT",
+            body: recording.blob,
+            headers: {
+              "Content-Type": result.mimeType,
+            },
+          });
+
+          if (!uploadRes.ok) {
+            throw new Error(`HTTP error ${uploadRes.status}`);
+          }
+
+          const saveRes = await saveR2AudioAction(
+            attemptId,
+            promptId,
+            result.fileKey,
+            result.mimeType,
+          );
+          if (saveRes.status === "error") {
+            setMessage(saveRes.message);
+            return false;
+          }
+        } catch {
+          setMessage("Đang thử tải lên qua máy chủ dự phòng...");
+          const ext = EXTENSION_BY_MIME[recording.mimeType] || "webm";
           const formData = new FormData();
-          formData.append("file", recording.blob, `audio.webm`);
+          formData.append("file", recording.blob, `audio.${ext}`);
           formData.append("attemptId", attemptId);
           formData.append("promptId", promptId);
           formData.append("mimeType", recording.mimeType);
-          formData.append("duration", String(recording.duration));
 
           const fallbackRes = await uploadR2AudioFallbackAction(formData);
-          if (fallbackRes.status === "success") {
-            setMessage("Audio đã được ghi nhận thành công!");
-            router.refresh();
-          } else {
+          if (fallbackRes.status !== "success") {
             setMessage(fallbackRes.message || "Lỗi kết nối khi tải audio lên.");
+            return false;
           }
-        } catch {
-          setMessage("Lỗi kết nối khi tải audio lên. Vui lòng thử lại.");
         }
+
+        setUploadedPrompts((prev) => ({ ...prev, [promptId]: true }));
+        setRecordings((current) => {
+          if (current[promptId]) {
+            URL.revokeObjectURL(current[promptId].url);
+          }
+          const next = { ...current };
+          delete next[promptId];
+          recordingsRef.current = next;
+          return next;
+        });
+        setMessage("Audio đã được xác minh và lưu thành công!");
+        router.refresh();
+        return true;
+      } catch {
+        setMessage("Lỗi kết nối khi tải audio lên. Vui lòng thử lại.");
+        return false;
+      } finally {
+        setUploadingPromptId(null);
       }
-    });
-  };
+    },
+    [attemptId, router],
+  );
 
   const handleSubmit = useCallback(async () => {
-    startTransition(async () => {
-      if (mockContext) {
-        await submitMockTestSectionAction({
-          mockTestSlug: mockContext.mockTestSlug,
-          sessionId: mockContext.sessionId,
-          sectionAttemptId: mockContext.sectionAttemptId,
-          idempotencyKey: crypto.randomUUID(),
-        });
-      } else {
-        await submitSpeakingAction({
-          attemptId,
-          setSlug: data.set.slug,
-          idempotencyKey: crypto.randomUUID(),
-        });
+    if (activePrompt !== null) {
+      throw new Error("Vui lòng dừng ghi âm trước khi nộp bài.");
+    }
+
+    const pendingRecordings = Object.entries(recordingsRef.current);
+    for (const [promptId, recording] of pendingRecordings) {
+      const ok = await uploadRecordingToServer(promptId, recording);
+      if (!ok) {
+        throw new Error(
+          "Không thể tải lên bản ghi âm đang chờ. Hãy kiểm tra và tải lại trước khi nộp.",
+        );
       }
+    }
+
+    if (mockContext) {
+      const res = await submitMockTestSectionAction({
+        mockTestSlug: mockContext.mockTestSlug,
+        sessionId: mockContext.sessionId,
+        sectionAttemptId: mockContext.sectionAttemptId,
+        idempotencyKey: crypto.randomUUID(),
+      });
+      if (res && "status" in res && res.status === "error") {
+        throw new Error(res.message);
+      }
+      return;
+    }
+
+    const res = await submitSpeakingAction({
+      attemptId,
+      setSlug: data.set.slug,
+      idempotencyKey: crypto.randomUUID(),
     });
-  }, [attemptId, data.set.slug, mockContext]);
+    if (res && "status" in res && res.status === "error") {
+      throw new Error(res.message);
+    }
+  }, [
+    activePrompt,
+    attemptId,
+    data.set.slug,
+    mockContext,
+    uploadRecordingToServer,
+  ]);
 
   const questions = data.prompts.map((p) => ({
     id: p.id,
@@ -236,17 +307,22 @@ export function SpeakingRunner({
 
   return (
     <GenericPracticeEngine
+      attemptId={attempt.id}
+      questions={questions}
+      enableAutosave={false}
       title={data.set.title}
       domain="speaking"
       categoryLabel="Speaking Practice"
-      questions={questions}
-      isSubmitting={pending}
+      isSubmitting={uploadingPromptId !== null}
       onSubmit={handleSubmit}
       renderSidePanel={() => (
-        <div className="flex flex-col h-full justify-center items-center p-8 bg-white text-center">
-          <h2 className="text-2xl font-black text-slate-800 mb-4">Speaking Instructions</h2>
-          <p className="text-slate-600 max-w-md leading-relaxed">
-            Record your audio response for each question using your microphone. Make sure you speak clearly within the maximum allowed time limit.
+        <div className="flex h-full flex-col items-center justify-center bg-white p-8 text-center">
+          <h2 className="mb-4 text-2xl font-black text-slate-800">
+            Speaking Instructions
+          </h2>
+          <p className="max-w-md leading-relaxed text-slate-600">
+            Ghi âm câu trả lời cho từng câu hỏi và nhấn Tải lên để hệ thống xác
+            minh audio trước khi nộp bài.
           </p>
         </div>
       )}
@@ -255,32 +331,39 @@ export function SpeakingRunner({
         if (!prompt) return null;
         const local = recordings[prompt.id];
         const isRecording = activePrompt === prompt.id;
+        const isPromptUploaded =
+          Boolean(prompt.verifiedAudio?.signedUrl) ||
+          Boolean(uploadedPrompts[prompt.id]);
+        const isBusy = uploadingPromptId !== null;
 
         return (
-          <div className="space-y-6 max-w-xl mx-auto text-center">
-            <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-slate-200">
-              <h2 className="text-xs font-black uppercase tracking-wider text-slate-400 mb-2">
+          <div className="mx-auto max-w-xl space-y-6 text-center">
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+              <h2 className="mb-2 text-xs font-black tracking-wider text-slate-400 uppercase">
                 {prompt.part.replace("_", " ")}
               </h2>
-              <p className="text-slate-800 text-xl font-black mb-4 leading-relaxed">
+              <p className="mb-4 text-xl leading-relaxed font-black text-slate-800">
                 {prompt.text}
               </p>
-              <p className="text-slate-500 text-xs bg-slate-50 p-3 rounded-xl border border-slate-100">
+              <p className="rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs text-slate-500">
                 {prompt.instructions ||
                   `Speak for ${prompt.minimumAnswerSeconds}-${prompt.maximumAnswerSeconds} seconds.`}
               </p>
             </div>
 
             {message ? (
-              <p aria-live="polite" className="text-xs font-bold text-indigo-600">
+              <p
+                aria-live="polite"
+                className="text-xs font-bold text-indigo-600"
+              >
                 {message}
               </p>
             ) : null}
 
-            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200 flex flex-col items-center justify-center min-h-[300px]">
+            <div className="flex min-h-[300px] flex-col items-center justify-center rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
               <div className="relative mb-6">
                 {isRecording ? (
-                  <div className="absolute -inset-4 bg-rose-500/20 rounded-full animate-ping" />
+                  <div className="absolute -inset-4 animate-ping rounded-full bg-rose-500/20" />
                 ) : null}
                 <button
                   type="button"
@@ -289,9 +372,9 @@ export function SpeakingRunner({
                       ? stopRecording()
                       : startRecording(prompt.id, prompt.maximumAnswerSeconds)
                   }
-                  disabled={pending || Boolean(activePrompt && !isRecording)}
+                  disabled={isBusy || Boolean(activePrompt && !isRecording)}
                   className={cn(
-                    "relative z-10 h-20 w-20 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg disabled:opacity-50",
+                    "relative z-10 flex h-20 w-20 items-center justify-center rounded-full shadow-lg transition-all duration-300 disabled:opacity-50",
                     isRecording
                       ? "bg-slate-900 text-rose-500 hover:bg-slate-800"
                       : "bg-rose-500 text-white hover:bg-rose-600",
@@ -301,7 +384,7 @@ export function SpeakingRunner({
                 </button>
               </div>
 
-              <div className="text-lg font-bold text-slate-600 font-mono">
+              <div className="font-mono text-lg font-bold text-slate-600">
                 {String(Math.floor(recordingSeconds / 60)).padStart(2, "0")}:
                 {String(recordingSeconds % 60).padStart(2, "0")}{" "}
                 <span className="text-slate-400">
@@ -311,16 +394,23 @@ export function SpeakingRunner({
 
               {local ? (
                 <div className="mt-6 w-full">
-                  <audio controls src={local.url} className="w-full h-10" />
+                  <audio controls src={local.url} className="h-10 w-full" />
                   <div className="mt-3 flex gap-2">
                     <button
-                      onClick={() => upload(prompt.id)}
-                      disabled={pending || isRecording}
-                      className="flex-1 bg-sky-600 text-white font-bold py-2.5 rounded-xl hover:bg-sky-700 transition-colors flex items-center justify-center gap-2 text-sm"
+                      type="button"
+                      onClick={() =>
+                        void uploadRecordingToServer(prompt.id, local)
+                      }
+                      disabled={isBusy || isRecording}
+                      className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-sky-600 py-2.5 text-sm font-bold text-white transition-colors hover:bg-sky-700 disabled:opacity-50"
                     >
-                      <UploadCloud size={16} /> Nộp audio
+                      <UploadCloud size={16} />{" "}
+                      {uploadingPromptId === prompt.id
+                        ? "Đang tải lên..."
+                        : "Nộp audio"}
                     </button>
                     <button
+                      type="button"
                       onClick={() => {
                         URL.revokeObjectURL(local.url);
                         setRecordings((c) => {
@@ -330,20 +420,28 @@ export function SpeakingRunner({
                           return n;
                         });
                       }}
-                      disabled={pending || isRecording}
-                      className="px-4 bg-rose-50 text-rose-600 font-bold py-2.5 rounded-xl hover:bg-rose-100 transition-colors"
+                      disabled={isBusy || isRecording}
+                      className="rounded-xl bg-rose-50 px-4 py-2.5 font-bold text-rose-600 transition-colors hover:bg-rose-100"
                     >
                       <Trash2 size={16} />
                     </button>
                   </div>
                 </div>
-              ) : prompt.verifiedAudio?.signedUrl ? (
-                <audio
-                  controls
-                  preload="none"
-                  src={prompt.verifiedAudio.signedUrl}
-                  className="mt-6 w-full h-10"
-                />
+              ) : isPromptUploaded ? (
+                <div className="mt-6 w-full space-y-2">
+                  <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
+                    <CheckCircle2 size={14} /> Audio đã được xác minh trên máy
+                    chủ
+                  </div>
+                  {prompt.verifiedAudio?.signedUrl ? (
+                    <audio
+                      controls
+                      preload="none"
+                      src={prompt.verifiedAudio.signedUrl}
+                      className="h-10 w-full"
+                    />
+                  ) : null}
+                </div>
               ) : null}
             </div>
           </div>

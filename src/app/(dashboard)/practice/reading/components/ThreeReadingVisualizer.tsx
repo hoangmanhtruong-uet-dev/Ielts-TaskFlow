@@ -16,7 +16,7 @@ export function ThreeReadingVisualizer({
   isScanning,
   visualMode,
   readingSpeedWpm,
-  className = ""
+  className = "",
 }: ThreeReadingVisualizerProps) {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const stateRef = useRef({ isScanning, visualMode, readingSpeedWpm });
@@ -36,7 +36,11 @@ export function ThreeReadingVisualizer({
     const camera = new THREE.PerspectiveCamera(55, width / height, 0.1, 1000);
     camera.position.z = 5.0;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+      powerPreference: "high-performance",
+    });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
@@ -52,7 +56,7 @@ export function ThreeReadingVisualizer({
       color: 0x6366f1,
       wireframe: true,
       transparent: true,
-      opacity: 0.4
+      opacity: 0.4,
     });
     const polyMesh = new THREE.Mesh(polyGeo, polyMat);
     mainGroup.add(polyMesh);
@@ -63,7 +67,7 @@ export function ThreeReadingVisualizer({
       color: 0x10b981, // Emerald Green Laser
       side: THREE.DoubleSide,
       transparent: true,
-      opacity: 0.85
+      opacity: 0.85,
     });
     const laserRingMesh = new THREE.Mesh(laserRingGeo, laserRingMat);
     laserRingMesh.rotation.x = Math.PI / 2;
@@ -87,7 +91,10 @@ export function ThreeReadingVisualizer({
       posArray[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
       posArray[i * 3 + 2] = radius * Math.cos(phi);
 
-      const mixed = Math.random() > 0.5 ? colorIndigo.clone().lerp(colorEmerald, Math.random()) : colorAmber;
+      const mixed =
+        Math.random() > 0.5
+          ? colorIndigo.clone().lerp(colorEmerald, Math.random())
+          : colorAmber;
       colorArray[i * 3] = mixed.r;
       colorArray[i * 3 + 1] = mixed.g;
       colorArray[i * 3 + 2] = mixed.b;
@@ -102,7 +109,7 @@ export function ThreeReadingVisualizer({
       vertexColors: true,
       transparent: true,
       opacity: 0.9,
-      blending: THREE.AdditiveBlending
+      blending: THREE.AdditiveBlending,
     });
     const nodeMesh = new THREE.Points(nodeGeo, nodeMat);
     mainGroup.add(nodeMesh);
@@ -145,7 +152,11 @@ export function ThreeReadingVisualizer({
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
 
-      const { isScanning: scanning, visualMode: mode, readingSpeedWpm: wpm } = stateRef.current;
+      const {
+        isScanning: scanning,
+        visualMode: mode,
+        readingSpeedWpm: wpm,
+      } = stateRef.current;
       const speedFactor = (wpm / 250) * (scanning ? 1.8 : 0.85);
       clock += 0.02 * speedFactor;
 
@@ -210,7 +221,7 @@ export function ThreeReadingVisualizer({
   return (
     <div
       ref={mountRef}
-      className={`relative w-full h-full min-h-[260px] cursor-grab active:cursor-grabbing flex items-center justify-center ${className}`}
+      className={`relative flex h-full min-h-[260px] w-full cursor-grab items-center justify-center active:cursor-grabbing ${className}`}
       title="Khối ma trận từ vựng 3D: Di chuột để xoay góc nhìn"
     />
   );

@@ -139,7 +139,7 @@ export function checksumTranscriptBundle(
   return createHash("sha256").update(canonical).digest("hex");
 }
 
-export function classifySpeakingAiError(error: any) {
+export function classifySpeakingAiError(error: unknown) {
   if (error instanceof SpeakingAiError) return error.code;
   if (error instanceof OpenAI.RateLimitError) return "provider_rate_limited";
   if (error instanceof OpenAI.APIConnectionTimeoutError)

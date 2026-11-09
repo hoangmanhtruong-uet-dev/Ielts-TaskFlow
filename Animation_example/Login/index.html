@@ -1,35 +1,41 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Modern Login Animation UI | Morphing Auth</title>
-    <meta name="description" content="Giao diện đăng nhập mượt mà với hiệu ứng Morphing Animation, nền code mờ ảo và hiệu ứng trạng thái đỉnh cao.">
+    <meta
+      name="description"
+      content="Giao diện đăng nhập mượt mà với hiệu ứng Morphing Animation, nền code mờ ảo và hiệu ứng trạng thái đỉnh cao."
+    />
     <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
     <!-- Background Ambient Glow & Code Decoration -->
     <div class="ambient-background">
-        <div class="glow-orb orb-1"></div>
-        <div class="glow-orb orb-2"></div>
-        <div class="grid-overlay"></div>
+      <div class="glow-orb orb-1"></div>
+      <div class="glow-orb orb-2"></div>
+      <div class="grid-overlay"></div>
 
-        <!-- Code Snippet Decor Layer -->
-        <div class="code-bg-window">
-            <div class="code-window-header">
-                <div class="window-dots">
-                    <span class="dot dot-red"></span>
-                    <span class="dot dot-yellow"></span>
-                    <span class="dot dot-green"></span>
-                </div>
-                <div class="window-title">auth_controller.js — Vibe-Animation</div>
-            </div>
-            <div class="code-window-body">
-<pre><code><span class="code-line"><span class="code-ln">01</span><span class="c-keyword">import</span> { <span class="c-func">createAuthSession</span>, <span class="c-func">morphState</span> } <span class="c-keyword">from</span> <span class="c-string">'@vibe/auth-core'</span>;</span>
+      <!-- Code Snippet Decor Layer -->
+      <div class="code-bg-window">
+        <div class="code-window-header">
+          <div class="window-dots">
+            <span class="dot dot-red"></span>
+            <span class="dot dot-yellow"></span>
+            <span class="dot dot-green"></span>
+          </div>
+          <div class="window-title">auth_controller.js — Vibe-Animation</div>
+        </div>
+        <div class="code-window-body">
+          <pre><code><span class="code-line"><span class="code-ln">01</span><span class="c-keyword">import</span> { <span class="c-func">createAuthSession</span>, <span class="c-func">morphState</span> } <span class="c-keyword">from</span> <span class="c-string">'@vibe/auth-core'</span>;</span>
 <span class="code-line"><span class="code-ln">02</span></span>
 <span class="code-line"><span class="code-ln">03</span><span class="c-comment">// Initiate smooth spring-loaded morphing sequence</span></span>
 <span class="code-line"><span class="code-ln">04</span><span class="c-keyword">export async function</span> <span class="c-func">handleSignIn</span>(<span class="c-param">credentials</span>) {</span>
@@ -48,104 +54,205 @@
 <span class="code-line"><span class="code-ln">17</span>    </span>
 <span class="code-line"><span class="code-ln">18</span>    <span class="c-keyword">return</span> <span class="c-func">createAuthSession</span>({ status: <span class="c-string">'SUCCESS_MINT'</span> });</span>
 <span class="code-line"><span class="code-ln">19</span>}</span></code></pre>
-            </div>
         </div>
+      </div>
     </div>
 
     <!-- Main Interactive Container -->
     <main class="app-container">
-        <!-- Brand Badge -->
-        <div class="brand-header">
-            <span class="brand-dot"></span>
-            <span class="brand-title">MODERN AUTH UI</span>
-        </div>
+      <!-- Brand Badge -->
+      <div class="brand-header">
+        <span class="brand-dot"></span>
+        <span class="brand-title">MODERN AUTH UI</span>
+      </div>
 
-        <!-- Morphing Card Hub -->
-        <div class="morph-card-wrapper">
-            <div id="morphCard" class="morph-card state-initial">
-                
-                <!-- VIEW 1: INITIAL STATE (White Sign In Button) -->
-                <div class="card-view view-initial" id="viewInitial">
-                    <button id="btnOpenSign" class="btn-sign-in" aria-label="Sign in to your account">
-                        <span class="btn-text">Sign in</span>
-                        <svg class="btn-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                            <polyline points="12 5 19 12 12 19"></polyline>
-                        </svg>
-                    </button>
-                </div>
+      <!-- Morphing Card Hub -->
+      <div class="morph-card-wrapper">
+        <div id="morphCard" class="morph-card state-initial">
+          <!-- VIEW 1: INITIAL STATE (White Sign In Button) -->
+          <div class="card-view view-initial" id="viewInitial">
+            <button
+              id="btnOpenSign"
+              class="btn-sign-in"
+              aria-label="Sign in to your account"
+            >
+              <span class="btn-text">Sign in</span>
+              <svg
+                class="btn-arrow"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </button>
+          </div>
 
-                <!-- VIEW 2: FORM STATE (Email & Password Inputs) -->
-                <div class="card-view view-form" id="viewForm">
-                    <div class="form-header">
-                        <div class="header-text">
-                            <h2 class="form-title">Welcome back</h2>
-                            <p class="form-subtitle">Enter your details to access account</p>
-                        </div>
-                        <button type="button" id="btnCloseForm" class="btn-close" title="Đóng form">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="18" y1="6" x2="6" y2="18"></line>
-                                <line x1="6" y1="6" x2="18" y2="18"></line>
-                            </svg>
-                        </button>
-                    </div>
-
-                    <form id="loginForm" class="auth-form" onsubmit="return false;">
-                        <div class="input-group">
-                            <label for="emailInput" class="input-label">Email Address</label>
-                            <div class="input-wrapper">
-                                <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                                    <polyline points="22,6 12,13 2,6"></polyline>
-                                </svg>
-                                <input type="email" id="emailInput" class="form-input" placeholder="hi@example.com" value="hi@example.com" required autocomplete="email">
-                                <div class="input-focus-glow"></div>
-                            </div>
-                        </div>
-
-                        <div class="input-group">
-                            <div class="label-row">
-                                <label for="passwordInput" class="input-label">Password</label>
-                                <a href="#" class="forgot-link" onclick="event.preventDefault();">Forgot?</a>
-                            </div>
-                            <div class="input-wrapper">
-                                <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                                </svg>
-                                <input type="password" id="passwordInput" class="form-input" placeholder="••••••••" value="password123" required autocomplete="current-password">
-                                <div class="input-focus-glow"></div>
-                            </div>
-                        </div>
-
-                        <button type="submit" id="btnSubmitForm" class="btn-submit">
-                            <span class="btn-submit-text">Đăng nhập</span>
-                            <span class="spinner"></span>
-                        </button>
-                    </form>
-                </div>
-
-                <!-- VIEW 3: SUCCESS STATE (Mint Green Button with Animated Checkmark) -->
-                <div class="card-view view-success" id="viewSuccess">
-                    <div class="success-badge">
-                        <svg class="checkmark-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                            <path class="checkmark-path" d="M20 6L9 17l-5-5"></path>
-                        </svg>
-                        <span class="success-text">Signed in</span>
-                    </div>
-                </div>
-
+          <!-- VIEW 2: FORM STATE (Email & Password Inputs) -->
+          <div class="card-view view-form" id="viewForm">
+            <div class="form-header">
+              <div class="header-text">
+                <h2 class="form-title">Welcome back</h2>
+                <p class="form-subtitle">
+                  Enter your details to access account
+                </p>
+              </div>
+              <button
+                type="button"
+                id="btnCloseForm"
+                class="btn-close"
+                title="Đóng form"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
             </div>
-        </div>
 
-        <!-- Footer / Instructions Bar -->
-        <div class="controls-hint">
-            <span class="hint-dot"></span>
-            <span id="hintText">Bấm nút <strong>"Sign in"</strong> để bắt đầu chuyển cảnh</span>
-            <button type="button" id="btnReset" class="btn-reset-link" title="Thử lại animation">Reset UI</button>
+            <form id="loginForm" class="auth-form" onsubmit="return false;">
+              <div class="input-group">
+                <label for="emailInput" class="input-label"
+                  >Email Address</label
+                >
+                <div class="input-wrapper">
+                  <svg
+                    class="input-icon"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"
+                    ></path>
+                    <polyline points="22,6 12,13 2,6"></polyline>
+                  </svg>
+                  <input
+                    type="email"
+                    id="emailInput"
+                    class="form-input"
+                    placeholder="hi@example.com"
+                    value="hi@example.com"
+                    required
+                    autocomplete="email"
+                  />
+                  <div class="input-focus-glow"></div>
+                </div>
+              </div>
+
+              <div class="input-group">
+                <div class="label-row">
+                  <label for="passwordInput" class="input-label"
+                    >Password</label
+                  >
+                  <a
+                    href="#"
+                    class="forgot-link"
+                    onclick="event.preventDefault()"
+                    >Forgot?</a
+                  >
+                </div>
+                <div class="input-wrapper">
+                  <svg
+                    class="input-icon"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <rect
+                      x="3"
+                      y="11"
+                      width="18"
+                      height="11"
+                      rx="2"
+                      ry="2"
+                    ></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </svg>
+                  <input
+                    type="password"
+                    id="passwordInput"
+                    class="form-input"
+                    placeholder="••••••••"
+                    value="password123"
+                    required
+                    autocomplete="current-password"
+                  />
+                  <div class="input-focus-glow"></div>
+                </div>
+              </div>
+
+              <button type="submit" id="btnSubmitForm" class="btn-submit">
+                <span class="btn-submit-text">Đăng nhập</span>
+                <span class="spinner"></span>
+              </button>
+            </form>
+          </div>
+
+          <!-- VIEW 3: SUCCESS STATE (Mint Green Button with Animated Checkmark) -->
+          <div class="card-view view-success" id="viewSuccess">
+            <div class="success-badge">
+              <svg
+                class="checkmark-icon"
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="3"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path class="checkmark-path" d="M20 6L9 17l-5-5"></path>
+              </svg>
+              <span class="success-text">Signed in</span>
+            </div>
+          </div>
         </div>
+      </div>
+
+      <!-- Footer / Instructions Bar -->
+      <div class="controls-hint">
+        <span class="hint-dot"></span>
+        <span id="hintText"
+          >Bấm nút <strong>"Sign in"</strong> để bắt đầu chuyển cảnh</span
+        >
+        <button
+          type="button"
+          id="btnReset"
+          class="btn-reset-link"
+          title="Thử lại animation"
+        >
+          Reset UI
+        </button>
+      </div>
     </main>
 
     <script src="script.js"></script>
-</body>
+  </body>
 </html>

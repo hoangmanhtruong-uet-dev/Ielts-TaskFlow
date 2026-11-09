@@ -52,7 +52,7 @@ export default async function WritingHistoryPage() {
         </Link>
       </header>
 
-      <main className="space-y-5 px-4 py-5 sm:px-6">
+      <div className="space-y-5 px-4 py-5 sm:px-6">
         <section>
           <p className="text-[10px] font-bold text-[#746d7f] uppercase">
             Your progress
@@ -192,7 +192,7 @@ export default async function WritingHistoryPage() {
             </div>
           )}
         </section>
-      </main>
+      </div>
     </div>
   );
 }

@@ -11,6 +11,8 @@ const publicEnvSchema = z.object({
     .url("NEXT_PUBLIC_SITE_URL phải là URL hợp lệ.")
     .optional(),
   NEXT_PUBLIC_SUPPORT_EMAIL: z.email().optional(),
+  NEXT_PUBLIC_CRISP_WEBSITE_ID: z.string().trim().optional(),
+  NEXT_PUBLIC_CDN_URL: z.string().trim().optional(),
 });
 
 const serverEnvSchema = z
@@ -20,6 +22,8 @@ const serverEnvSchema = z
       .default("development"),
     NEXT_PUBLIC_SUPPORT_EMAIL: z.email().optional(),
     NEXT_PUBLIC_SITE_URL: z.url().optional(),
+    NEXT_PUBLIC_CDN_URL: z.string().trim().optional(),
+    NEXT_PUBLIC_CRISP_WEBSITE_ID: z.string().trim().optional(),
     OPENAI_API_KEY: z.string().trim().optional(),
     OPENAI_WRITING_MODEL: z.string().trim().optional(),
     WRITING_FEEDBACK_SIGNING_SECRET: z.string().trim().optional(),
@@ -28,13 +32,31 @@ const serverEnvSchema = z
     SPEAKING_PIPELINE_SIGNING_SECRET: z.string().trim().min(32).optional(),
     SUPABASE_SERVICE_ROLE_KEY: z.string().trim().min(1).optional(),
     STORAGE_CLEANUP_SECRET: z.string().trim().min(32).optional(),
+    CRON_SECRET: z.string().trim().optional(),
+    R2_ACCOUNT_ID: z.string().trim().optional(),
+    R2_ACCESS_KEY_ID: z.string().trim().optional(),
+    R2_SECRET_ACCESS_KEY: z.string().trim().optional(),
+    R2_BUCKET_NAME: z.string().trim().optional(),
+    R2_PUBLIC_URL: z.string().trim().optional(),
+    CLOUDFLARE_R2_ACCOUNT_ID: z.string().trim().optional(),
+    CLOUDFLARE_R2_ACCESS_KEY_ID: z.string().trim().optional(),
+    CLOUDFLARE_R2_SECRET_ACCESS_KEY: z.string().trim().optional(),
+    CLOUDFLARE_R2_BUCKET_NAME: z.string().trim().optional(),
     BILLING_ENABLED: z
       .string()
       .optional()
       .refine(
-        (val) => val === undefined || val === "true" || val === "false",
+        (val) =>
+          val === undefined || val === "" || val === "true" || val === "false",
         "BILLING_ENABLED phải là 'true' hoặc 'false' nếu được set.",
       ),
+    BILLING_WEBHOOK_SECRET: z.string().trim().optional(),
+    UPSTASH_REDIS_REST_URL: z.string().trim().optional(),
+    UPSTASH_REDIS_REST_TOKEN: z.string().trim().optional(),
+    TELEGRAM_BOT_TOKEN: z.string().trim().optional(),
+    TELEGRAM_ADMIN_CHAT_ID: z.string().trim().optional(),
+    TELEGRAM_CHAT_ID: z.string().trim().optional(),
+    CMS_IMPORT_ALLOWED_HOSTS: z.string().trim().optional(),
   })
   .superRefine((env, context) => {
     if (env.NODE_ENV === "production" && !env.NEXT_PUBLIC_SUPPORT_EMAIL) {
@@ -77,6 +99,18 @@ const serverEnvSchema = z
         code: "custom",
         path: ["STORAGE_CLEANUP_SECRET"],
         message: "bắt buộc trong production để thực thi retention",
+      });
+    }
+
+    if (
+      env.NODE_ENV === "production" &&
+      env.BILLING_ENABLED === "true" &&
+      !env.BILLING_WEBHOOK_SECRET
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["BILLING_WEBHOOK_SECRET"],
+        message: "bắt buộc trong production khi BILLING_ENABLED=true",
       });
     }
   });
@@ -147,6 +181,15 @@ export function getPublicEnv(): PublicEnv {
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
     NEXT_PUBLIC_SUPPORT_EMAIL: process.env.NEXT_PUBLIC_SUPPORT_EMAIL,
+    ...(process.env.NEXT_PUBLIC_CRISP_WEBSITE_ID
+      ? {
+          NEXT_PUBLIC_CRISP_WEBSITE_ID:
+            process.env.NEXT_PUBLIC_CRISP_WEBSITE_ID,
+        }
+      : {}),
+    ...(process.env.NEXT_PUBLIC_CDN_URL
+      ? { NEXT_PUBLIC_CDN_URL: process.env.NEXT_PUBLIC_CDN_URL }
+      : {}),
   });
 }
 
@@ -226,6 +269,8 @@ export function getServerEnv(): ServerEnv {
     NODE_ENV: process.env.NODE_ENV,
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
     NEXT_PUBLIC_SUPPORT_EMAIL: process.env.NEXT_PUBLIC_SUPPORT_EMAIL,
+    NEXT_PUBLIC_CDN_URL: process.env.NEXT_PUBLIC_CDN_URL,
+    NEXT_PUBLIC_CRISP_WEBSITE_ID: process.env.NEXT_PUBLIC_CRISP_WEBSITE_ID,
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     OPENAI_WRITING_MODEL: process.env.OPENAI_WRITING_MODEL,
     WRITING_FEEDBACK_SIGNING_SECRET:
@@ -237,5 +282,62 @@ export function getServerEnv(): ServerEnv {
       process.env.SPEAKING_PIPELINE_SIGNING_SECRET,
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     STORAGE_CLEANUP_SECRET: process.env.STORAGE_CLEANUP_SECRET,
+    CRON_SECRET: process.env.CRON_SECRET,
+    R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID,
+    R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID,
+    R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,
+    R2_BUCKET_NAME: process.env.R2_BUCKET_NAME,
+    R2_PUBLIC_URL: process.env.R2_PUBLIC_URL,
+    CLOUDFLARE_R2_ACCOUNT_ID: process.env.CLOUDFLARE_R2_ACCOUNT_ID,
+    CLOUDFLARE_R2_ACCESS_KEY_ID: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID,
+    CLOUDFLARE_R2_SECRET_ACCESS_KEY:
+      process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY,
+    CLOUDFLARE_R2_BUCKET_NAME: process.env.CLOUDFLARE_R2_BUCKET_NAME,
+    BILLING_ENABLED: process.env.BILLING_ENABLED,
+    BILLING_WEBHOOK_SECRET: process.env.BILLING_WEBHOOK_SECRET,
+    UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
+    UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
+    TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN,
+    TELEGRAM_ADMIN_CHAT_ID: process.env.TELEGRAM_ADMIN_CHAT_ID,
+    TELEGRAM_CHAT_ID: process.env.TELEGRAM_CHAT_ID,
+    CMS_IMPORT_ALLOWED_HOSTS: process.env.CMS_IMPORT_ALLOWED_HOSTS,
   });
+}
+
+export function getR2Config() {
+  const env = getServerEnv();
+  const accountId = env.CLOUDFLARE_R2_ACCOUNT_ID || env.R2_ACCOUNT_ID;
+  const accessKeyId = env.CLOUDFLARE_R2_ACCESS_KEY_ID || env.R2_ACCESS_KEY_ID;
+  const secretAccessKey =
+    env.CLOUDFLARE_R2_SECRET_ACCESS_KEY || env.R2_SECRET_ACCESS_KEY;
+  const bucketName = env.CLOUDFLARE_R2_BUCKET_NAME || env.R2_BUCKET_NAME;
+
+  const missing: string[] = [];
+  if (!accountId) missing.push("R2_ACCOUNT_ID");
+  if (!accessKeyId) missing.push("R2_ACCESS_KEY_ID");
+  if (!secretAccessKey) missing.push("R2_SECRET_ACCESS_KEY");
+  if (!bucketName) missing.push("R2_BUCKET_NAME");
+
+  if (missing.length > 0) {
+    throw new EnvironmentValidationError(
+      `Thiếu cấu hình Cloudflare R2: ${missing.join(", ")}`,
+      missing,
+    );
+  }
+
+  const publicUrl = env.NEXT_PUBLIC_CDN_URL || env.R2_PUBLIC_URL || "";
+
+  return {
+    accountId: accountId!,
+    accessKeyId: accessKeyId!,
+    secretAccessKey: secretAccessKey!,
+    bucketName: bucketName!,
+    publicUrl,
+  };
+}
+
+export function assertProductionConfig() {
+  const publicEnv = getPublicEnv();
+  const serverEnv = getServerEnv();
+  return { publicEnv, serverEnv };
 }

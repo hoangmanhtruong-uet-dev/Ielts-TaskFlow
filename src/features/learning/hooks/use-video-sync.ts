@@ -26,14 +26,17 @@ export function useVideoProgressSync({
 
       const currentTime = video.currentTime;
       const duration = video.duration || 1;
-      
+
       // Update local storage
-      localStorage.setItem(`lesson_progress_${lessonId}`, currentTime.toString());
+      localStorage.setItem(
+        `lesson_progress_${lessonId}`,
+        currentTime.toString(),
+      );
 
       // Only sync to server if difference is > 5s or if it's the final sync (e.g. unload)
       if (isFinal || Math.abs(currentTime - lastSyncTimeRef.current) >= 5) {
         lastSyncTimeRef.current = currentTime;
-        
+
         await updateLessonProgressAction({
           lessonId,
           lastPositionSeconds: Math.floor(currentTime),
@@ -48,15 +51,24 @@ export function useVideoProgressSync({
       if (videoRef.current) {
         const formData = new FormData();
         formData.append("lessonId", lessonId);
-        formData.append("lastPositionSeconds", Math.floor(videoRef.current.currentTime).toString());
-        formData.append("completionPercentage", Math.floor((videoRef.current.currentTime / (videoRef.current.duration || 1)) * 100).toString());
+        formData.append(
+          "lastPositionSeconds",
+          Math.floor(videoRef.current.currentTime).toString(),
+        );
+        formData.append(
+          "completionPercentage",
+          Math.floor(
+            (videoRef.current.currentTime / (videoRef.current.duration || 1)) *
+              100,
+          ).toString(),
+        );
         navigator.sendBeacon("/api/beacon/sync-video", formData);
       }
     };
-    
+
     // Sync when video pauses
     const handlePause = () => syncProgress(false);
-    
+
     const videoNode = videoRef.current;
     if (videoNode) {
       videoNode.addEventListener("pause", handlePause);

@@ -2,6 +2,7 @@ import { isProtectedRoute } from "@/lib/auth/routes";
 
 const FALLBACK_PATH = "/dashboard";
 const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001f\u007f]/;
+const SAFE_RELATIVE_PATH_PATTERN = /^\/(?![/\\])/;
 
 export function getSafeRedirectPath(
   value: string | null | undefined,
@@ -11,9 +12,9 @@ export function getSafeRedirectPath(
 
   const candidate = value.trim();
   if (
-    !candidate.startsWith("/") ||
-    candidate.startsWith("//") ||
+    !SAFE_RELATIVE_PATH_PATTERN.test(candidate) ||
     candidate.includes("\\") ||
+    candidate.includes("@") ||
     CONTROL_CHARACTER_PATTERN.test(candidate)
   ) {
     return fallback;
@@ -22,15 +23,17 @@ export function getSafeRedirectPath(
   try {
     const decoded = decodeURIComponent(candidate);
     if (
-      decoded.startsWith("//") ||
+      !SAFE_RELATIVE_PATH_PATTERN.test(decoded) ||
       decoded.includes("\\") ||
+      decoded.includes("@") ||
       CONTROL_CHARACTER_PATTERN.test(decoded)
     ) {
       return fallback;
     }
 
-    const parsed = new URL(candidate, "https://ielts-flow.local");
-    if (parsed.origin !== "https://ielts-flow.local") return fallback;
+    const parsed = new URL(candidate, "https://indigoscholar.invalid");
+    if (parsed.origin !== "https://indigoscholar.invalid") return fallback;
+    if (parsed.username || parsed.password) return fallback;
     if (!isProtectedRoute(parsed.pathname)) return fallback;
 
     return `${parsed.pathname}${parsed.search}${parsed.hash}`;
@@ -38,3 +41,5 @@ export function getSafeRedirectPath(
     return fallback;
   }
 }
+
+export const sanitizeNextPath = getSafeRedirectPath;

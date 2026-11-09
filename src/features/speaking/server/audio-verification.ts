@@ -2,6 +2,7 @@ import "server-only";
 
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 
+import { parseBuffer } from "music-metadata";
 
 import { parseWebmDurationSeconds } from "@/features/speaking/server/webm-duration";
 
@@ -27,36 +28,32 @@ export async function verifySpeakingAudio(
     throw new Error("invalid_audio_size");
   }
   const bytes = new Uint8Array(await blob.arrayBuffer());
-  const mimeType = detectMimeType(bytes);
-  if (!mimeType || mimeType !== expectedMimeType) {
+  return verifySpeakingAudioBuffer(bytes, expectedMimeType);
+}
+
+export async function verifySpeakingAudioBuffer(
+  bytes: Uint8Array,
+  expectedMimeType: string,
+): Promise<VerifiedSpeakingAudio> {
+  if (bytes.byteLength < 1 || bytes.byteLength > MAX_AUDIO_BYTES) {
+    throw new Error("invalid_audio_size");
+  }
+
+  const normalizedExpected = expectedMimeType.split(";")[0]?.trim() ?? "";
+  const mimeType = detectAudioMimeType(bytes);
+  if (!mimeType || mimeType !== normalizedExpected) {
     throw new Error("invalid_audio_signature");
   }
 
-  // Use API route to parse duration to avoid bundling music-metadata in Server Actions
-  const formData = new FormData();
-  formData.append("file", blob);
-  
-  // Note: ensure NEXT_PUBLIC_APP_URL is set or use relative URL if client-side
-  // Since this is server-side, we must provide absolute URL. 
-  // We'll fallback to a basic parse or WebM duration if fetch fails.
-  let duration = 0;
-  try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    const res = await fetch(`${baseUrl}/api/media/duration`, {
-      method: "POST",
-      body: formData,
-    });
-    if (res.ok) {
-      const data = await res.json();
-      duration = data.durationSeconds;
-    }
-  } catch (err) {
-    console.error("Failed to fetch duration API:", err);
-  }
+  const metadata = await parseBuffer(
+    bytes,
+    { mimeType, size: bytes.byteLength },
+    { duration: true, skipCovers: true },
+  ).catch(() => null);
 
-  // Fallback to webm basic parse if API fails
-  if (!duration && mimeType === "audio/webm") {
-    duration = parseWebmDurationSeconds(bytes) || 0;
+  let duration = metadata?.format.duration;
+  if ((!duration || !Number.isFinite(duration)) && mimeType === "audio/webm") {
+    duration = parseWebmDurationSeconds(bytes);
   }
 
   if (
@@ -67,6 +64,7 @@ export async function verifySpeakingAudio(
   ) {
     throw new Error("invalid_audio_duration");
   }
+
   return {
     mimeType,
     sizeBytes: bytes.byteLength,
@@ -88,7 +86,7 @@ export function signaturesMatch(first: string, second: string) {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
-function detectMimeType(
+export function detectAudioMimeType(
   bytes: Uint8Array,
 ): VerifiedSpeakingAudio["mimeType"] | null {
   if (

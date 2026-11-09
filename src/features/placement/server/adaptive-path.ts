@@ -7,7 +7,8 @@ export interface TaxonomyAccuracy {
 }
 
 export interface AdaptiveRecommendation {
-  domain: "reading" | "listening" | "writing" | "speaking" | "grammar" | "vocabulary";
+  domain:
+    "reading" | "listening" | "writing" | "speaking" | "grammar" | "vocabulary";
   title: string;
   recommendationReason: string;
   targetSlug: string;
@@ -20,11 +21,18 @@ export function generateAdaptiveLearningPath(
 ): AdaptiveRecommendation[] {
   const recommendations: AdaptiveRecommendation[] = [];
 
-  const sortedWeak = [...weakTags].sort((a, b) => a.accuracyRate - b.accuracyRate);
+  const sortedWeak = [...weakTags].sort(
+    (a, b) => a.accuracyRate - b.accuracyRate,
+  );
 
   for (const tag of sortedWeak) {
     if (tag.accuracyRate < 70) {
-      const rec = mapTagToRecommendation(tag.tagId, tag.tagName, tag.accuracyRate, targetBandScore);
+      const rec = mapTagToRecommendation(
+        tag.tagId,
+        tag.tagName,
+        tag.accuracyRate,
+        targetBandScore,
+      );
       if (rec) recommendations.push(rec);
     }
   }
@@ -41,7 +49,8 @@ export function generateAdaptiveLearningPath(
     recommendations.push({
       domain: "listening",
       title: "IELTS Listening Section 3 Dictation",
-      recommendationReason: "Sharpen exact spelling and fill-in-blanks accuracy",
+      recommendationReason:
+        "Sharpen exact spelling and fill-in-blanks accuracy",
       targetSlug: "dictation-section-3",
       priority: "medium",
     });
@@ -68,7 +77,10 @@ function mapTagToRecommendation(
     };
   }
 
-  if (tagId.includes("listening") || tagName.toLowerCase().includes("listening")) {
+  if (
+    tagId.includes("listening") ||
+    tagName.toLowerCase().includes("listening")
+  ) {
     return {
       domain: "listening",
       title: `Listening Drill: ${tagName}`,

@@ -17,6 +17,9 @@ export function PronunciationPractice({ data }: { data: SpeakingReviewData }) {
 
   useEffect(
     () => () => {
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
       streamRef.current?.getTracks().forEach((track) => track.stop());
       if (localUrl) URL.revokeObjectURL(localUrl);
     },
@@ -97,15 +100,13 @@ export function PronunciationPractice({ data }: { data: SpeakingReviewData }) {
         </h1>
         <span className="w-10" />
       </header>
-      <main className="flex min-h-[calc(100dvh-3.5rem)] flex-col px-4 py-5 sm:px-6">
+      <div className="flex min-h-[calc(100dvh-3.5rem)] flex-col px-4 py-5 sm:px-6">
         <section className="rounded-2xl border border-[#e3ddec] bg-white p-6 text-center">
           <p className="text-2xl font-bold text-[#3823bd]">{word}</p>
           <p className="mt-2 text-xs text-[#736c7e]">
-            Practice word from your transcript or feedback
+            Nghe mẫu và tự ghi âm đối chiếu trực tiếp trên thiết bị (chế độ tự
+            luyện nghe-nhắc lại, không chấm điểm âm vị tự động)
           </p>
-          <div className="mt-5 h-1 overflow-hidden rounded-full bg-[#e9e4f0]">
-            <span className="block h-full w-1/2 rounded-full bg-[#7652e8]" />
-          </div>
         </section>
 
         <section className="mt-4 rounded-2xl border border-[#e3ddec] bg-[#f4f1fa] p-4">
@@ -167,7 +168,7 @@ export function PronunciationPractice({ data }: { data: SpeakingReviewData }) {
           )}
           {recording ? "Stop Recording" : "Practice Word"}
         </button>
-      </main>
+      </div>
     </div>
   );
 }

@@ -1,19 +1,43 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { updateSupabaseSession } from "@/lib/supabase/proxy";
+
 import { ipRateLimit } from "@/lib/rate-limit";
+import { updateSupabaseSession } from "@/lib/supabase/proxy";
+
+export function getClientIp(request: NextRequest): string {
+  const vercelForwarded = request.headers
+    .get("x-vercel-forwarded-for")
+    ?.split(",")[0]
+    ?.trim();
+  if (vercelForwarded) return vercelForwarded;
+
+  const realIp = request.headers.get("x-real-ip")?.trim();
+  if (realIp) return realIp;
+
+  const forwarded = request.headers
+    .get("x-forwarded-for")
+    ?.split(",")[0]
+    ?.trim();
+  if (forwarded) return forwarded;
+
+  return "unknown-ip";
+}
 
 export async function proxy(request: NextRequest) {
-  // Rate limit for all /api/ routes
-  if (request.nextUrl.pathname.startsWith("/api")) {
-    const ip = request.headers.get("x-forwarded-for") ?? "127.0.0.1";
-    try {
-      const { success } = await ipRateLimit.limit(ip);
-      if (!success) {
-        return new NextResponse("Too Many Requests", { status: 429 });
-      }
-    } catch (e) {
-      console.error("Rate limit error:", e);
+  const { pathname } = request.nextUrl;
+
+  if (pathname.startsWith("/api")) {
+    const ip = getClientIp(request);
+    const { success, reset } = await ipRateLimit.limit(ip);
+    if (!success) {
+      const retryAfter = Math.max(1, Math.ceil((reset - Date.now()) / 1000));
+      return NextResponse.json(
+        { error: "Too Many Requests" },
+        {
+          status: 429,
+          headers: { "Retry-After": String(retryAfter) },
+        },
+      );
     }
   }
 

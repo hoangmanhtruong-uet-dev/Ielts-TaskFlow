@@ -17,9 +17,9 @@ const actionMocks = vi.hoisted(() => ({
 
 vi.mock("@/features/learning/actions", () => ({
   initialLearningProgressActionState: { status: "idle" },
-  openLessonSectionAction: (...args: any[]) =>
+  openLessonSectionAction: (...args: unknown[]) =>
     actionMocks.openSection(...args),
-  completeLessonSectionAction: (...args: any[]) =>
+  completeLessonSectionAction: (...args: unknown[]) =>
     actionMocks.completeSection(...args),
 }));
 

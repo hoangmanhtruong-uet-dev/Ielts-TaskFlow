@@ -1,6 +1,12 @@
 "use client";
 
-import { useState, useEffect, useMemo, useId } from "react";
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useId,
+  useSyncExternalStore,
+} from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import "./plans.css";
@@ -14,7 +20,6 @@ export interface StagePlan {
   lvl: string;
   wk: number;
   min: number;
-  n: number;
   short: string;
   title: string;
   sub: string;
@@ -34,11 +39,10 @@ export const STAGES: StagePlan[] = [
     lvl: "Foundation",
     wk: 8,
     min: 45,
-    n: 12450,
     short: "Nền Tảng Ngữ Âm & Từ Vựng",
     title: "Chặng 1: Nền Tảng Ngữ Âm & Ngữ Pháp Sơ Cấp",
-    sub: "Foundation (0.0 - 2.5) | Xóa mù chữ cái, chuẩn hóa 44 âm IPA",
-    desc: "Xóa mù chữ cái, chuẩn hóa 44 âm IPA, 800 từ vựng cơ bản, ghép câu đơn. Giao diện tối giản, nút lớn, trợ thính và thị giác sinh động.",
+    sub: "Foundation (0.0 - 2.5) | Chuẩn hóa 44 âm IPA & câu đơn",
+    desc: "Chuẩn hóa 44 âm IPA, 800 từ vựng cơ bản, ghép câu đơn rõ nghĩa trong giao tiếp hằng ngày.",
     perks: [
       "Ngữ âm IPA (44 âm): 20 nguyên âm, 24 phụ âm, cơ chế bật hơi",
       "Ngữ pháp cốt lõi: Động từ To Be, Đại từ nhân xưng, Thì Hiện tại/Quá khứ",
@@ -56,11 +60,10 @@ export const STAGES: StagePlan[] = [
     lvl: "Elementary",
     wk: 10,
     min: 60,
-    n: 8900,
     short: "Mở Rộng Câu & Giao Tiếp Cơ Bản",
     title: "Chặng 2: Mở Rộng Câu & Giao Tiếp Cơ Bản",
     sub: "Elementary (2.5 - 3.5) | Giao tiếp hội thoại ngắn, kiểm soát 5 thì",
-    desc: "Nối âm, câu ghép, câu hỏi thông dụng, nghe hội thoại đời sống. Thẻ bài tập kéo thả, hội thoại 2 kênh, trợ lý phản hồi tức thì.",
+    desc: "Nối âm, câu ghép, câu hỏi thông dụng và nghe hội thoại đời sống có kiểm soát tốc độ.",
     perks: [
       "Ngữ âm nâng cao: Trọng âm từ, nối âm căn bản, đuôi -s, -es, -ed",
       "Ngữ pháp mở rộng: Tiếp diễn, Hoàn thành, Tương lai, Liên từ, So sánh",
@@ -78,11 +81,10 @@ export const STAGES: StagePlan[] = [
     lvl: "Pre-IELTS",
     wk: 12,
     min: 90,
-    n: 7500,
     short: "Định Hình Tư Duy IELTS Nền Tảng",
     title: "Chặng 3: Định Hình Tư Duy IELTS Nền Tảng",
-    sub: "Pre-IELTS (3.5 - 4.5) | Làm quen cấu trúc đề, kỹ thuật Skimming/Scanning",
-    desc: "Đọc hiểu văn bản 400 từ, viết đoạn văn mô tả, mệnh đề quan hệ, câu bị động. Giao diện 2 cột học thuật, chia đôi văn bản và bảng câu hỏi.",
+    sub: "Pre-IELTS (3.5 - 4.5) | Làm quen cấu trúc đề, Skimming/Scanning",
+    desc: "Đọc hiểu văn bản 400 từ, viết đoạn văn mô tả, mệnh đề quan hệ và câu bị động.",
     perks: [
       "Mệnh đề quan hệ, Thể bị động, Mệnh đề trạng ngữ",
       "Kỹ năng cốt lõi: Skimming, Scanning, Paraphrase",
@@ -100,15 +102,14 @@ export const STAGES: StagePlan[] = [
     lvl: "Intermediate",
     wk: 12,
     min: 90,
-    n: 9200,
     short: "Chuẩn Hóa Kỹ Năng & Chiến Lược",
     title: "Chặng 4: Chuẩn Hóa Kỹ Năng & Chiến Lược",
-    sub: "Intermediate (4.5 - 5.5) | Xử lý hoàn chỉnh đề thi IELTS 4 kỹ năng",
-    desc: "Cấu trúc PEEL, paraphrase logic, từ nối liên kết, phản xạ Speaking P2. Đồng hồ thi đua, thanh nhiệt tiêu chí chấm thi, trình soạn thảo chuẩn.",
+    sub: "Intermediate (4.5 - 5.5) | Xử lý đề IELTS 4 kỹ năng theo chiến lược",
+    desc: "Cấu trúc PEEL, paraphrase logic, từ nối liên kết và phản xạ Speaking Part 2.",
     perks: [
       "Ngữ pháp phức tạp: Câu điều kiện loại 2&3, phân từ rút gọn, câu ghép phức hợp",
       "Writing Frameworks: Cấu trúc PEEL, Intro & Overview Task 1, 2",
-      "Speaking Strategy: Mở rộng ý Part 2 (W-H) và duy trì trôi chảy với fillers",
+      "Speaking Strategy: Mở rộng ý Part 2 (W-H) và duy trì trôi chảy",
     ],
     range: "4.5 - 5.5",
     goal: "5.5",
@@ -122,14 +123,13 @@ export const STAGES: StagePlan[] = [
     lvl: "Upper-Inter",
     wk: 12,
     min: 120,
-    n: 6300,
     short: "Nâng Cao Biện Luận & Thuần Thục",
     title: "Chặng 5: Nâng Cao Biện Luận & Thuần Thục",
     sub: "Upper-Inter (5.5 - 6.5) | Kiểm soát ngữ cảnh học thuật phức tạp",
-    desc: "Collocations C1, cấu trúc đảo ngữ, danh từ hóa, phòng thi ảo. Giao diện phòng thi mô phỏng, phân tích phổ sóng giọng nói và radar điểm.",
+    desc: "Collocations C1, cấu trúc đảo ngữ, danh từ hóa và luyện thi thử phòng thi mô phỏng.",
     perks: [
       "Đảo ngữ với phó từ phủ định, Câu chẻ nhấn mạnh, Danh từ hóa",
-      "Collocations chuyên sâu học thuật, Phrasal Verbs, tránh Idioms",
+      "Collocations chuyên sâu học thuật, Phrasal Verbs",
       "Speaking Part 3 Reasoning: Phản biện đa góc nhìn",
     ],
     range: "5.5 - 6.5",
@@ -144,15 +144,14 @@ export const STAGES: StagePlan[] = [
     lvl: "Advanced",
     wk: 8,
     min: 150,
-    n: 4200,
     short: "Làm Chủ Bứt Phá & Tối Ưu Điểm",
     title: "Chặng 6: Làm Chủ Bứt Phá & Tối Ưu Điểm",
-    sub: "Advanced (6.5 - 7.0) | Tư duy sắc bén, triệt tiêu lỗi hệ thống",
-    desc: "Hedging, ngữ nghĩa tinh tế, tốc độ giải đề áp lực cao, bẫy distractors. Sa bàn thi CD-IELTS nguyên bản, phân tích dữ liệu micro-error cực đoan.",
+    sub: "Advanced (6.5 - 7.0) | Tư duy sắc bén, giảm lỗi hệ thống",
+    desc: "Hedging, độ chính xác từ vựng, quản lý thời gian áp lực cao và bẫy distractors.",
     perks: [
       "Kỹ thuật Hedging, Cấu trúc câu điều kiện hỗn hợp, Lexical Precision",
-      "Chiến lược bứt phá Reading: Tốc chiến 50 phút cho 3 bài đọc",
-      "Quản lý thi thử Full Mock Exam 4 kỹ năng môi trường áp lực cao",
+      "Chiến lược quản lý thời gian Reading & Listening nâng cao",
+      "Luyện tập Full Mock Exam 4 kỹ năng với đồng hồ giới hạn thực tế",
     ],
     range: "6.5 - 7.0",
     goal: "7.0",
@@ -181,40 +180,45 @@ export interface PlansClientProps {
   initialProg?: Record<number, number>;
 }
 
+const subscribeNoop = () => () => {};
+function getStoredEnrolledSnapshot(): number | null {
+  try {
+    const saved = localStorage.getItem("plans.enrolled");
+    if (!saved) return null;
+    const parsed = Number(JSON.parse(saved));
+    return Number.isFinite(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
 export function PlansClient({
   initialBand = 2.0,
   initialEnrolledId = 1,
-  initialProg = { 1: 40 },
+  initialProg = {},
 }: PlansClientProps) {
   const router = useRouter();
   const searchInputId = useId();
   const bandInputId = useId();
 
-  const [enrolled, setEnrolled] = useState<number>(initialEnrolledId);
+  const storedEnrolled = useSyncExternalStore(
+    subscribeNoop,
+    getStoredEnrolledSnapshot,
+    () => null,
+  );
+  const [enrolledOverride, setEnrolledOverride] = useState<number | null>(null);
+  const enrolled = enrolledOverride ?? storedEnrolled ?? initialEnrolledId;
   const [prog, setProg] = useState<Record<number, number>>(initialProg);
   const [band, setBand] = useState<number>(initialBand);
   const [activeTab, setActiveTab] = useState<number>(0);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [modalStageId, setModalStageId] = useState<number | null>(null);
 
-  // Hydrate from localStorage on client mount
-  useEffect(() => {
-    try {
-      const savedEnrolled = localStorage.getItem("plans.enrolled");
-      if (savedEnrolled) setEnrolled(Number(JSON.parse(savedEnrolled)));
-
-      const savedProg = localStorage.getItem("plans.prog");
-      if (savedProg) setProg(JSON.parse(savedProg));
-
-      const savedBand = localStorage.getItem("plans.band");
-      if (savedBand) setBand(Number(JSON.parse(savedBand)));
-    } catch {
-      // localStorage may fail in private mode
-    }
-  }, []);
-
-  // Sync to localStorage
-  const saveState = (newEnrolled: number, newProg: Record<number, number>, newBand: number) => {
+  const saveState = (
+    newEnrolled: number,
+    newProg: Record<number, number>,
+    newBand: number,
+  ) => {
     try {
       localStorage.setItem("plans.enrolled", JSON.stringify(newEnrolled));
       localStorage.setItem("plans.prog", JSON.stringify(newProg));
@@ -234,18 +238,19 @@ export function PlansClient({
       enrolled &&
       enrolled !== stageId &&
       typeof window !== "undefined" &&
-      !window.confirm(`Chuyển từ Chặng ${enrolled} sang Chặng ${stageId}? Tiến độ chặng cũ vẫn được giữ.`)
+      !window.confirm(
+        `Chuyển từ Chặng ${enrolled} sang Chặng ${stageId}? Tiến độ chặng cũ vẫn được giữ.`,
+      )
     ) {
       return;
     }
     const updatedEnrolled = stageId;
-    const updatedProg = { ...prog, [stageId]: prog[stageId] || 0 };
-    setEnrolled(updatedEnrolled);
+    const updatedProg = { ...prog, [stageId]: prog[stageId] ?? 0 };
+    setEnrolledOverride(updatedEnrolled);
     setProg(updatedProg);
     saveState(updatedEnrolled, updatedProg, band);
   };
 
-  // Close modal on Escape
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && modalStageId !== null) {
@@ -256,25 +261,25 @@ export function PlansClient({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [modalStageId]);
 
-  // Derived calculations for Journey Track
   const bi = stageOf(band);
   const curStage = STAGES[bi];
-  const frac = Math.min(1, Math.max(0, (band - curStage.lo) / (curStage.hi - curStage.lo)));
+  const frac = Math.min(
+    1,
+    Math.max(0, (band - curStage.lo) / (curStage.hi - curStage.lo)),
+  );
   const markerPos = ((bi + frac) / STAGES.length) * 100;
   const leftWeeks = STAGES.slice(bi).reduce((acc, x) => acc + x.wk, 0);
   const totalWeeks = STAGES.reduce((acc, x) => acc + x.wk, 0);
 
-  // Active Enrolled Plan Info
   const enrolledStage = STAGES.find((s) => s.id === enrolled);
-  const currentProgPercent = enrolledStage ? prog[enrolledStage.id] || 0 : 0;
-  const doneWeeks = enrolledStage
-    ? enrolledStage.id === 1
-      ? 4
-      : Math.round((currentProgPercent * enrolledStage.wk) / 100)
+  const currentProgPercent = enrolledStage
+    ? Math.min(100, Math.max(0, prog[enrolledStage.id] ?? 0))
     : 0;
-  const displayTotalWeeks = enrolledStage ? (enrolledStage.id === 1 ? 10 : enrolledStage.wk) : 0;
+  const displayTotalWeeks = enrolledStage ? enrolledStage.wk : 0;
+  const doneWeeks = enrolledStage
+    ? Math.round((currentProgPercent * enrolledStage.wk) / 100)
+    : 0;
 
-  // Filtered Cards
   const filteredStages = useMemo(() => {
     return STAGES.filter((s) => {
       const matchesTab = activeTab === 0 || s.id === activeTab;
@@ -282,40 +287,41 @@ export function PlansClient({
       if (!searchQuery.trim()) return true;
 
       const fullSearchText = nz(
-        [s.title, s.sub, s.desc, s.lvl, s.range, `${s.goal} ielts`].join(" ")
+        [s.title, s.sub, s.desc, s.lvl, s.range, `${s.goal} ielts`].join(" "),
       );
       return fullSearchText.includes(nz(searchQuery));
     });
   }, [activeTab, searchQuery]);
 
-  // Current Modal Stage
-  const modalStage = modalStageId !== null ? STAGES.find((s) => s.id === modalStageId) : null;
-  const modalHrs = modalStage ? Math.round((modalStage.wk * 7 * modalStage.min) / 60) : 0;
+  const modalStage =
+    modalStageId !== null ? STAGES.find((s) => s.id === modalStageId) : null;
+  const modalHrs = modalStage
+    ? Math.round((modalStage.wk * 7 * modalStage.min) / 60)
+    : 0;
   const isEnrolledModal = modalStage ? enrolled === modalStage.id : false;
-  const modalProg = modalStage ? prog[modalStage.id] || 0 : 0;
+  const modalProg = modalStage ? (prog[modalStage.id] ?? 0) : 0;
 
   return (
     <div className="plans-root">
       <div className="plans-wrap">
-        {/* 1. Hero Section */}
         <section className="plans-hero" aria-label="Giới thiệu lộ trình">
           <div>
             <h1>
               <span>Lộ trình học tập chi tiết</span>
               <span>
-                <em className="plans-mk">chuẩn khảo thí quốc tế</em>
+                <em className="plans-mk">theo năng lực cá nhân</em>
               </span>
             </h1>
             <p>
-              Kế hoạch học được thiết kế khoa học từng ngày, từng tuần. Tự động cá nhân hóa theo
-              trình độ khởi điểm, thời gian rảnh và mục tiêu band điểm của bạn.
+              Kế hoạch học tập phân theo từng chặng kỹ năng, cập nhật tiến độ
+              thực tế từ hồ sơ học tập của bạn.
             </p>
           </div>
 
           <div className="plans-cur" id="cur">
             {enrolledStage ? (
               <>
-                <small>Lộ trình bạn đang học</small>
+                <small>Lộ trình gợi ý theo Band của bạn</small>
                 <h2>{enrolledStage.short}</h2>
                 <div className="row">
                   <span>Tiến độ {currentProgPercent}%</span>
@@ -343,7 +349,7 @@ export function PlansClient({
             ) : (
               <>
                 <small>Lộ trình bạn đang học</small>
-                <h2>Bạn chưa đăng ký lộ trình nào</h2>
+                <h2>Chưa chọn chặng học</h2>
                 <p style={{ position: "relative", zIndex: 1, opacity: 0.85 }}>
                   Chọn một chặng bên dưới để bắt đầu.
                 </p>
@@ -352,8 +358,10 @@ export function PlansClient({
           </div>
         </section>
 
-        {/* 2. Journey Band Track */}
-        <section className="plans-journey" aria-label="Hành trình band 0.0 đến 7.0">
+        <section
+          className="plans-journey"
+          aria-label="Hành trình band 0.0 đến 7.0"
+        >
           <div className="plans-jh">
             <h2>Hành trình từ band 0.0 đến 7.0</h2>
             <p>
@@ -390,7 +398,10 @@ export function PlansClient({
                       setActiveTab((prev) => (prev === x.id ? 0 : x.id));
                       const gridEl = document.getElementById("plans-grid");
                       if (gridEl) {
-                        gridEl.scrollIntoView({ behavior: "smooth", block: "start" });
+                        gridEl.scrollIntoView({
+                          behavior: "smooth",
+                          block: "start",
+                        });
                       }
                     }}
                   >
@@ -422,18 +433,20 @@ export function PlansClient({
             />
             <div className="rec">
               {band >= 7 ? (
-                <>Bạn đã đạt mốc 7.0. Có thể ôn lại Chặng 6 để giữ phong độ.</>
+                <>
+                  Bạn đã đạt mốc 7.0. Có thể ôn lại Chặng 6 để duy trì phong độ.
+                </>
               ) : (
                 <>
-                  Gợi ý: bắt đầu từ <b>Chặng {curStage.id}</b>. Theo đủ các chặng còn lại, bạn cần
-                  khoảng <b>{leftWeeks} tuần</b> để lên band 7.0.
+                  Gợi ý: bắt đầu từ <b>Chặng {curStage.id}</b>. Theo đủ các
+                  chặng còn lại, cần ước tính <b>{leftWeeks} tuần</b> để tới mốc
+                  7.0.
                 </>
               )}
             </div>
           </div>
         </section>
 
-        {/* 3. Sticky Filter Toolbar */}
         <div className="plans-tools">
           <div className="plans-tabsrow">
             <div className="plans-tabs" role="tablist">
@@ -485,12 +498,12 @@ export function PlansClient({
           </div>
         </div>
 
-        {/* 4. Grid of Stage Cards */}
         <div className="plans-grid" id="plans-grid">
           {filteredStages.length > 0 ? (
             filteredStages.map((s, i) => {
               const on = enrolled === s.id;
               const rec = recId(band) === s.id && !on;
+              const estTotalHours = Math.round((s.wk * 7 * s.min) / 60);
               return (
                 <article
                   key={s.id}
@@ -502,7 +515,7 @@ export function PlansClient({
                     } as React.CSSProperties
                   }
                 >
-                  {on && <span className="plans-badge">Lộ trình đang đăng ký</span>}
+                  {on && <span className="plans-badge">Lộ trình đang học</span>}
                   {rec && <span className="plans-rec-tag">Gợi ý cho bạn</span>}
 
                   <div className="plans-ch">
@@ -528,7 +541,7 @@ export function PlansClient({
                   </div>
 
                   <div className="plans-perks">
-                    <h4>Bạn sẽ học</h4>
+                    <h4>Nội dung trọng tâm</h4>
                     <ul>
                       {s.perks.map((p) => (
                         <li key={p}>{p}</li>
@@ -537,7 +550,7 @@ export function PlansClient({
                   </div>
 
                   <div className="plans-foot">
-                    <span>{s.n.toLocaleString("vi-VN")} học viên</span>
+                    <span>≈ {estTotalHours} giờ học tiêu chuẩn</span>
                     <button
                       className="plans-cta"
                       onClick={() => setModalStageId(s.id)}
@@ -552,13 +565,15 @@ export function PlansClient({
           ) : (
             <div className="plans-empty">
               <h2>Không tìm thấy lộ trình nào</h2>
-              <p>Thử từ khoá khác, ví dụ &quot;5.5&quot;, &quot;Pre-IELTS&quot; hoặc &quot;ngữ âm&quot;.</p>
+              <p>
+                Thử từ khoá khác, ví dụ &quot;5.5&quot;, &quot;Pre-IELTS&quot;
+                hoặc &quot;ngữ âm&quot;.
+              </p>
             </div>
           )}
         </div>
       </div>
 
-      {/* 5. Detail & Enrollment Modal */}
       {modalStage && (
         <div
           className="plans-dialog-overlay"
@@ -573,7 +588,6 @@ export function PlansClient({
             className="plans-dialog"
             style={{ "--a": modalStage.a } as React.CSSProperties}
           >
-            {/* Modal Header */}
             <div className="plans-dh">
               <button
                 className="x"
@@ -589,7 +603,6 @@ export function PlansClient({
               <p style={{ color: "var(--mute)" }}>{modalStage.desc}</p>
             </div>
 
-            {/* Modal Body */}
             <div className="plans-db">
               <div className="plans-stats4">
                 <div>
@@ -621,16 +634,18 @@ export function PlansClient({
 
               {isEnrolledModal && (
                 <p style={{ color: "var(--mute)", marginBottom: 18 }}>
-                  Bạn đang học chặng này, tiến độ {modalProg}%.
+                  Tiến độ hệ thống ghi nhận: {modalProg}%.
                 </p>
               )}
 
-              <p style={{ color: "var(--mute)", fontSize: 13, marginBottom: 6 }}>
-                Tổng giờ tính nếu bạn học đủ mỗi ngày trong {modalStage.wk} tuần.
+              <p
+                style={{ color: "var(--mute)", fontSize: 13, marginBottom: 6 }}
+              >
+                Tổng giờ tính theo mức tối thiểu mỗi ngày trong {modalStage.wk}{" "}
+                tuần.
               </p>
             </div>
 
-            {/* Modal Footer */}
             <div className="plans-df">
               <div className="pn">
                 <button

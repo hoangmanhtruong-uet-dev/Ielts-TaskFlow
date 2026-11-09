@@ -1,5 +1,5 @@
-import { WordDiff } from '@/types/dictation';
-import { splitWords } from './normalize-text';
+import { WordDiff } from "@/types/dictation";
+import { splitWords } from "./normalize-text";
 
 /**
  * So sánh user input vs correct text, trả về mảng WordDiff
@@ -7,17 +7,16 @@ import { splitWords } from './normalize-text';
  */
 export function computeWordDiff(
   correctText: string,
-  userInput: string
+  userInput: string,
 ): WordDiff[] {
   const correctWords = splitWords(correctText);
   const userWords = splitWords(userInput);
-  const diffs: WordDiff[] = [];
 
   // Build LCS table
   const m = correctWords.length;
   const n = userWords.length;
   const dp: number[][] = Array.from({ length: m + 1 }, () =>
-    Array(n + 1).fill(0)
+    Array(n + 1).fill(0),
   );
 
   for (let i = 1; i <= m; i++) {
@@ -37,16 +36,16 @@ export function computeWordDiff(
 
   while (i > 0 || j > 0) {
     if (i > 0 && j > 0 && correctWords[i - 1] === userWords[j - 1]) {
-      result.unshift({ word: correctWords[i - 1], type: 'correct' });
+      result.unshift({ word: correctWords[i - 1], type: "correct" });
       i--;
       j--;
     } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
-      result.unshift({ word: userWords[j - 1], type: 'extra' });
+      result.unshift({ word: userWords[j - 1], type: "extra" });
       j--;
     } else {
       result.unshift({
         word: correctWords[i - 1],
-        type: 'missing',
+        type: "missing",
       });
       i--;
     }
@@ -60,9 +59,9 @@ export function computeWordDiff(
  */
 export function calculateAccuracyFromDiff(diffs: WordDiff[]): number {
   const totalExpected = diffs.filter(
-    (d) => d.type === 'correct' || d.type === 'missing'
+    (d) => d.type === "correct" || d.type === "missing",
   ).length;
-  const correct = diffs.filter((d) => d.type === 'correct').length;
+  const correct = diffs.filter((d) => d.type === "correct").length;
   if (totalExpected === 0) return 0;
   return Math.round((correct / totalExpected) * 100 * 100) / 100;
 }

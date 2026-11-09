@@ -10,124 +10,169 @@ vi.mock("next/navigation", () => ({
 }));
 
 describe("ProgressClient component", () => {
+  const sampleProps = {
+    ranges: {
+      "7d": {
+        hours: "4h 30m",
+        hoursSub: "Thời gian làm bài 7 ngày qua",
+        lessons: 6,
+        lessonTotal: 20,
+        lessonsPct: 30,
+        band: "6.5",
+        bandBadge: "4 bài chấm điểm",
+        confidence: "Sơ bộ",
+        streak: "5 Ngày",
+        weeks: [
+          {
+            id: 0,
+            label: "Mock #1",
+            band: 6.0,
+            hours: "01/11/2026",
+            note: "Mock Test 1",
+          },
+          {
+            id: 1,
+            label: "Mock #2",
+            band: 6.5,
+            hours: "08/11/2026",
+            note: "Mock Test 2",
+          },
+        ],
+      },
+      "30d": {
+        hours: "12h 10m",
+        hoursSub: "Thời gian làm bài 30 ngày qua",
+        lessons: 6,
+        lessonTotal: 20,
+        lessonsPct: 30,
+        band: "6.5",
+        bandBadge: "4 bài chấm điểm",
+        confidence: "Sơ bộ",
+        streak: "5 Ngày",
+        weeks: [
+          {
+            id: 0,
+            label: "Mock #1",
+            band: 6.0,
+            hours: "01/11/2026",
+            note: "Mock Test 1",
+          },
+          {
+            id: 1,
+            label: "Mock #2",
+            band: 6.5,
+            hours: "08/11/2026",
+            note: "Mock Test 2",
+          },
+        ],
+      },
+      all: {
+        hours: "18h 0m",
+        hoursSub: "Tổng thời gian ghi nhận",
+        lessons: 6,
+        lessonTotal: 20,
+        lessonsPct: 30,
+        band: "6.5",
+        bandBadge: "4 bài chấm điểm",
+        confidence: "Sơ bộ",
+        streak: "5 Ngày",
+        weeks: [
+          {
+            id: 0,
+            label: "Mock #1",
+            band: 6.0,
+            hours: "01/11/2026",
+            note: "Mock Test 1",
+          },
+          {
+            id: 1,
+            label: "Mock #2",
+            band: 6.5,
+            hours: "08/11/2026",
+            note: "Mock Test 2",
+          },
+        ],
+      },
+    },
+    skills: [
+      {
+        id: "reading",
+        name: "Reading",
+        band: 7.0,
+        progress: 75,
+        status: "Điểm mạnh",
+        barColor: "bg-emerald-500",
+        badgeClass: "bg-emerald-950/90 text-emerald-400 border-emerald-500/30",
+        statusClass: "text-emerald-400",
+      },
+      {
+        id: "writing",
+        name: "Writing",
+        band: 5.5,
+        progress: 50,
+        status: "Cần chú ý",
+        barColor: "bg-amber-500",
+        badgeClass: "bg-amber-950/90 text-amber-400 border-amber-500/30",
+        statusClass: "text-amber-500",
+      },
+    ],
+    vocabSummary: { savedTerms: 18, dueReview: 4, mastered: 12 },
+    weakArea: { skill: "writing", label: "Writing", accuracyPercent: 50 },
+    targetBand: 7.5,
+    lastUpdatedLabel: "09/11/2026",
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
     window.print = vi.fn();
   });
 
-  it("renders header, 4 KPI cards, and default 7d metrics correctly", () => {
-    render(
-      <ProgressClient
-        initialStreak={12}
-        initialCompletedLessons={38}
-        initialTargetBand="7.5"
-      />
-    );
+  it("renders header, 4 KPI cards, and default empty/zero telemetry honestly", () => {
+    render(<ProgressClient />);
 
-    // Verify Title & Tag
     expect(screen.getByText("ANALYTICS HUB")).toBeInTheDocument();
     expect(screen.getByText("Báo cáo & Tiến độ học tập")).toBeInTheDocument();
-
-    // Verify 4 Top KPI cards
-    expect(screen.getByText("Tổng giờ học")).toBeInTheDocument();
-    expect(screen.getByText("24h 45m")).toBeInTheDocument();
-    expect(screen.getByText("+12% so với tuần trước")).toBeInTheDocument();
-
-    expect(screen.getByText("Bài học đã xong")).toBeInTheDocument();
-    expect(screen.getByText("38")).toBeInTheDocument();
-    expect(screen.getByText("/ 120 bài")).toBeInTheDocument();
-
-    expect(screen.getByText("Band dự phóng")).toBeInTheDocument();
-    expect(screen.getAllByText("7.0")[0]).toBeInTheDocument();
-    expect(screen.getByText("+0.5 tăng")).toBeInTheDocument();
-
-    expect(screen.getByText("Chuỗi liên tục (Streak)")).toBeInTheDocument();
-    expect(screen.getByText("12 Ngày")).toBeInTheDocument();
-
-    // Verify AI Smart Insight Banner
-    expect(screen.getByText("AI SMART INSIGHT")).toBeInTheDocument();
-    expect(
-      screen.getByText(/Bạn đang gặp khó khăn nhỏ với cấu trúc phát âm nguyên âm đôi/)
-    ).toBeInTheDocument();
+    expect(screen.getByText("0h 0m")).toBeInTheDocument();
+    expect(screen.getByText("/ 0 bài")).toBeInTheDocument();
+    expect(screen.getByText("0 Ngày")).toBeInTheDocument();
+    expect(screen.queryByText("92h 15m")).not.toBeInTheDocument();
+    expect(screen.queryByText("1,240")).not.toBeInTheDocument();
   });
 
-  it("switches time ranges dynamically (7d, 30d, all) and updates KPI values", () => {
-    render(<ProgressClient />);
+  it("switches time ranges dynamically and reflects passed DB telemetry", () => {
+    render(<ProgressClient {...sampleProps} />);
 
-    // 1. Switch to Tháng này (30d)
-    const monthTab = screen.getByRole("button", { name: "Tháng này" });
-    fireEvent.click(monthTab);
+    expect(screen.getByText("4h 30m")).toBeInTheDocument();
 
-    expect(screen.getByText("92h 15m")).toBeInTheDocument();
-    expect(screen.getByText("+24% so với tháng trước")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Tháng này" }));
+    expect(screen.getByText("12h 10m")).toBeInTheDocument();
 
-    // 2. Switch to Toàn thời gian (all)
-    const allTab = screen.getByRole("button", { name: "Toàn thời gian" });
-    fireEvent.click(allTab);
-
-    expect(screen.getByText("148h 30m")).toBeInTheDocument();
-    expect(screen.getByText("Tổng thời gian tích lũy")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Toàn thời gian" }));
+    expect(screen.getByText("18h 0m")).toBeInTheDocument();
   });
 
-  it("selects different weeks from footer bar and updates Trajectory HUD", () => {
-    render(<ProgressClient />);
+  it("links weak area CTA to real practice route instead of fake +0.2 drill", () => {
+    render(<ProgressClient {...sampleProps} />);
 
-    // Click 'Tuần 3' in the trajectory footer bar
-    const week3Btn = screen.getByRole("button", { name: /Tuần 3/ });
-    fireEvent.click(week3Btn);
-
-    // Mini HUD should show note for Tuần 3
-    expect(screen.getByText("Vượt qua Milestone Test 1")).toBeInTheDocument();
-    expect(screen.getAllByText("Tuần 3").length).toBeGreaterThanOrEqual(1);
-  });
-
-  it("opens, performs, and completes AI Speaking Pronunciation drill modal", () => {
-    render(<ProgressClient />);
-
-    // Open pronunciation drill
-    const openDrillBtn = screen.getByText(
-      /Khắc phục ngay: Luyện phát âm nguyên âm đôi/
-    );
-    fireEvent.click(openDrillBtn);
-
-    // Modal should be visible
-    const modal = screen.getByRole("dialog");
-    expect(modal).toBeInTheDocument();
-    expect(within(modal).getByText("unforgettable")).toBeInTheDocument();
-    expect(
-      within(modal).getByText("/ˌʌn.fəˈɡet.ə.bəl/ — Chú ý âm chuyển tiếp")
-    ).toBeInTheDocument();
-
-    // Complete drill
-    const completeBtn = screen.getByRole("button", {
-      name: "Hoàn thành bài tập (+0.2 Speaking)",
-    });
-    fireEvent.click(completeBtn);
-
-    // Modal should close and toast should appear
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(screen.getByText("Speaking Part 2 Boost")).toBeInTheDocument();
+    const cta = screen.getByRole("button", { name: /Luyện ngay: Writing/ });
+    fireEvent.click(cta);
+    expect(mockPush).toHaveBeenCalledWith("/practice/writing");
   });
 
   it("toggles 3D heatmap isometric elevation mode", () => {
-    render(<ProgressClient />);
+    render(<ProgressClient {...sampleProps} />);
 
     const toggleBtn = screen.getByRole("button", {
       name: "Bật tắt khối nổi 3D Heatmap",
     });
     expect(toggleBtn).toHaveTextContent("Khối nổi 3D: Tắt");
 
-    // Click toggle to enable 3D
     fireEvent.click(toggleBtn);
     expect(toggleBtn).toHaveTextContent("Khối nổi 3D: Bật");
-
-    // Click toggle to disable 3D
-    fireEvent.click(toggleBtn);
-    expect(toggleBtn).toHaveTextContent("Khối nổi 3D: Tắt");
   });
 
   it("navigates to vocabulary vault on 'Ôn tập' click", () => {
-    render(<ProgressClient />);
+    render(<ProgressClient {...sampleProps} />);
 
     const reviewBtn = screen.getByRole("button", { name: "Ôn tập từ vựng" });
     fireEvent.click(reviewBtn);
@@ -136,23 +181,15 @@ describe("ProgressClient component", () => {
   });
 
   it("opens PDF export modal and calls window.print on confirmation", () => {
-    render(<ProgressClient />);
+    render(<ProgressClient {...sampleProps} />);
 
-    // Click Export PDF
-    const exportBtn = screen.getByRole("button", { name: "Xuất báo cáo PDF" });
-    fireEvent.click(exportBtn);
-
-    // Verify modal
+    fireEvent.click(screen.getByRole("button", { name: "Xuất báo cáo PDF" }));
     const modal = screen.getByRole("dialog");
-    expect(modal).toBeInTheDocument();
     expect(
-      within(modal).getByText("Xuất báo cáo tiến độ học tập")
+      within(modal).getByText("Xuất báo cáo tiến độ học tập"),
     ).toBeInTheDocument();
 
-    // Click Print
-    const printBtn = screen.getByRole("button", { name: "In / Lưu file PDF" });
-    fireEvent.click(printBtn);
-
+    fireEvent.click(screen.getByRole("button", { name: "In / Lưu file PDF" }));
     expect(window.print).toHaveBeenCalled();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });

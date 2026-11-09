@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getDictationBySlug } from "@/features/dictation/content";
+import { requireCompletedOnboarding } from "@/features/onboarding/server/learner-profile";
+import { getUnifiedDictationBySlug } from "@/features/dictation/server/content";
 import { DictationRunner } from "@/features/dictation/components/dictation-runner";
 
 export const metadata: Metadata = {
@@ -12,8 +13,9 @@ export default async function DictationExercisePage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  await requireCompletedOnboarding();
   const { slug } = await params;
-  const exercise = getDictationBySlug(slug);
+  const exercise = await getUnifiedDictationBySlug(slug);
   if (!exercise) notFound();
 
   return <DictationRunner exercise={exercise} />;

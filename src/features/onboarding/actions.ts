@@ -15,6 +15,7 @@ import {
   testTypeStepSchema,
 } from "@/features/onboarding/schemas";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { PRIVACY_VERSION, TERMS_VERSION } from "@/features/auth/policies";
 import { requireCurrentAccount } from "@/features/auth/server/account";
 import { logServerEvent } from "@/server/observability/logger";
 import { getServerRequestId } from "@/server/observability/request-context";
@@ -130,7 +131,7 @@ export async function saveOnboardingStepAction(
       return validationError(requestId, result.error.flatten().fieldErrors);
     update = {
       target_band: result.data.targetBand,
-      primary_goal: (result.data.primaryGoal ?? inferredGoal) as any,
+      primary_goal: result.data.primaryGoal ?? inferredGoal,
     };
     nextStep = 5;
   } else if (step === 5) {
@@ -263,6 +264,16 @@ export async function completeOnboardingAction(
       message: "Không thể hoàn tất thiết lập lúc này. Hãy thử lại sau.",
       requestId,
     };
+  }
+
+  try {
+    await supabase.rpc("accept_current_policies", {
+      p_terms_version: TERMS_VERSION,
+      p_privacy_version: PRIVACY_VERSION,
+      p_channel: "onboarding_banner",
+    });
+  } catch {
+    // Non-fatal if already accepted on signup or OAuth.
   }
 
   revalidatePath("/", "layout");

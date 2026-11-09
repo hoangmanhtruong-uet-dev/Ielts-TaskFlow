@@ -29,9 +29,11 @@ export const currentBandStepSchema = z.object({
 
 export const targetStepSchema = z.object({
   targetBand: halfBandSchema,
-  primaryGoal: z.enum(PRIMARY_GOALS, {
-    error: "Hãy chọn mục tiêu học IELTS.",
-  }).optional(),
+  primaryGoal: z
+    .enum(PRIMARY_GOALS, {
+      error: "Hãy chọn mục tiêu học IELTS.",
+    })
+    .optional(),
 });
 
 export function createExamDateStepSchema(today: string) {

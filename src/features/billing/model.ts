@@ -1,10 +1,10 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import { Database } from "@/types/database";
+import type { Database, Json } from "@/types/database";
 import { SubscriptionTier } from "./schemas";
 
 export async function getUserTier(
-  supabase: SupabaseClient<any, "public", any>,
-  userId: string
+  supabase: SupabaseClient<Database>,
+  userId: string,
 ): Promise<SubscriptionTier> {
   const { data, error } = await supabase
     .from("subscriptions")
@@ -22,11 +22,11 @@ export async function getUserTier(
 }
 
 export async function processWebhookEvent(
-  supabaseAdmin: SupabaseClient<any, "public", any>,
+  supabaseAdmin: SupabaseClient<Database>,
   gateway: string,
   eventId: string,
   eventType: string,
-  payload: any
+  payload: Json,
 ): Promise<{ success: boolean; error?: string }> {
   // 1. Check if event is already processed (Idempotency)
   const { data: existing } = await supabaseAdmin
@@ -62,7 +62,7 @@ export async function processWebhookEvent(
       // Update subscription to 'active' or create new 'pro' subscription
       // Reset AI quotas
     }
-    
+
     // Mark as processed
     await supabaseAdmin
       .from("billing_events")
@@ -71,13 +71,14 @@ export async function processWebhookEvent(
       .eq("gateway_event_id", eventId);
 
     return { success: true };
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : String(err);
     await supabaseAdmin
       .from("billing_events")
-      .update({ error_message: err.message })
+      .update({ error_message: errorMessage })
       .eq("gateway", gateway)
       .eq("gateway_event_id", eventId);
-      
-    return { success: false, error: err.message };
+
+    return { success: false, error: errorMessage };
   }
 }

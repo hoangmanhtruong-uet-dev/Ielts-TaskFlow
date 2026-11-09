@@ -20,13 +20,15 @@ export function FaqAccordion({ items }: { items: FaqItem[] }) {
           <div
             key={item.question}
             className="group rounded-2xl border border-[var(--border)] bg-[var(--background)] px-5 py-1 transition-colors sm:px-6"
-            style={{ 
-              backgroundColor: isOpen ? "var(--primary-subtle)" : "var(--background)"
+            style={{
+              backgroundColor: isOpen
+                ? "var(--primary-subtle)"
+                : "var(--background)",
             }}
           >
             <button
               onClick={() => setOpenIndex(isOpen ? null : index)}
-              className="flex w-full min-h-16 cursor-pointer items-center justify-between gap-4 py-3 text-left font-extrabold focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:outline-none"
+              className="flex min-h-16 w-full cursor-pointer items-center justify-between gap-4 py-3 text-left font-extrabold focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:outline-none"
               aria-expanded={isOpen}
             >
               {item.question}

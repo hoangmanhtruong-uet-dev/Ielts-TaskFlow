@@ -3,18 +3,25 @@
 import React from "react";
 import Link from "next/link";
 
+import type { WeeklyLeagueEntry } from "@/features/dashboard/server/dashboard-data";
+
 interface WeeklyLeagueCardProps {
   userXp?: number;
   userInitial?: string;
+  entries?: WeeklyLeagueEntry[];
 }
 
 export function WeeklyLeagueCard({
-  userXp = 1450,
-  userInitial = "H",
+  userXp = 0,
+  userInitial = "Y",
+  entries = [],
 }: WeeklyLeagueCardProps) {
-  const formattedXp = Number(userXp).toLocaleString();
-  const rank6Xp = (userXp + 50).toLocaleString();
-  const rank8Xp = Math.max(0, userXp - 40).toLocaleString();
+  const formattedUserXp = Number(userXp).toLocaleString();
+  const meIndex = entries.findIndex((entry) => entry.isCurrentUser);
+  const aheadEntry = meIndex > 0 ? entries[meIndex - 1] : null;
+  const myEntry = meIndex >= 0 ? entries[meIndex] : null;
+  const xpGap =
+    aheadEntry && myEntry ? Math.max(1, aheadEntry.xp - myEntry.xp + 1) : null;
 
   return (
     <div className="box lg">
@@ -25,30 +32,48 @@ export function WeeklyLeagueCard({
         </Link>
       </div>
 
-      <div className="r">
-        <span className="rk">6</span>
-        <span className="av">NH</span>
-        <span>Nam Hoàng</span>
-        <span className="xp">{rank6Xp} XP</span>
-      </div>
+      {entries.length === 0 ? (
+        <div className="space-y-3">
+          <div className="r me2">
+            <span className="rk" style={{ color: "var(--mark)" }}>
+              —
+            </span>
+            <span className="av">{userInitial}</span>
+            <b>You</b>
+            <span className="xp">{formattedUserXp} XP</span>
+          </div>
+          <p className="muted">
+            Chưa có bảng xếp hạng tuần này. Hoàn thành bài học để tích lũy XP.
+          </p>
+        </div>
+      ) : (
+        <>
+          {entries.map((entry) => (
+            <div
+              key={entry.userId}
+              className={`r ${entry.isCurrentUser ? "me2" : ""}`}
+            >
+              <span
+                className="rk"
+                style={
+                  entry.isCurrentUser ? { color: "var(--mark)" } : undefined
+                }
+              >
+                {entry.rank}
+              </span>
+              <span className="av">{entry.initials}</span>
+              {entry.isCurrentUser ? <b>You</b> : <span>{entry.label}</span>}
+              <span className="xp">{Number(entry.xp).toLocaleString()} XP</span>
+            </div>
+          ))}
 
-      <div className="r me2">
-        <span className="rk" style={{ color: "var(--mark)" }}>
-          7
-        </span>
-        <span className="av">{userInitial}</span>
-        <b>You</b>
-        <span className="xp">{formattedXp} XP</span>
-      </div>
-
-      <div className="r">
-        <span className="rk">8</span>
-        <span className="av">MT</span>
-        <span>Minh Thư</span>
-        <span className="xp">{rank8Xp} XP</span>
-      </div>
-
-      <div className="gap">+51 XP overtakes rank 6</div>
+          {xpGap !== null && aheadEntry ? (
+            <div className="gap">
+              +{xpGap.toLocaleString()} XP overtakes rank {aheadEntry.rank}
+            </div>
+          ) : null}
+        </>
+      )}
     </div>
   );
 }

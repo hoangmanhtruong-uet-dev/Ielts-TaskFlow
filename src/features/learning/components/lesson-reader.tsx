@@ -13,8 +13,16 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { LearningProgress } from "@/features/learning/components/learning-progress";
 import dynamic from "next/dynamic";
 const LessonMarkdown = dynamic(
-  () => import("@/features/learning/components/lesson-markdown").then((mod) => mod.LessonMarkdown),
-  { ssr: false, loading: () => <div className="animate-pulse bg-gray-200 h-32 rounded-xl"></div> }
+  () =>
+    import("@/features/learning/components/lesson-markdown").then(
+      (mod) => mod.LessonMarkdown,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-32 animate-pulse rounded-xl bg-gray-200"></div>
+    ),
+  },
 );
 import { Button } from "@/components/ui/button";
 import { initialLearningProgressActionState } from "@/features/learning/action-state";

@@ -173,7 +173,7 @@ export class WritingAiError extends Error {
 }
 
 export function classifyWritingAiError(
-  error: any,
+  error: unknown,
 ): WritingFeedbackFailureCode {
   if (error instanceof WritingAiError) return error.code;
   if (error instanceof OpenAI.APIConnectionTimeoutError)

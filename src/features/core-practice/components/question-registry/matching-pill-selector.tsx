@@ -9,15 +9,18 @@ export interface MatchingPillSelectorProps {
   options: QuestionOption[];
   selectedOptionIds: string[];
   answerText?: string;
-  onChange: (draft: { answerText: string; selectedOptionIds: string[] }) => void;
+  onChange: (draft: {
+    answerText: string;
+    selectedOptionIds: string[];
+  }) => void;
 }
 
 export function MatchingPillSelector({
-  questionId,
+  questionId: _questionId,
   options,
   selectedOptionIds,
-  answerText = "",
-  onChange
+  answerText: _answerText = "",
+  onChange,
 }: MatchingPillSelectorProps) {
   // Option letter helper (e.g. "A", "B", "C")
   const getOptionLetter = (opt: QuestionOption, index: number) => {
@@ -30,12 +33,14 @@ export function MatchingPillSelector({
     return opt.label.replace(/^[A-Z][\.\:\s]+/i, "").trim();
   };
 
-  const selectedOption = options.find((opt) => selectedOptionIds.includes(opt.id));
+  const selectedOption = options.find((opt) =>
+    selectedOptionIds.includes(opt.id),
+  );
 
   const handleSelect = (opt: QuestionOption, letter: string) => {
     onChange({
       answerText: letter,
-      selectedOptionIds: [opt.id]
+      selectedOptionIds: [opt.id],
     });
   };
 
@@ -44,7 +49,7 @@ export function MatchingPillSelector({
       {/* 1. Reference Options Box */}
       {options.length > 0 && (
         <div className="rounded-2xl border border-[#2B3060] bg-[#141731]/80 p-4 backdrop-blur-sm">
-          <div className="flex items-center gap-1.5 mb-2.5 text-xs font-bold uppercase tracking-wider text-indigo-300">
+          <div className="mb-2.5 flex items-center gap-1.5 text-xs font-bold tracking-wider text-indigo-300 uppercase">
             <HelpCircle size={14} className="text-[#F6E85C]" />
             Khung phương án phân loại:
           </div>
@@ -58,14 +63,14 @@ export function MatchingPillSelector({
                 <div
                   key={opt.id}
                   onClick={() => handleSelect(opt, letter)}
-                  className={`flex items-start gap-2.5 p-2.5 rounded-xl border transition-all cursor-pointer select-none text-xs ${
+                  className={`flex cursor-pointer items-start gap-2.5 rounded-xl border p-2.5 text-xs transition-all select-none ${
                     isSelected
-                      ? "bg-indigo-600/25 border-indigo-500/60 text-white"
-                      : "bg-[#1B1F40]/60 border-[#2B3060]/70 text-zinc-300 hover:bg-[#1B1F40] hover:text-white"
+                      ? "border-indigo-500/60 bg-indigo-600/25 text-white"
+                      : "border-[#2B3060]/70 bg-[#1B1F40]/60 text-zinc-300 hover:bg-[#1B1F40] hover:text-white"
                   }`}
                 >
                   <span
-                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg font-bold text-xs ${
+                    className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-xs font-bold ${
                       isSelected
                         ? "bg-[#F6E85C] text-[#0C0E1D]"
                         : "bg-[#2B3060] text-indigo-200"
@@ -73,7 +78,9 @@ export function MatchingPillSelector({
                   >
                     {letter}
                   </span>
-                  <span className="font-medium leading-relaxed pt-0.5">{text}</span>
+                  <span className="pt-0.5 leading-relaxed font-medium">
+                    {text}
+                  </span>
                 </div>
               );
             })}
@@ -83,10 +90,10 @@ export function MatchingPillSelector({
 
       {/* 2. 1-Touch Pill Selection Row */}
       <div>
-        <p className="text-xs font-semibold text-zinc-400 mb-2">
+        <p className="mb-2 text-xs font-semibold text-zinc-400">
           Chọn phương án tương ứng cho câu hỏi này:
         </p>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-wrap items-center gap-2">
           {options.map((opt, idx) => {
             const letter = getOptionLetter(opt, idx);
             const isSelected = selectedOptionIds.includes(opt.id);
@@ -98,10 +105,10 @@ export function MatchingPillSelector({
                 onClick={() => handleSelect(opt, letter)}
                 aria-pressed={isSelected}
                 aria-label={`Chọn phương án ${letter}`}
-                className={`h-11 min-w-[3.5rem] px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-1.5 transition-all border ${
+                className={`flex h-11 min-w-[3.5rem] items-center justify-center gap-1.5 rounded-xl border px-4 text-sm font-bold transition-all ${
                   isSelected
-                    ? "bg-[#F6E85C] text-[#0C0E1D] border-[#F6E85C] shadow-lg shadow-[#F6E85C]/20 scale-105"
-                    : "bg-[#141731] text-zinc-200 hover:text-white hover:bg-[#1B1F40] border-[#2B3060]"
+                    ? "scale-105 border-[#F6E85C] bg-[#F6E85C] text-[#0C0E1D] shadow-lg shadow-[#F6E85C]/20"
+                    : "border-[#2B3060] bg-[#141731] text-zinc-200 hover:bg-[#1B1F40] hover:text-white"
                 }`}
               >
                 <span>{letter}</span>
@@ -113,9 +120,10 @@ export function MatchingPillSelector({
 
         {/* Selected Confirmation Banner */}
         {selectedOption && (
-          <p className="text-xs text-indigo-300 mt-2 font-medium flex items-center gap-1.5 animate-in fade-in">
+          <p className="animate-in fade-in mt-2 flex items-center gap-1.5 text-xs font-medium text-indigo-300">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
-            Đã chọn: <strong className="text-white">{selectedOption.label}</strong>
+            Đã chọn:{" "}
+            <strong className="text-white">{selectedOption.label}</strong>
           </p>
         )}
       </div>

@@ -1,11 +1,4 @@
-import {
-  Check,
-  CheckCircle2,
-  Clock3,
-  RotateCcw,
-  Target,
-  XCircle,
-} from "lucide-react";
+import { CheckCircle2, Clock3, RotateCcw, Target, XCircle } from "lucide-react";
 import Link from "next/link";
 
 import { LessonMarkdown } from "@/features/learning/components/lesson-markdown";
@@ -35,7 +28,7 @@ export function PracticeResultView({
         <header className="border-b border-[#e7e1ef] bg-white px-4 py-4 text-lg font-bold lg:rounded-t-2xl">
           Lesson Complete
         </header>
-        <main className="space-y-6 px-4 py-6 sm:px-6">
+        <div className="space-y-6 px-4 py-6 sm:px-6">
           <div className="grid place-items-center text-center">
             <div
               className="grid size-32 place-items-center rounded-full bg-[conic-gradient(#4d32d4_var(--score),#e8e2f0_0)] p-3"
@@ -57,8 +50,10 @@ export function PracticeResultView({
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-2xl border border-[#e2dced] bg-white p-4 text-center">
               <Clock3 className="mx-auto text-[#4d31d2]" size={19} />
-              <p className="mt-2 text-xl font-bold">11 min</p>
-              <p className="text-[10px] text-[#716a7c] uppercase">Time spent</p>
+              <p className="mt-2 text-xl font-bold">
+                {result.score}/{result.maxScore}
+              </p>
+              <p className="text-[10px] text-[#716a7c] uppercase">Score</p>
             </div>
             <div className="rounded-2xl border border-[#e2dced] bg-white p-4 text-center">
               <Target className="mx-auto text-[#4d31d2]" size={19} />
@@ -68,24 +63,8 @@ export function PracticeResultView({
           </div>
 
           <section>
-            <h2 className="text-base font-bold">What You Learned</h2>
-            <ul className="mt-3 space-y-2">
-              {[
-                "Usage and sentence patterns",
-                "Verb forms",
-                "Questions and negatives",
-              ].map((item) => (
-                <li
-                  key={item}
-                  className="flex min-h-14 items-center gap-3 rounded-xl border border-[#e2dced] bg-white px-4 text-sm"
-                >
-                  <span className="grid size-7 place-items-center rounded-lg bg-[#4d32d4] text-white">
-                    <Check size={15} />
-                  </span>
-                  {item}
-                </li>
-              ))}
-            </ul>
+            <h2 className="text-base font-bold">Lesson Summary</h2>
+            <p className="mt-2 text-sm text-[#716a7c]">{exercise.summary}</p>
           </section>
 
           {missed.length ? (
@@ -108,7 +87,7 @@ export function PracticeResultView({
           >
             Practice Again
           </Link>
-        </main>
+        </div>
       </div>
     );
   }

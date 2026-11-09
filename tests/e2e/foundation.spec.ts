@@ -127,7 +127,7 @@ test("password recovery validates email without exposing account state", async (
 }) => {
   await page.goto("/forgot-password");
   await page.getByLabel("Email").fill("not-an-email");
-  await page.getByRole("button", { name: "Gửi hướng dẫn" }).click();
+  await page.getByRole("button", { name: "Nhận mã OTP" }).click();
   await expect(
     page.getByText("Hãy nhập một địa chỉ email hợp lệ."),
   ).toBeVisible();

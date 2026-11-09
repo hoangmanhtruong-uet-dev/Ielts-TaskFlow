@@ -1,331 +1,356 @@
 import {
-  Bell,
-  BookOpen,
-  CalendarDays,
-  Camera,
-  CheckCircle2,
-  ChevronDown,
-  Clock,
-  Copy,
-  FileText,
   Flame,
-  Headphones,
-  ShieldCheck,
+  GraduationCap,
+  ShieldAlert,
+  Sparkles,
   Target,
   UserRound,
 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { requireCurrentAccount } from "@/features/auth/server/account";
-import { getCurrentLearnerProfile } from "@/features/onboarding/server/learner-profile";
 
-export const metadata: Metadata = { title: "Profile & Settings" };
+import { getAccountLabel } from "@/features/auth/server/account";
+import { requireCompletedOnboarding } from "@/features/onboarding/server/learner-profile";
+import { DeleteAccountCard } from "@/features/profile/components/delete-account-card";
+import { LearningPreferencesForm } from "@/features/profile/components/learning-preferences-form";
+import { ProfileForm } from "@/features/profile/components/profile-form";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+
+export const metadata: Metadata = {
+  title: "Hồ sơ & Cài đặt tài khoản",
+  description:
+    "Quản lý thông tin cá nhân, mục tiêu IELTS, hạn mức AI thực tế và quyền dữ liệu cá nhân.",
+};
+
+type AiQuotaUsage = {
+  tier: "free" | "pro";
+  weeklyLimitPerSkill: number;
+  writingUsedWeekly: number;
+  writingUsedToday: number;
+  speakingUsedWeekly: number;
+  speakingUsedToday: number;
+};
+
+function resolveCefrBadge(band: number | null) {
+  if (band === null || band < 3.5) return "A1";
+  if (band < 4.5) return "A2";
+  if (band < 5.5) return "B1";
+  if (band < 7.0) return "B2";
+  if (band < 8.5) return "C1";
+  return "C2";
+}
+
+function getDaysUntilExam(targetExamDate: string | null) {
+  if (!targetExamDate) return null;
+  const parsed = new Date(`${targetExamDate}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const diffDays = Math.ceil(
+    (parsed.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+  );
+  return diffDays;
+}
 
 export default async function ProfilePage() {
-  const [account, learnerProfile] = await Promise.all([
-    requireCurrentAccount(),
-    getCurrentLearnerProfile(),
+  const { account, learnerProfile } = await requireCompletedOnboarding();
+  const supabase = await createSupabaseServerClient();
+
+  const [gamificationRes, quotaRes] = await Promise.all([
+    supabase
+      .from("user_gamification")
+      .select(
+        "total_xp, current_level, current_streak, longest_streak, streak_freezes_available",
+      )
+      .eq("user_id", account.user.id)
+      .maybeSingle(),
+    supabase.rpc("get_learner_ai_quota_usage"),
   ]);
 
-  const displayName = account.profile?.display_name || account.user.email.split("@")[0];
+  const displayName =
+    account.profile?.display_name?.trim() || getAccountLabel(account);
+  const currentBand =
+    learnerProfile.current_band === null
+      ? null
+      : Number(learnerProfile.current_band);
+  const targetBand =
+    learnerProfile.target_band === null
+      ? null
+      : Number(learnerProfile.target_band);
+
+  const gamification = gamificationRes.data as {
+    total_xp?: number;
+    current_level?: number;
+    current_streak?: number;
+    longest_streak?: number;
+    streak_freezes_available?: number;
+  } | null;
+
+  const currentStreak = Math.max(0, Number(gamification?.current_streak ?? 0));
+  const totalXp = Math.max(0, Number(gamification?.total_xp ?? 0));
+  const cefrCode = resolveCefrBadge(currentBand);
+  const daysToExam = getDaysUntilExam(learnerProfile.target_exam_date);
+
+  const rawQuota = (quotaRes.data ?? null) as Partial<AiQuotaUsage> | null;
+  const quota: AiQuotaUsage = {
+    tier: rawQuota?.tier === "pro" ? "pro" : "free",
+    weeklyLimitPerSkill: Math.max(
+      1,
+      Number(rawQuota?.weeklyLimitPerSkill ?? 5),
+    ),
+    writingUsedWeekly: Math.max(0, Number(rawQuota?.writingUsedWeekly ?? 0)),
+    writingUsedToday: Math.max(0, Number(rawQuota?.writingUsedToday ?? 0)),
+    speakingUsedWeekly: Math.max(0, Number(rawQuota?.speakingUsedWeekly ?? 0)),
+    speakingUsedToday: Math.max(0, Number(rawQuota?.speakingUsedToday ?? 0)),
+  };
+
+  const writingPercent = Math.min(
+    100,
+    Math.round((quota.writingUsedWeekly / quota.weeklyLimitPerSkill) * 100),
+  );
+  const speakingPercent = Math.min(
+    100,
+    Math.round((quota.speakingUsedWeekly / quota.weeklyLimitPerSkill) * 100),
+  );
 
   return (
-    <div className="min-h-[100dvh] bg-[var(--background)] px-4 pb-24 pt-4 sm:px-6 lg:px-8">
+    <div className="min-h-[100dvh] bg-[var(--background)] px-4 pt-6 pb-16 text-[var(--foreground)] sm:px-6 lg:px-8">
       <div className="mx-auto w-full max-w-6xl">
-        
-        {/* Cover Photo & Header Profile */}
-        <section className="relative overflow-hidden rounded-3xl border border-[var(--border)] bg-white shadow-sm">
-          <div className="relative h-48 w-full bg-[#efedff]">
-            {/* Mock Cover Image */}
-            <div 
-               className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-80" 
-               style={{ backgroundImage: "linear-gradient(to right, #4338ca, #3b82f6)" }}
-            >
-               {/* Abstract pattern */}
-               <svg className="absolute inset-0 h-full w-full opacity-30" preserveAspectRatio="none" viewBox="0 0 100 100">
-                  <path d="M0,50 C20,20 40,80 60,50 C80,20 100,50 100,50 L100,100 L0,100 Z" fill="#ffffff" opacity="0.1" />
-                  <path d="M0,70 C30,40 50,90 80,60 C90,50 100,70 100,70 L100,100 L0,100 Z" fill="#ffffff" opacity="0.2" />
-               </svg>
+        {/* Header Profile Card */}
+        <section className="overflow-hidden rounded-3xl border border-[var(--border)] bg-white shadow-sm">
+          <div className="h-36 w-full bg-gradient-to-r from-[#4338ca] to-[#3b82f6]" />
+          <div className="flex flex-col gap-5 p-6 pt-0 sm:flex-row sm:items-end sm:justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+              <div className="relative -mt-14 inline-block w-fit">
+                <div className="grid size-28 place-items-center rounded-full border-4 border-white bg-[#efedff] text-[#4338CA] shadow-md">
+                  <UserRound size={44} aria-hidden="true" />
+                </div>
+                <span className="absolute bottom-1 left-0 rounded-full border-2 border-white bg-[#4338CA] px-2.5 py-0.5 text-xs font-bold text-white">
+                  {cefrCode}
+                </span>
+              </div>
+              <div className="pb-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="text-2xl font-extrabold text-[var(--foreground)]">
+                    {displayName}
+                  </h1>
+                  <span className="rounded-full bg-[#efedff] px-2.5 py-0.5 text-xs font-bold text-[#4338CA]">
+                    {quota.tier === "pro" ? "Gói Pro" : "Tài khoản Học viên"}
+                  </span>
+                </div>
+                <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+                  {account.user.email}
+                </p>
+                <div className="mt-2 flex flex-wrap items-center gap-4 text-sm font-medium text-[var(--muted-foreground)]">
+                  <span className="flex items-center gap-1.5">
+                    <Target
+                      size={15}
+                      className="text-[#4338CA]"
+                      aria-hidden="true"
+                    />
+                    Mục tiêu:{" "}
+                    <strong className="text-[var(--foreground)]">
+                      {targetBand !== null
+                        ? `IELTS ${targetBand.toFixed(1)}`
+                        : "Chưa đặt band"}
+                    </strong>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <Flame
+                      size={15}
+                      className="text-[#F59E0B]"
+                      aria-hidden="true"
+                    />
+                    Chuỗi học:{" "}
+                    <strong className="text-[var(--foreground)]">
+                      {currentStreak} ngày
+                    </strong>
+                  </span>
+                  <span>
+                    XP tích lũy:{" "}
+                    <strong className="text-[var(--foreground)]">
+                      {totalXp.toLocaleString("vi-VN")} XP
+                    </strong>
+                  </span>
+                </div>
+              </div>
             </div>
-            
-            <button className="absolute right-4 top-4 flex items-center gap-2 rounded-lg bg-white/90 px-3 py-1.5 text-sm font-semibold text-[var(--foreground)] shadow-sm hover:bg-white backdrop-blur-md">
-              <Camera size={16} /> Đổi ảnh bìa
-            </button>
-          </div>
-          
-          <div className="flex flex-col gap-4 p-6 pt-0 sm:flex-row sm:items-end sm:justify-between">
-            <div className="flex flex-col sm:flex-row sm:items-end gap-5">
-               <div className="relative -mt-16 inline-block">
-                 <div className="grid size-32 place-items-center rounded-full bg-[#efedff] border-4 border-white shadow-md text-[#4338CA]">
-                   <UserRound size={48} />
-                 </div>
-                 <button className="absolute bottom-1 right-1 grid size-8 place-items-center rounded-full bg-white border border-[var(--border)] shadow-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
-                   <Camera size={14} />
-                 </button>
-                 <span className="absolute bottom-2 left-0 rounded-full bg-[#4338CA] px-2 py-0.5 text-[10px] font-bold text-white border-2 border-white">
-                   A2
-                 </span>
-               </div>
-               <div className="mb-2">
-                 <div className="flex items-center gap-2">
-                   <h1 className="text-2xl font-extrabold text-[var(--foreground)]">{displayName}</h1>
-                   <span className="flex items-center gap-1 rounded-full bg-[#efedff] px-2 py-0.5 text-[10px] font-bold text-[#4338CA]">
-                     <AwardIcon size={12} /> IELTS Fighter
-                   </span>
-                 </div>
-                 <div className="mt-1 flex items-center gap-3 text-sm font-medium text-[var(--muted-foreground)]">
-                   <span className="flex items-center gap-1.5"><Target size={14} /> Mục tiêu: <strong className="text-[var(--foreground)]">IELTS 7.0</strong></span>
-                   <span className="size-1 rounded-full bg-[var(--muted-foreground)]" />
-                   <span className="flex items-center gap-1.5"><Flame size={14} className="text-[#F59E0B]" /> Chuỗi học: <strong className="text-[var(--foreground)]">12 Ngày liên tiếp</strong></span>
-                 </div>
-               </div>
-            </div>
-            
-            <div className="flex items-center gap-3 mb-2">
-               <div className="flex items-center gap-2 rounded-xl bg-[var(--muted)] px-3 py-2 text-sm font-semibold">
-                 Hồ sơ công khai
-                 <div className="relative h-5 w-9 rounded-full bg-[#4338CA] p-0.5 shadow-inner">
-                    <div className="h-4 w-4 translate-x-4 rounded-full bg-white shadow-sm" />
-                 </div>
-               </div>
-               <button className="flex items-center gap-2 rounded-xl border border-[var(--border)] bg-white px-4 py-2 text-sm font-bold text-[var(--foreground)] shadow-sm hover:bg-[var(--muted)]">
-                 <Copy size={16} /> Sao chép liên kết
-               </button>
+
+            <div className="flex flex-wrap gap-2 pb-1">
+              <Link
+                href="/placement-test"
+                className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[var(--border)] bg-white px-4 py-2 text-sm font-semibold text-[var(--foreground)] hover:bg-[var(--muted)]"
+              >
+                <GraduationCap size={16} aria-hidden="true" />
+                Kiểm tra trình độ
+              </Link>
+              <Link
+                href="/pricing"
+                className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[#4338CA] px-4 py-2 text-sm font-bold text-white hover:bg-[#3730a3]"
+              >
+                <Sparkles size={16} aria-hidden="true" />
+                Xem gói học tập
+              </Link>
             </div>
           </div>
         </section>
 
-        {/* 2-Column Layout */}
+        {/* 2-Column Layout (Note: AppShell already wraps inside <main id="main-content">) */}
         <div className="mt-6 grid gap-6 lg:grid-cols-12">
-          
-          {/* Sidebar Menu (3/12) */}
           <aside className="lg:col-span-3">
-             <nav className="flex gap-2 overflow-x-auto pb-2 lg:flex-col lg:gap-1 lg:overflow-visible lg:pb-0 sticky top-24">
-                <Link href="#" className="flex shrink-0 items-center gap-3 whitespace-nowrap rounded-xl bg-[#4338CA] px-4 py-3 text-sm font-bold text-white shadow-sm">
-                   <Target size={18} /> Mục tiêu & Kế hoạch học
-                </Link>
-                <Link href="#" className="flex shrink-0 items-center gap-3 whitespace-nowrap rounded-xl px-4 py-3 text-sm font-semibold text-[var(--muted-foreground)] hover:bg-white hover:text-[var(--foreground)]">
-                   <UserRound size={18} /> Hồ sơ cá nhân
-                </Link>
-                <Link href="#" className="flex shrink-0 items-center gap-3 whitespace-nowrap rounded-xl px-4 py-3 text-sm font-semibold text-[var(--muted-foreground)] hover:bg-white hover:text-[var(--foreground)]">
-                   <Bell size={18} /> Thông báo & Nhắc học
-                </Link>
-                <Link href="#" className="flex shrink-0 items-center gap-3 whitespace-nowrap rounded-xl px-4 py-3 text-sm font-semibold text-[var(--muted-foreground)] hover:bg-white hover:text-[var(--foreground)]">
-                   <AwardIcon size={18} /> Gói cước & Quản trị VIP
-                </Link>
-                <Link href="#" className="flex shrink-0 items-center gap-3 whitespace-nowrap rounded-xl px-4 py-3 text-sm font-semibold text-[var(--muted-foreground)] hover:bg-white hover:text-[var(--foreground)]">
-                   <ShieldCheck size={18} /> Bảo mật & Tài khoản
-                </Link>
-             </nav>
+            <nav
+              aria-label="Điều hướng cài đặt hồ sơ"
+              className="flex gap-2 overflow-x-auto pb-2 lg:sticky lg:top-24 lg:flex-col lg:gap-1 lg:overflow-visible lg:pb-0"
+            >
+              <a
+                href="#account-profile"
+                className="flex shrink-0 items-center gap-3 rounded-xl bg-white px-4 py-3 text-sm font-semibold whitespace-nowrap text-[var(--foreground)] shadow-sm hover:bg-[#efedff] hover:text-[#4338CA]"
+              >
+                <UserRound size={18} aria-hidden="true" /> Thông tin tài khoản
+              </a>
+              <a
+                href="#learning-goals"
+                className="flex shrink-0 items-center gap-3 rounded-xl bg-white px-4 py-3 text-sm font-semibold whitespace-nowrap text-[var(--foreground)] shadow-sm hover:bg-[#efedff] hover:text-[#4338CA]"
+              >
+                <Target size={18} aria-hidden="true" /> Mục tiêu &amp; Lộ trình
+              </a>
+              <a
+                href="#ai-quota"
+                className="flex shrink-0 items-center gap-3 rounded-xl bg-white px-4 py-3 text-sm font-semibold whitespace-nowrap text-[var(--foreground)] shadow-sm hover:bg-[#efedff] hover:text-[#4338CA]"
+              >
+                <Sparkles size={18} aria-hidden="true" /> Hạn mức AI tuần này
+              </a>
+              <a
+                href="#account-deletion"
+                className="flex shrink-0 items-center gap-3 rounded-xl bg-white px-4 py-3 text-sm font-semibold whitespace-nowrap text-[#dc2626] shadow-sm hover:bg-[#fef2f2]"
+              >
+                <ShieldAlert size={18} aria-hidden="true" /> Xóa tài khoản
+              </a>
+            </nav>
           </aside>
 
-          {/* Main Content (9/12) */}
-          <main className="space-y-6 lg:col-span-9">
-            
-            {/* Section 1: Kỳ thi & Điểm số mục tiêu */}
-            <section className="rounded-3xl border border-[var(--border)] bg-white p-6 sm:p-8 shadow-sm">
-               <div className="flex items-start justify-between">
-                  <div>
-                    <h2 className="text-lg font-bold text-[var(--foreground)]">Kỳ thi & Điểm số mục tiêu</h2>
-                    <p className="mt-1 text-sm text-[var(--muted-foreground)]">Cấu hình lộ trình ôn luyện IELTS chính thức của bạn</p>
-                  </div>
-                  <span className="text-sm font-semibold text-[#4338CA]">ID: IS-98240</span>
-               </div>
-               
-               <div className="mt-8 grid gap-6 sm:grid-cols-3">
-                  <div>
-                     <label className="text-xs font-semibold text-[var(--foreground)]">Loại kỳ thi</label>
-                     <div className="mt-2 flex h-11 items-center justify-between rounded-xl border border-[var(--border)] bg-[#fbf9ff] px-4 text-sm font-medium">
-                        IELTS Academic <ChevronDown size={16} className="text-[var(--muted-foreground)]" />
-                     </div>
-                  </div>
-                  <div>
-                     <label className="text-xs font-semibold text-[var(--foreground)]">Mục tiêu Band</label>
-                     <div className="mt-2 flex h-11 items-center justify-between rounded-xl border border-[var(--border)] bg-[#fbf9ff] px-4 text-sm font-medium">
-                        7.0 <ChevronDown size={16} className="text-[var(--muted-foreground)]" />
-                     </div>
-                  </div>
-                  <div>
-                     <label className="text-xs font-semibold text-[var(--foreground)]">Ngày thi dự kiến</label>
-                     <div className="mt-2 flex h-11 items-center justify-between rounded-xl border border-[var(--border)] bg-[#efedff] px-4 text-sm font-medium">
-                        15/12/2026 <CalendarDays size={16} className="text-[var(--foreground)]" />
-                     </div>
-                  </div>
-               </div>
+          <div className="space-y-6 lg:col-span-9">
+            {/* Section 1: Profile Form */}
+            <section
+              id="account-profile"
+              className="rounded-3xl border border-[var(--border)] bg-white p-6 shadow-sm sm:p-8"
+            >
+              <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-bold text-[var(--foreground)]">
+                    Thông tin cá nhân
+                  </h2>
+                  <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+                    Tên hiển thị được đồng bộ trên toàn bộ bảng điều khiển và hồ
+                    sơ học tập của bạn.
+                  </p>
+                </div>
+                <span className="rounded-lg bg-[#fbf9ff] px-3 py-1.5 text-xs font-medium text-[var(--muted-foreground)]">
+                  Múi giờ:{" "}
+                  <strong className="text-[var(--foreground)]">
+                    {account.profile?.timezone || "Asia/Ho_Chi_Minh"}
+                  </strong>
+                </span>
+              </div>
 
-               <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-2xl bg-[#fbf9ff] p-5 border border-[var(--border)]">
-                  <div className="flex items-center gap-4">
-                     <span className="grid size-12 shrink-0 place-items-center rounded-full bg-[#4338CA] text-lg font-bold text-white shadow-md">
-                        4.5
-                     </span>
-                     <div>
-                        <p className="text-xs text-[var(--muted-foreground)]">Điểm xuất phát (Diagnostic Band)</p>
-                        <p className="font-bold text-[var(--foreground)]">
-                           Band 4.5 <span className="font-medium text-[#4338CA]">(Còn lại 74 ngày đến kỳ thi)</span>
-                        </p>
-                     </div>
-                  </div>
-                  <button className="flex items-center gap-2 rounded-xl bg-white border border-[var(--border)] px-4 py-2.5 text-sm font-semibold text-[var(--foreground)] shadow-sm hover:bg-[var(--muted)]">
-                     <RotateCcwIcon size={16} /> Làm lại bài test chẩn đoán
-                  </button>
-               </div>
+              <ProfileForm displayName={displayName} />
             </section>
 
-            {/* Section 2: Mục tiêu kỹ năng thành phần */}
-            <section className="rounded-3xl border border-[var(--border)] bg-white p-6 sm:p-8 shadow-sm">
-               <div>
-                 <h2 className="text-lg font-bold text-[var(--foreground)]">Mục tiêu kỹ năng thành phần</h2>
-                 <p className="mt-1 text-sm text-[var(--muted-foreground)]">Tinh chỉnh band điểm mục tiêu cho từng kỹ năng riêng biệt</p>
-               </div>
-               
-               <div className="mt-6 grid gap-4 sm:grid-cols-4">
-                  <div className="rounded-2xl bg-[#fbf9ff] p-4 border border-[var(--border)]">
-                     <div className="flex justify-between text-[#4338CA]">
-                        <span className="font-bold text-[var(--foreground)]">Listening</span> <Headphones size={18} />
-                     </div>
-                     <div className="mt-3 flex h-10 items-center justify-between rounded-lg bg-white border border-[var(--border)] px-3 text-sm font-bold">
-                        7.0 <ChevronDown size={14} className="text-[var(--muted-foreground)]" />
-                     </div>
-                  </div>
-                  <div className="rounded-2xl bg-[#fbf9ff] p-4 border border-[var(--border)]">
-                     <div className="flex justify-between text-[#4338CA]">
-                        <span className="font-bold text-[var(--foreground)]">Reading</span> <BookOpen size={18} />
-                     </div>
-                     <div className="mt-3 flex h-10 items-center justify-between rounded-lg bg-white border border-[var(--border)] px-3 text-sm font-bold">
-                        7.5 <ChevronDown size={14} className="text-[var(--muted-foreground)]" />
-                     </div>
-                  </div>
-                  <div className="rounded-2xl bg-[#fbf9ff] p-4 border border-[var(--border)]">
-                     <div className="flex justify-between text-[#4338CA]">
-                        <span className="font-bold text-[var(--foreground)]">Writing</span> <FileText size={18} />
-                     </div>
-                     <div className="mt-3 flex h-10 items-center justify-between rounded-lg bg-white border border-[var(--border)] px-3 text-sm font-bold">
-                        6.5 <ChevronDown size={14} className="text-[var(--muted-foreground)]" />
-                     </div>
-                  </div>
-                  <div className="rounded-2xl bg-[#fbf9ff] p-4 border border-[var(--border)]">
-                     <div className="flex justify-between text-[#4338CA]">
-                        <span className="font-bold text-[var(--foreground)]">Speaking</span> <MicIcon size={18} />
-                     </div>
-                     <div className="mt-3 flex h-10 items-center justify-between rounded-lg bg-white border border-[var(--border)] px-3 text-sm font-bold">
-                        6.5 <ChevronDown size={14} className="text-[var(--muted-foreground)]" />
-                     </div>
-                  </div>
-               </div>
+            {/* Section 2: Learning Goals Form */}
+            <section
+              id="learning-goals"
+              className="rounded-3xl border border-[var(--border)] bg-white p-6 shadow-sm sm:p-8"
+            >
+              <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-bold text-[var(--foreground)]">
+                    Kỳ thi &amp; Mục tiêu học tập
+                  </h2>
+                  <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+                    Cấu hình trực tiếp mục tiêu band, ngày thi dự kiến và kỹ
+                    năng ưu tiên.
+                  </p>
+                </div>
+                {daysToExam !== null ? (
+                  <span className="rounded-full bg-[#efedff] px-3 py-1 text-xs font-bold text-[#4338CA]">
+                    {daysToExam >= 0
+                      ? `Còn ${daysToExam} ngày đến kỳ thi dự kiến`
+                      : "Ngày thi dự kiến đã qua"}
+                  </span>
+                ) : null}
+              </div>
+
+              <LearningPreferencesForm profile={learnerProfile} />
             </section>
 
-            {/* Section 3: Kế hoạch học tập hàng ngày */}
-            <section className="rounded-3xl border border-[var(--border)] bg-white p-6 sm:p-8 shadow-sm">
-               <div>
-                 <h2 className="text-lg font-bold text-[var(--foreground)]">Kế hoạch học tập hàng ngày</h2>
-                 <p className="mt-1 text-sm text-[var(--muted-foreground)]">Duy trì thói quen học đều đặn để đạt kết quả tối ưu</p>
-               </div>
-               
-               <div className="mt-8">
-                  <label className="text-xs font-semibold text-[var(--foreground)]">Ngày học trong tuần</label>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                     {["T2", "T3", "T4", "T5", "T6"].map(day => (
-                        <button key={day} className="grid size-10 place-items-center rounded-xl bg-[#4338CA] text-sm font-bold text-white shadow-sm">
-                           {day}
-                        </button>
-                     ))}
-                     {["T7", "CN"].map(day => (
-                        <button key={day} className="grid size-10 place-items-center rounded-xl bg-white border border-[var(--border)] text-sm font-bold text-[var(--muted-foreground)] hover:bg-[var(--muted)]">
-                           {day}
-                        </button>
-                     ))}
-                  </div>
-               </div>
+            {/* Section 3: Real AI Quota */}
+            <section
+              id="ai-quota"
+              className="rounded-3xl border border-[var(--border)] bg-white p-6 shadow-sm sm:p-8"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-bold text-[var(--foreground)]">
+                    Hạn mức chấm bài AI (7 ngày gần nhất)
+                  </h2>
+                  <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+                    Số liệu thực tế từ lượt gửi chấm Writing AI và Speaking AI
+                    của bạn.
+                  </p>
+                </div>
+                <span className="rounded-full bg-[#efedff] px-3 py-1 text-xs font-bold text-[#4338CA]">
+                  {quota.tier === "pro"
+                    ? "Gói Pro (50/tuần)"
+                    : "Gói Free (5/tuần)"}
+                </span>
+              </div>
 
-               <div className="mt-6 grid gap-6 sm:grid-cols-2">
-                  <div>
-                     <label className="text-xs font-semibold text-[var(--foreground)]">Thời lượng học mỗi ngày</label>
-                     <div className="mt-2 flex h-11 items-center justify-between rounded-xl border border-[var(--border)] bg-[#fbf9ff] px-4 text-sm font-medium">
-                        60 phút / ngày <ChevronDown size={16} className="text-[var(--muted-foreground)]" />
-                     </div>
+              <div className="mt-6 grid gap-6 sm:grid-cols-2">
+                <div className="rounded-2xl border border-[var(--border)] bg-[#fbf9ff] p-5">
+                  <div className="flex items-center justify-between text-sm font-bold">
+                    <span>Writing AI Feedback</span>
+                    <span className="text-[#4338CA]">
+                      {quota.writingUsedWeekly} / {quota.weeklyLimitPerSkill}{" "}
+                      lượt
+                    </span>
                   </div>
-                  <div>
-                     <label className="text-xs font-semibold text-[var(--foreground)]">Khung giờ vàng nhắc học</label>
-                     <div className="mt-2 flex h-11 items-center justify-between rounded-xl border border-[var(--border)] bg-[#fbf9ff] px-4 text-sm font-medium">
-                        20:30 PM <Clock size={16} className="text-[var(--foreground)]" />
-                     </div>
+                  <div className="mt-3 h-2 w-full rounded-full bg-[var(--muted)]">
+                    <div
+                      className="h-full rounded-full bg-[#4338CA]"
+                      style={{ width: `${writingPercent}%` }}
+                    />
                   </div>
-               </div>
+                  <p className="mt-3 text-xs text-[var(--muted-foreground)]">
+                    Hôm nay đã dùng: {quota.writingUsedToday} lượt
+                  </p>
+                </div>
 
-               <div className="mt-6 flex items-center gap-3">
-                  <div className="grid size-5 place-items-center rounded bg-[#4338CA] text-white">
-                     <CheckCircle2 size={14} />
+                <div className="rounded-2xl border border-[var(--border)] bg-[#fbf9ff] p-5">
+                  <div className="flex items-center justify-between text-sm font-bold">
+                    <span>Speaking AI Feedback</span>
+                    <span className="text-[#4338CA]">
+                      {quota.speakingUsedWeekly} / {quota.weeklyLimitPerSkill}{" "}
+                      lượt
+                    </span>
                   </div>
-                  <span className="text-sm font-medium text-[var(--foreground)]">Đồng bộ tự động lịch học vào Google Calendar</span>
-               </div>
+                  <div className="mt-3 h-2 w-full rounded-full bg-[var(--muted)]">
+                    <div
+                      className="h-full rounded-full bg-[#4338CA]"
+                      style={{ width: `${speakingPercent}%` }}
+                    />
+                  </div>
+                  <p className="mt-3 text-xs text-[var(--muted-foreground)]">
+                    Hôm nay đã dùng: {quota.speakingUsedToday} lượt
+                  </p>
+                </div>
+              </div>
             </section>
 
-            {/* Section 4: Hạn mức AI hôm nay */}
-            <section className="rounded-3xl border border-[var(--border)] bg-white p-6 sm:p-8 shadow-sm">
-               <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg font-bold text-[var(--foreground)]">Hạn mức AI hôm nay</h2>
-                    <p className="mt-1 text-sm text-[var(--muted-foreground)]">Dung lượng sử dụng trợ lý ảo chấm bài & luyện nói</p>
-                  </div>
-                  <span className="rounded-full bg-[#efedff] px-3 py-1 text-xs font-bold text-[#4338CA]">VIP Plan</span>
-               </div>
-               
-               <div className="mt-6 grid gap-6 sm:grid-cols-2">
-                  <div className="rounded-2xl bg-[#fbf9ff] p-5 border border-[var(--border)]">
-                     <div className="flex items-center justify-between text-sm font-bold">
-                        <span>Writing AI Prompts</span>
-                        <span className="text-[#4338CA]">14 / 20</span>
-                     </div>
-                     <div className="mt-3 h-2 w-full rounded-full bg-[var(--muted)]">
-                        <div className="h-full rounded-full bg-[#4338CA]" style={{ width: '70%' }} />
-                     </div>
-                     <p className="mt-3 text-[10px] text-[var(--muted-foreground)]">Làm mới sau 4 giờ tới</p>
-                  </div>
-                  
-                  <div className="rounded-2xl bg-[#fbf9ff] p-5 border border-[var(--border)]">
-                     <div className="flex items-center justify-between text-sm font-bold">
-                        <span>Speaking Practice Minutes</span>
-                        <span className="text-[#4338CA]">45 / 60 phút</span>
-                     </div>
-                     <div className="mt-3 h-2 w-full rounded-full bg-[var(--muted)]">
-                        <div className="h-full rounded-full bg-[#4338CA]" style={{ width: '75%' }} />
-                     </div>
-                     <p className="mt-3 text-[10px] text-[var(--muted-foreground)]">Làm mới vào ngày mai</p>
-                  </div>
-               </div>
-            </section>
-          </main>
+            {/* Section 4: Self-Service DSR Account Deletion */}
+            <DeleteAccountCard email={account.user.email} />
+          </div>
         </div>
-      </div>
-      
-      {/* Sticky Save Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-[var(--border)] bg-white/95 px-4 py-4 backdrop-blur-xl shadow-[0_-10px_40px_rgb(var(--shadow-color)/0.05)] sm:px-8">
-         <div className="mx-auto flex max-w-6xl items-center justify-between">
-            <div className="flex items-center gap-2">
-               <div className="size-2 rounded-full bg-[#F59E0B]" />
-               <span className="text-sm font-medium text-[var(--muted-foreground)]">Bạn có thay đổi chưa lưu</span>
-            </div>
-            <div className="flex items-center gap-3">
-               <button className="rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-[var(--muted-foreground)] hover:bg-[var(--muted)]">
-                  Hủy bỏ
-               </button>
-               <button className="rounded-xl bg-[#4338CA] px-6 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-[#4338CA]/90">
-                  Lưu cài đặt mục tiêu
-               </button>
-            </div>
-         </div>
       </div>
     </div>
   );
-}
-
-// Icon fallbacks (using generic lucide icons mapped to names)
-function AwardIcon(props: any) {
-  return <Target {...props} />;
-}
-function RotateCcwIcon(props: any) {
-  return <Flame {...props} />;
-}
-function MicIcon(props: any) {
-  return <Bell {...props} />;
 }

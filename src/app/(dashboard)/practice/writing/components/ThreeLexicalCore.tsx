@@ -73,7 +73,10 @@ export function ThreeLexicalCore({ isTyping = false }: ThreeLexicalCoreProps) {
       positions[i * 3 + 2] = r * Math.cos(phi);
     }
 
-    particleGeo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    particleGeo.setAttribute(
+      "position",
+      new THREE.BufferAttribute(positions, 3),
+    );
     const particleMat = new THREE.PointsMaterial({
       color: 0x00f0ff,
       size: 0.08,
@@ -128,7 +131,8 @@ export function ThreeLexicalCore({ isTyping = false }: ThreeLexicalCoreProps) {
       const typingActive = isTypingRef.current;
 
       // Group rotation
-      mainGroup.rotation.y += (targetRotY - mainGroup.rotation.y) * 0.05 + 0.003;
+      mainGroup.rotation.y +=
+        (targetRotY - mainGroup.rotation.y) * 0.05 + 0.003;
       mainGroup.rotation.x += (targetRotX - mainGroup.rotation.x) * 0.05;
 
       // Pulse and spin crystal
@@ -193,20 +197,22 @@ export function ThreeLexicalCore({ isTyping = false }: ThreeLexicalCoreProps) {
   }, []);
 
   return (
-    <div className="relative h-[280px] w-full max-w-[340px] flex items-center justify-center">
+    <div className="relative flex h-[280px] w-full max-w-[340px] items-center justify-center">
       <div
         ref={containerRef}
         className="h-full w-full cursor-grab active:cursor-grabbing"
         aria-label="3D Lexical Crystal Visualizer"
       />
       {/* Cybernetic HUD overlay markers */}
-      <div className="pointer-events-none absolute inset-0 flex flex-col justify-between p-3 text-[10px] font-mono text-[#A855F7]/70 select-none">
+      <div className="pointer-events-none absolute inset-0 flex flex-col justify-between p-3 font-mono text-[10px] text-[#A855F7]/70 select-none">
         <div className="flex justify-between">
           <span>{"// LEXICAL_CORE"}</span>
           <span>SYNTAX_MATRIX_v4</span>
         </div>
         <div className="flex justify-between">
-          <span>{isTyping ? "TYPING STREAM ACTIVE" : "COHESION SYNCHRONIZED"}</span>
+          <span>
+            {isTyping ? "TYPING STREAM ACTIVE" : "COHESION SYNCHRONIZED"}
+          </span>
           <span>DISCOURSE_ENGINE</span>
         </div>
       </div>

@@ -3,19 +3,11 @@
 import React from "react";
 import Link from "next/link";
 
-interface PlanItem {
-  id: string;
-  iconText: string;
-  colorClass: string;
-  title: string;
-  subtitle: string;
-  href: string;
-  tag?: string;
-  completed?: boolean;
-  progressPercent?: number;
-}
+import type { DashboardPlanItem } from "@/features/dashboard/server/dashboard-data";
 
-const DEFAULT_PLAN_ITEMS: PlanItem[] = [
+export type PlanItem = DashboardPlanItem;
+
+const EMPTY_PLAN_ITEMS: PlanItem[] = [
   {
     id: "vocab",
     iconText: "Aa",
@@ -23,7 +15,7 @@ const DEFAULT_PLAN_ITEMS: PlanItem[] = [
     title: "Vocabulary",
     subtitle: "Flashcards and spaced repetition",
     href: "/learn/vocabulary",
-    completed: true,
+    progressPercent: 0,
   },
   {
     id: "grammar",
@@ -32,7 +24,7 @@ const DEFAULT_PLAN_ITEMS: PlanItem[] = [
     title: "Grammar",
     subtitle: "Rules and structure drills",
     href: "/learn/grammar",
-    progressPercent: 45,
+    progressPercent: 0,
   },
   {
     id: "listening",
@@ -49,7 +41,7 @@ const DEFAULT_PLAN_ITEMS: PlanItem[] = [
     colorClass: "c-d",
     title: "Dictation",
     tag: "NEW",
-    subtitle: "Listen and write exactly. Best for IELTS and TOEIC",
+    subtitle: "Listen and write with exact diff feedback",
     href: "/dictation",
     progressPercent: 0,
   },
@@ -58,8 +50,8 @@ const DEFAULT_PLAN_ITEMS: PlanItem[] = [
     iconText: "!",
     colorClass: "c-m",
     title: "Review mistakes",
-    subtitle: "5 grammar errors waiting",
-    href: "/learn/mistakes",
+    subtitle: "Review recorded practice errors",
+    href: "/error-notebook",
   },
 ];
 
@@ -67,7 +59,9 @@ interface TodaysPlanProps {
   items?: PlanItem[];
 }
 
-export function TodaysPlan({ items = DEFAULT_PLAN_ITEMS }: TodaysPlanProps) {
+export function TodaysPlan({ items }: TodaysPlanProps) {
+  const displayItems = items && items.length > 0 ? items : EMPTY_PLAN_ITEMS;
+
   return (
     <section>
       <div className="head">
@@ -78,13 +72,8 @@ export function TodaysPlan({ items = DEFAULT_PLAN_ITEMS }: TodaysPlanProps) {
       </div>
 
       <div className="plan">
-        {items.map((item) => (
-          <Link
-            key={item.id}
-            href={item.href}
-            prefetch={false}
-            className="row"
-          >
+        {displayItems.map((item) => (
+          <Link key={item.id} href={item.href} prefetch={false} className="row">
             <div className={`ic ${item.colorClass}`}>{item.iconText}</div>
 
             <div>

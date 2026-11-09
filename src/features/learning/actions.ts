@@ -1,15 +1,16 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { revalidatePath } from "next/cache";
 
 import {
   mapProgressError,
   type LearningProgressActionState,
 } from "@/features/learning/action-state";
 import { lessonProgressMutationSchema } from "@/features/learning/schemas";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireCompletedOnboarding } from "@/features/onboarding/server/learner-profile";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { logServerEvent } from "@/server/observability/logger";
 import { getServerRequestId } from "@/server/observability/request-context";
 
@@ -44,8 +45,23 @@ async function mutateLessonProgress(
   }
 
   try {
-    await requireCompletedOnboarding();
-    const supabase = await createSupabaseServerClient() as unknown as SupabaseClient;
+    const { account } = await requireCompletedOnboarding();
+    const supabase =
+      (await createSupabaseServerClient()) as unknown as SupabaseClient;
+
+    let alreadyCompletedSection = false;
+    if (operation === "complete") {
+      const { data: existingSection } = await supabase
+        .from("learner_section_progress")
+        .select("completed_at")
+        .eq("user_id", account.user.id)
+        .eq("lesson_id", parsed.data.lessonId)
+        .eq("section_id", parsed.data.sectionId)
+        .maybeSingle();
+
+      alreadyCompletedSection = Boolean(existingSection?.completed_at);
+    }
+
     const functionName =
       operation === "complete"
         ? "complete_lesson_section"
@@ -66,13 +82,26 @@ async function mutateLessonProgress(
       return mapProgressError(error.code, requestId);
     }
 
-    if (operation === "complete") {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase.rpc("award_xp", {
-          p_user_id: user.id,
-          p_amount: 10,
-          p_source: "lesson_section_completed",
+    if (
+      operation === "complete" &&
+      !alreadyCompletedSection &&
+      process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()
+    ) {
+      try {
+        const admin = createSupabaseAdminClient();
+        await admin.rpc("award_xp", {
+          target_user_id: account.user.id,
+          xp_amount: 10,
+          xp_source: "lesson_section_completed",
+        });
+      } catch (xpError) {
+        logServerEvent("warn", {
+          event: "learning.award_xp.skipped",
+          requestId,
+          route: "mutateLessonProgress",
+          stage: "award_xp",
+          errorCode: "XP_AWARD_FAILED",
+          error: xpError,
         });
       }
     }

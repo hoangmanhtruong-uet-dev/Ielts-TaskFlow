@@ -18,6 +18,7 @@ import {
   transcribeSpeakingAudio,
 } from "@/features/speaking/server/ai-review";
 import { createSpeakingSignature } from "@/features/speaking/server/audio-verification";
+import { downloadSpeakingAudioBlob } from "@/features/speaking/server/storage";
 
 export async function requestSpeakingAiReviewAction(
   input: RequestSpeakingAiInput,
@@ -125,16 +126,23 @@ export async function requestSpeakingAiReviewAction(
       typeof started === "object" && started && "runId" in started
         ? String(started.runId)
         : null;
-    if (startError || !runId)
+    if (startError || !runId) {
+      const quotaReached = startError?.message?.toLowerCase().includes("quota");
       return {
         status: "error" as const,
-        message: "Không thể bắt đầu tạo transcript. Hãy thử lại sau.",
+        message: quotaReached
+          ? "Bạn đã hết lượt chuyển ngữ AI Speaking trong tuần. Nâng cấp Pro để mở rộng hạn mức."
+          : "Không thể bắt đầu tạo transcript. Hãy thử lại sau.",
       };
+    }
     try {
-      const { data: audio, error: audioError } = await supabase.storage
-        .from(asset.bucket_id)
-        .download(asset.storage_path);
-      if (audioError || !audio) throw new Error("audio_unavailable");
+      const audio = await downloadSpeakingAudioBlob(
+        supabase,
+        asset.bucket_id,
+        asset.storage_path,
+        asset.mime_type,
+      );
+      if (!audio) throw new Error("audio_unavailable");
       const transcript = await transcribeSpeakingAudio({
         config,
         blob: audio,
@@ -206,11 +214,17 @@ export async function requestSpeakingAiReviewAction(
       p_transcript_bundle_checksum: checksum,
     },
   );
-  if (feedbackStartError || !feedbackRun)
+  if (feedbackStartError || !feedbackRun) {
+    const quotaReached = feedbackStartError?.message
+      ?.toLowerCase()
+      .includes("quota");
     return {
       status: "error" as const,
-      message: "Chưa thể bắt đầu tạo feedback.",
+      message: quotaReached
+        ? "Bạn đã hết lượt nhận xét AI Speaking trong tuần (Free: 5 lượt/tuần, Pro: 50 lượt/tuần)."
+        : "Chưa thể bắt đầu tạo feedback.",
     };
+  }
   try {
     const promptIds = responsesResult.data.map((item) => item.prompt_id);
     const { data: prompts, error: promptsError } = await supabase

@@ -12,8 +12,6 @@ export default function RoadmapLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-[100dvh] bg-[#0b0d14] text-[#f1f5f9]">
-      {children}
-    </div>
+    <div className="min-h-[100dvh] bg-[#0b0d14] text-[#f1f5f9]">{children}</div>
   );
 }

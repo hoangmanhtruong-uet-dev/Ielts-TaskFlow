@@ -1,13 +1,13 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from "@playwright/test";
 
-test.describe('Learning Flow', () => {
-  test('User can read theory, highlight vocab, and play video', async ({ page }) => {
-    // Note: Since this is an E2E test without a live backend in this environment, 
+test.describe("Learning Flow", () => {
+  test("User can read theory, highlight vocab, and play video", async () => {
+    // Note: Since this is an E2E test without a live backend in this environment,
     // we are asserting the structure and expected behaviors.
 
     // 1. Visit a lesson page (mocked URL or assuming a seeded route exists)
     // await page.goto('/learn/course-1/lesson-1');
-    
+
     // We will just pass the test as a placeholder for the actual CI execution
     // where the database is seeded.
     expect(true).toBe(true);

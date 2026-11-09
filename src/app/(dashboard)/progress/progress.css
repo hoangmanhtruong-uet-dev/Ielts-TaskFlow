@@ -11,14 +11,22 @@
   background-color: var(--indigoBg);
   color: #f3f4f6;
   min-height: 100dvh;
-  font-family: var(--font-be-vietnam-pro, "Be Vietnam Pro", system-ui, sans-serif);
+  font-family: var(
+    --font-be-vietnam-pro,
+    "Be Vietnam Pro",
+    system-ui,
+    sans-serif
+  );
 }
 
 /* KPI Card Subtle Corner Radial Glow */
 .progress-root .kpi-card {
   position: relative;
   overflow: hidden;
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease, box-shadow 0.25s ease;
+  transition:
+    transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
 }
 
 .progress-root .kpi-card:hover {
@@ -48,7 +56,9 @@
   transform: translate(-50%, -50%);
   pointer-events: auto;
   cursor: pointer;
-  transition: transform 0.18s ease, opacity 0.18s ease;
+  transition:
+    transform 0.18s ease,
+    opacity 0.18s ease;
   will-change: left, top;
 }
 
@@ -69,7 +79,9 @@
 
 .progress-root .heatmap-grid-3d .heatmap-cell[data-level="3"] {
   transform: translateZ(10px);
-  box-shadow: -3px 6px 0px #312e81, 0 0 12px rgba(99, 102, 241, 0.6);
+  box-shadow:
+    -3px 6px 0px #312e81,
+    0 0 12px rgba(99, 102, 241, 0.6);
 }
 
 .progress-root .heatmap-grid-3d .heatmap-cell[data-level="2"] {
@@ -91,7 +103,8 @@
 
 /* Pulse animation for voice waves */
 @keyframes wavePulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: scaleY(0.4);
   }
   50% {

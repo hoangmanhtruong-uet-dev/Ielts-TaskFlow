@@ -7,7 +7,9 @@ interface ThreeVocalVisualizerProps {
   isRecording?: boolean;
 }
 
-export function ThreeVocalVisualizer({ isRecording = false }: ThreeVocalVisualizerProps) {
+export function ThreeVocalVisualizer({
+  isRecording = false,
+}: ThreeVocalVisualizerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const isRecordingRef = useRef(isRecording);
 
@@ -73,7 +75,10 @@ export function ThreeVocalVisualizer({ isRecording = false }: ThreeVocalVisualiz
       originalPositions[i * 3 + 2] = z;
     }
 
-    particleGeo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    particleGeo.setAttribute(
+      "position",
+      new THREE.BufferAttribute(positions, 3),
+    );
     const particleMat = new THREE.PointsMaterial({
       color: 0x00f0ff,
       size: 0.08,
@@ -128,7 +133,8 @@ export function ThreeVocalVisualizer({ isRecording = false }: ThreeVocalVisualiz
       const recordingActive = isRecordingRef.current;
 
       // Group rotation
-      mainGroup.rotation.y += (targetRotY - mainGroup.rotation.y) * 0.05 + 0.003;
+      mainGroup.rotation.y +=
+        (targetRotY - mainGroup.rotation.y) * 0.05 + 0.003;
       mainGroup.rotation.x += (targetRotX - mainGroup.rotation.x) * 0.05;
 
       // Pulse core
@@ -151,7 +157,9 @@ export function ThreeVocalVisualizer({ isRecording = false }: ThreeVocalVisualiz
         const oy = originalPositions[i * 3 + 1];
         const oz = originalPositions[i * 3 + 2];
 
-        const wave = Math.sin(elapsed * (recordingActive ? 5 : 2) + ox * 2 + oy * 2) * intensity;
+        const wave =
+          Math.sin(elapsed * (recordingActive ? 5 : 2) + ox * 2 + oy * 2) *
+          intensity;
         posArray[i * 3] = ox * (1 + wave);
         posArray[i * 3 + 1] = oy * (1 + wave);
         posArray[i * 3 + 2] = oz * (1 + wave);
@@ -204,14 +212,14 @@ export function ThreeVocalVisualizer({ isRecording = false }: ThreeVocalVisualiz
   }, []);
 
   return (
-    <div className="relative h-[280px] w-full max-w-[340px] flex items-center justify-center">
+    <div className="relative flex h-[280px] w-full max-w-[340px] items-center justify-center">
       <div
         ref={containerRef}
         className="h-full w-full cursor-grab active:cursor-grabbing"
         aria-label="3D Vocal Acoustic Visualizer"
       />
       {/* Cybernetic HUD overlay markers */}
-      <div className="pointer-events-none absolute inset-0 flex flex-col justify-between p-3 text-[10px] font-mono text-[#00F0FF]/60 select-none">
+      <div className="pointer-events-none absolute inset-0 flex flex-col justify-between p-3 font-mono text-[10px] text-[#00F0FF]/60 select-none">
         <div className="flex justify-between">
           <span>{"// HARMONIC_MATRIX"}</span>
           <span>48kHz / 24-BIT</span>

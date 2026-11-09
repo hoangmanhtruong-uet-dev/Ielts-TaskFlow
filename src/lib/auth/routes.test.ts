@@ -13,6 +13,12 @@ describe("auth route classification", () => {
       "/progress",
       "/practice/grammar-foundations",
       "/mock-tests/academic-foundation-mock",
+      "/mock-test",
+      "/error-notebook",
+      "/leaderboard",
+      "/community",
+      "/vocabulary",
+      "/ai-studio",
       "/profile",
       "/settings",
     ]) {

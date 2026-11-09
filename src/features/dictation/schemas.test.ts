@@ -7,12 +7,16 @@ import {
 
 describe("dictation schemas", () => {
   it("validates startDictationSchema with valid slug", () => {
-    const res = startDictationSchema.safeParse({ exerciseSlug: "daily-routine-1" });
+    const res = startDictationSchema.safeParse({
+      exerciseSlug: "daily-routine-1",
+    });
     expect(res.success).toBe(true);
   });
 
   it("rejects invalid slugs in startDictationSchema", () => {
-    const res = startDictationSchema.safeParse({ exerciseSlug: "Invalid Slug!" });
+    const res = startDictationSchema.safeParse({
+      exerciseSlug: "Invalid Slug!",
+    });
     expect(res.success).toBe(false);
   });
 

@@ -11,7 +11,7 @@ import {
   Minimize2,
   Volume2,
   VolumeX,
-  Repeat
+  Repeat,
 } from "lucide-react";
 
 import type { AmbientNoise } from "./ThreeSonicVisualizer";
@@ -65,7 +65,7 @@ export function FloatingAudioDock({
   onToggleMute,
   onToggleAbLoop,
   onSetAmbientNoise,
-  onSetDockMinimized
+  onSetDockMinimized,
 }: FloatingAudioDockProps) {
   // Web Audio API Ambient Noise Synthesizer
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -75,14 +75,21 @@ export function FloatingAudioDock({
   useEffect(() => {
     if (ambientNoise === "off") {
       if (noiseGainRef.current) {
-        noiseGainRef.current.gain.setTargetAtTime(0, audioCtxRef.current?.currentTime ?? 0, 0.2);
+        noiseGainRef.current.gain.setTargetAtTime(
+          0,
+          audioCtxRef.current?.currentTime ?? 0,
+          0.2,
+        );
       }
       return;
     }
 
     try {
       if (!audioCtxRef.current) {
-        const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        const AudioContextClass =
+          window.AudioContext ||
+          (window as unknown as { webkitAudioContext: typeof AudioContext })
+            .webkitAudioContext;
         if (AudioContextClass) {
           audioCtxRef.current = new AudioContextClass();
         }
@@ -147,7 +154,10 @@ export function FloatingAudioDock({
     return () => {
       if (noiseGainRef.current && audioCtxRef.current) {
         try {
-          noiseGainRef.current.gain.setValueAtTime(0, audioCtxRef.current.currentTime);
+          noiseGainRef.current.gain.setValueAtTime(
+            0,
+            audioCtxRef.current.currentTime,
+          );
         } catch {}
       }
     };
@@ -160,53 +170,58 @@ export function FloatingAudioDock({
     return `${m}:${s < 10 ? "0" : ""}${s}`;
   };
 
-  const progressPercent = duration > 0 ? Math.min(100, Math.max(0, (currentTime / duration) * 100)) : 0;
+  const progressPercent =
+    duration > 0
+      ? Math.min(100, Math.max(0, (currentTime / duration) * 100))
+      : 0;
 
   return (
-    <div className="fixed bottom-4 inset-x-0 z-40 px-4 pointer-events-none flex justify-center">
+    <div className="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex justify-center px-4">
       {isDockMinimized ? (
         /* Compact Pill Button */
         <button
           onClick={() => onSetDockMinimized(false)}
-          className="pointer-events-auto flex items-center gap-3 px-4 py-2.5 rounded-full bg-[#101436]/95 backdrop-blur-2xl border border-indigo-400/40 shadow-2xl shadow-indigo-950 text-xs font-bold text-white hover:scale-105 transition-all duration-300"
+          className="pointer-events-auto flex items-center gap-3 rounded-full border border-indigo-400/40 bg-[#101436]/95 px-4 py-2.5 text-xs font-bold text-white shadow-2xl shadow-indigo-950 backdrop-blur-2xl transition-all duration-300 hover:scale-105"
         >
           <span
-            className={`w-2.5 h-2.5 rounded-full ${
-              isPlaying ? "bg-emerald-400 animate-ping" : "bg-indigo-400"
+            className={`h-2.5 w-2.5 rounded-full ${
+              isPlaying ? "animate-ping bg-emerald-400" : "bg-indigo-400"
             }`}
           />
-          <span className="truncate max-w-[180px]">{currentTrack.title}</span>
-          <span className="text-indigo-300 font-mono tabular-nums">{formatTime(currentTime)}</span>
-          <Maximize2 className="w-3.5 h-3.5 text-zinc-400" />
+          <span className="max-w-[180px] truncate">{currentTrack.title}</span>
+          <span className="font-mono text-indigo-300 tabular-nums">
+            {formatTime(currentTime)}
+          </span>
+          <Maximize2 className="h-3.5 w-3.5 text-zinc-400" />
         </button>
       ) : (
         /* Full Cyber Audio Dock */
-        <div className="pointer-events-auto w-full max-w-4xl rounded-3xl bg-[#101436]/95 backdrop-blur-2xl border border-[#2B3060] shadow-[0_20px_60px_rgba(0,0,0,0.8)] p-3.5 sm:px-5 sm:py-3.5 transition-all">
+        <div className="pointer-events-auto w-full max-w-4xl rounded-3xl border border-[#2B3060] bg-[#101436]/95 p-3.5 shadow-[0_20px_60px_rgba(0,0,0,0.8)] backdrop-blur-2xl transition-all sm:px-5 sm:py-3.5">
           {/* Subtitle Script Ticker & Ambient Simulator */}
-          <div className="flex items-center justify-between gap-2 pb-2 mb-2.5 border-b border-[#2B3060]/60 text-[11px]">
+          <div className="mb-2.5 flex items-center justify-between gap-2 border-b border-[#2B3060]/60 pb-2 text-[11px]">
             <div className="flex items-center gap-2 truncate">
-              <span className="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-bold shrink-0 text-[10px] uppercase tracking-wider">
+              <span className="shrink-0 rounded bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold tracking-wider text-indigo-300 uppercase">
                 LIVE SCRIPT
               </span>
-              <span className="text-zinc-300 italic truncate max-w-[280px] sm:max-w-md">
+              <span className="max-w-[280px] truncate text-zinc-300 italic sm:max-w-md">
                 "{currentTranscriptLine || "Sẵn sàng nghe bài tập..."}"
               </span>
             </div>
 
             {/* Ambient Noise Selector */}
-            <div className="hidden sm:flex items-center gap-1.5 shrink-0 text-xs">
-              <span className="text-zinc-400 text-[11px]">Môi trường:</span>
+            <div className="hidden shrink-0 items-center gap-1.5 text-xs sm:flex">
+              <span className="text-[11px] text-zinc-400">Môi trường:</span>
               {[
                 { id: "off" as const, label: "Phòng thu (Chuẩn)" },
                 { id: "exam" as const, label: "Phòng thi" },
-                { id: "cafe" as const, label: "Quán Cafe" }
+                { id: "cafe" as const, label: "Quán Cafe" },
               ].map((env) => (
                 <button
                   key={env.id}
                   onClick={() => onSetAmbientNoise(env.id)}
-                  className={`px-2 py-0.5 rounded-md font-semibold text-[10px] transition-colors ${
+                  className={`rounded-md px-2 py-0.5 text-[10px] font-semibold transition-colors ${
                     ambientNoise === env.id
-                      ? "bg-cyan-500/25 text-cyan-300 border border-cyan-500/40"
+                      ? "border border-cyan-500/40 bg-cyan-500/25 text-cyan-300"
                       : "text-zinc-400 hover:text-white"
                   }`}
                 >
@@ -216,28 +231,28 @@ export function FloatingAudioDock({
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
             {/* Track Info */}
-            <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="flex w-full items-center gap-3 sm:w-auto">
               <button
                 onClick={onTogglePlay}
                 aria-label={isPlaying ? "Tạm dừng" : "Phát âm thanh"}
-                className="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white shrink-0 shadow-lg shadow-indigo-500/30 hover:scale-105 active:scale-95 transition-transform"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/30 transition-transform hover:scale-105 active:scale-95"
               >
-                <Headphones className="w-5 h-5" />
+                <Headphones className="h-5 w-5" />
               </button>
 
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+                <div className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-emerald-400 uppercase">
                   <span
-                    className={`w-1.5 h-1.5 rounded-full bg-emerald-400 ${
+                    className={`h-1.5 w-1.5 rounded-full bg-emerald-400 ${
                       isPlaying ? "animate-ping" : ""
                     }`}
                   />
                   <span>{isPlaying ? "ĐANG PHÁT" : "SẴN SÀNG"}</span>
                   <span className="text-zinc-400">• {currentTrack.accent}</span>
                 </div>
-                <div className="text-xs sm:text-sm font-bold text-white truncate max-w-[200px] sm:max-w-[220px]">
+                <div className="max-w-[200px] truncate text-xs font-bold text-white sm:max-w-[220px] sm:text-sm">
                   {currentTrack.title}
                 </div>
               </div>
@@ -245,35 +260,38 @@ export function FloatingAudioDock({
               {/* Mobile Minimize */}
               <button
                 onClick={() => onSetDockMinimized(true)}
-                className="sm:hidden p-2 rounded-xl bg-white/5 text-zinc-400 hover:text-white"
+                className="rounded-xl bg-white/5 p-2 text-zinc-400 hover:text-white sm:hidden"
                 title="Thu gọn"
               >
-                <Minimize2 className="w-4 h-4" />
+                <Minimize2 className="h-4 w-4" />
               </button>
             </div>
 
             {/* Scrub Timeline */}
-            <div className="flex items-center gap-3 w-full sm:flex-1 max-w-md">
-              <span className="text-[11px] font-mono text-zinc-400 w-9 text-right tabular-nums">
+            <div className="flex w-full max-w-md items-center gap-3 sm:flex-1">
+              <span className="w-9 text-right font-mono text-[11px] text-zinc-400 tabular-nums">
                 {formatTime(currentTime)}
               </span>
 
               <div
                 onClick={(e) => {
                   const rect = e.currentTarget.getBoundingClientRect();
-                  const clickRatio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+                  const clickRatio = Math.max(
+                    0,
+                    Math.min(1, (e.clientX - rect.left) / rect.width),
+                  );
                   onSeekTo(Math.floor(clickRatio * duration));
                 }}
-                className="flex-1 h-2 bg-[#0C0E1D] border border-[#2B3060]/50 rounded-full overflow-hidden cursor-pointer relative group"
+                className="group relative h-2 flex-1 cursor-pointer overflow-hidden rounded-full border border-[#2B3060]/50 bg-[#0C0E1D]"
                 title="Click để tua"
               >
                 <div
-                  className="h-full bg-gradient-to-r from-indigo-500 via-violet-400 to-[#F6E85C] rounded-full transition-all"
+                  className="h-full rounded-full bg-gradient-to-r from-indigo-500 via-violet-400 to-[#F6E85C] transition-all"
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
 
-              <span className="text-[11px] font-mono text-zinc-400 w-9 tabular-nums">
+              <span className="w-9 font-mono text-[11px] text-zinc-400 tabular-nums">
                 {formatTime(duration)}
               </span>
             </div>
@@ -284,20 +302,20 @@ export function FloatingAudioDock({
                 onClick={() => onSeek(-5)}
                 title="Tua lùi 5 giây"
                 aria-label="Tua lùi 5 giây"
-                className="p-2 rounded-xl hover:bg-white/[0.08] text-zinc-300 transition-colors"
+                className="rounded-xl p-2 text-zinc-300 transition-colors hover:bg-white/[0.08]"
               >
-                <RotateCcw className="w-4 h-4" />
+                <RotateCcw className="h-4 w-4" />
               </button>
 
               <button
                 onClick={onTogglePlay}
                 aria-label={isPlaying ? "Tạm dừng" : "Phát"}
-                className="w-10 h-10 rounded-full bg-white text-[#0C0E1D] hover:scale-105 active:scale-95 flex items-center justify-center shadow-lg font-bold transition-all"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-white font-bold text-[#0C0E1D] shadow-lg transition-all hover:scale-105 active:scale-95"
               >
                 {isPlaying ? (
-                  <Pause className="w-4 h-4 fill-current" />
+                  <Pause className="h-4 w-4 fill-current" />
                 ) : (
-                  <Play className="w-4 h-4 fill-current ml-0.5" />
+                  <Play className="ml-0.5 h-4 w-4 fill-current" />
                 )}
               </button>
 
@@ -305,18 +323,18 @@ export function FloatingAudioDock({
                 onClick={() => onSeek(5)}
                 title="Tua tới 5 giây"
                 aria-label="Tua tới 5 giây"
-                className="p-2 rounded-xl hover:bg-white/[0.08] text-zinc-300 transition-colors"
+                className="rounded-xl p-2 text-zinc-300 transition-colors hover:bg-white/[0.08]"
               >
-                <RotateCw className="w-4 h-4" />
+                <RotateCw className="h-4 w-4" />
               </button>
 
-              <div className="h-5 w-px bg-[#2B3060] mx-1" />
+              <div className="mx-1 h-5 w-px bg-[#2B3060]" />
 
               {/* Speed Multiplier */}
               <button
                 onClick={onChangeSpeed}
                 title="Tốc độ nghe"
-                className="px-2.5 py-1.5 rounded-xl bg-[#1B1F40] hover:bg-[#252A56] border border-[#2B3060] text-xs font-mono font-bold text-indigo-300 transition-colors tabular-nums"
+                className="rounded-xl border border-[#2B3060] bg-[#1B1F40] px-2.5 py-1.5 font-mono text-xs font-bold text-indigo-300 tabular-nums transition-colors hover:bg-[#252A56]"
               >
                 {playbackSpeed}x
               </button>
@@ -325,10 +343,10 @@ export function FloatingAudioDock({
               <button
                 onClick={onToggleAbLoop}
                 title="Lặp lại câu (Loop)"
-                className={`px-2 py-1.5 rounded-xl text-[11px] font-bold border transition-colors flex items-center gap-1 ${
+                className={`flex items-center gap-1 rounded-xl border px-2 py-1.5 text-[11px] font-bold transition-colors ${
                   abLoop
-                    ? "bg-amber-500/20 border-amber-400 text-amber-300"
-                    : "bg-[#1B1F40] border-[#2B3060] text-zinc-400 hover:text-white"
+                    ? "border-amber-400 bg-amber-500/20 text-amber-300"
+                    : "border-[#2B3060] bg-[#1B1F40] text-zinc-400 hover:text-white"
                 }`}
               >
                 <Repeat size={12} />
@@ -339,18 +357,22 @@ export function FloatingAudioDock({
               <button
                 onClick={onToggleMute}
                 title={isMuted ? "Bật tiếng" : "Tắt tiếng"}
-                className="p-2 rounded-xl hover:bg-white/[0.08] text-zinc-300 transition-colors"
+                className="rounded-xl p-2 text-zinc-300 transition-colors hover:bg-white/[0.08]"
               >
-                {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                {isMuted ? (
+                  <VolumeX className="h-4 w-4" />
+                ) : (
+                  <Volume2 className="h-4 w-4" />
+                )}
               </button>
 
               {/* Desktop Minimize */}
               <button
                 onClick={() => onSetDockMinimized(true)}
                 title="Thu gọn thanh phát"
-                className="hidden sm:flex p-2 rounded-xl hover:bg-white/[0.08] text-zinc-400 hover:text-white transition-colors"
+                className="hidden rounded-xl p-2 text-zinc-400 transition-colors hover:bg-white/[0.08] hover:text-white sm:flex"
               >
-                <Minimize2 className="w-4 h-4" />
+                <Minimize2 className="h-4 w-4" />
               </button>
             </div>
           </div>

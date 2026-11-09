@@ -23,7 +23,12 @@ async function testUpload() {
   const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
   const bucketName = process.env.R2_BUCKET_NAME;
 
-  console.log("Config:", { accountId, accessKeyId, bucketName, hasSecret: !!secretAccessKey });
+  console.log("Config:", {
+    accountId,
+    accessKeyId,
+    bucketName,
+    hasSecret: !!secretAccessKey,
+  });
 
   const client = new S3Client({
     region: "auto",
@@ -44,14 +49,14 @@ async function testUpload() {
   try {
     const url = await getSignedUrl(client, command, { expiresIn: 300 });
     console.log("Generated URL:", url);
-    
+
     // Now try fetching it
     const res = await fetch(url, {
       method: "PUT",
       body: "Hello from test",
-      headers: { "Content-Type": "text/plain" }
+      headers: { "Content-Type": "text/plain" },
     });
-    
+
     console.log("Fetch status:", res.status, res.statusText);
     if (!res.ok) {
       console.error(await res.text());

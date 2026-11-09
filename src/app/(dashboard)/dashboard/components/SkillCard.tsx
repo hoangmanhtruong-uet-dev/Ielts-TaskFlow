@@ -12,8 +12,8 @@ export interface SkillCardProps {
   desc: string;
   href: string;
   Icon: LucideIcon;
-  colorClass: string;   // e.g. "bg-violet-50 text-violet-600 border-violet-100"
-  accentClass: string;  // e.g. "bg-violet-600"
+  colorClass: string; // e.g. "bg-violet-50 text-violet-600 border-violet-100"
+  accentClass: string; // e.g. "bg-violet-600"
   tip: string;
   completed?: boolean;
   progressPct?: number;
@@ -37,8 +37,8 @@ export const SkillCard = memo(function SkillCard({
       href={href}
       className={cn(
         "group app-panel flex flex-col gap-3 p-4",
-        "transition-all duration-200 hover:shadow-[0_12px_32px_rgb(var(--shadow-color)/0.1)] hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]",
-        completed && "opacity-70"
+        "transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgb(var(--shadow-color)/0.1)] focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:outline-none",
+        completed && "opacity-70",
       )}
     >
       {/* Icon row */}
@@ -46,14 +46,14 @@ export const SkillCard = memo(function SkillCard({
         <span
           className={cn(
             "grid size-10 place-items-center rounded-xl border",
-            colorClass
+            colorClass,
           )}
         >
           <Icon size={20} aria-hidden />
         </span>
         <div className="flex items-center gap-1.5">
           {isNew && (
-            <span className="rounded-full bg-[var(--primary-subtle)] px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-[var(--primary)]">
+            <span className="rounded-full bg-[var(--primary-subtle)] px-1.5 py-0.5 text-[9px] font-black tracking-wider text-[var(--primary)] uppercase">
               New
             </span>
           )}
@@ -91,7 +91,7 @@ export const SkillCard = memo(function SkillCard({
       )}
 
       {/* Tip footer */}
-      <p className="flex items-center gap-1 text-[10px] font-semibold text-[var(--muted-foreground)] mt-auto">
+      <p className="mt-auto flex items-center gap-1 text-[10px] font-semibold text-[var(--muted-foreground)]">
         <Sparkles size={9} aria-hidden />
         {tip}
       </p>

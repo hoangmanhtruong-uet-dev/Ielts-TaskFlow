@@ -2,8 +2,9 @@ Dưới đây là kế hoạch kiến trúc và đặc tả kỹ thuật chi ti�
 
 ---
 
-```markdown
+````markdown
 # KẾ HOẠCH PHÁT TRIỂN MODULE HỌC TẬP IELTS (LEARNING & PRACTICE ENGINE)
+
 **Tài liệu:** `specs/PLAN_PROJECT.md`  
 **Phiên bản:** v1.0.0  
 **Tác giả:** Principal Software Architect  
@@ -14,6 +15,7 @@ Dưới đây là kế hoạch kiến trúc và đặc tả kỹ thuật chi ti�
 ## 1. TỔNG QUAN KIẾN TRÚC & MỤC TIÊU (ARCHITECTURE OVERVIEW)
 
 Module Học tập bao gồm 2 phân hệ cốt lõi:
+
 1. **Theory Learning Engine (`/learn/[courseId]/[lessonId]`):** Trình phát nội dung lý thuyết đa phương tiện (Video HLS/DASH + Rich Markdown), tích hợp bộ công cụ tương tác từ vựng (Vocabulary Highlighter & Vault sync), giao diện Zen/Focus Mode chống phân tâm, đồng bộ tiến độ học theo thời gian thực.
 2. **Interactive Practice Engine (`/practice/[exerciseId]`):** Bộ công cụ làm bài tập tương tác (Multiple Choice, Fill-in-the-blanks, Matching, Drag & Drop), kế thừa từ `Generic Practice Engine` (giải quyết nợ kỹ thuật DRY từ bản Audit), chấm điểm Server-Authoritative, chống gian lận thời gian và chống spam request.
 
@@ -25,6 +27,7 @@ graph TD
     Postgres -->|Private Schema| AnswerKeys[(private.exercise_answers)]
     Client -->|Vocab Save| VocabVault[Feature: Error Notebook & Vocab]
 ```
+````
 
 ---
 
@@ -135,10 +138,10 @@ CREATE POLICY "Public read lessons" ON public.lessons FOR SELECT TO authenticate
 CREATE POLICY "Public read exercises" ON public.practice_exercises FOR SELECT TO authenticated USING (is_published = true);
 CREATE POLICY "Public read questions" ON public.exercise_questions FOR SELECT TO authenticated USING (true);
 
-CREATE POLICY "Users own lesson progress" ON public.user_lesson_progress 
+CREATE POLICY "Users own lesson progress" ON public.user_lesson_progress
     FOR ALL TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Users own attempts" ON public.exercise_attempts 
+CREATE POLICY "Users own attempts" ON public.exercise_attempts
     FOR ALL TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
 -- Secure RPC: Nộp bài và chấm điểm Server-Authoritative
@@ -164,9 +167,9 @@ DECLARE
     v_result_details JSONB := '[]'::jsonb;
 BEGIN
     v_user_id := auth.uid();
-    
+
     -- 1. Validate Attempt
-    SELECT user_id, exercise_id, server_expires_at, status 
+    SELECT user_id, exercise_id, server_expires_at, status
     INTO v_user_id, v_exercise_id, v_expires_at, v_status
     FROM public.exercise_attempts
     WHERE id = p_attempt_id;
@@ -186,14 +189,14 @@ BEGIN
     END IF;
 
     -- 2. Đánh giá kết quả từ Private Schema
-    FOR v_q IN 
+    FOR v_q IN
         SELECT eq.id, eq.question_type, eq.explanation, ak.correct_answers, ak.accepted_synonyms, ak.case_sensitive
         FROM public.exercise_questions eq
         JOIN private.exercise_answer_keys ak ON eq.id = ak.question_id
         WHERE eq.exercise_id = v_exercise_id
     LOOP
         v_is_correct := false;
-        
+
         -- Logic kiểm tra câu trả lời dựa trên loại câu hỏi
         IF v_q.question_type = 'multiple_choice' THEN
             v_is_correct := (v_q.correct_answers = (p_user_answers->v_q.id::text));
@@ -248,13 +251,15 @@ $$;
 ## 3. THIẾT KẾ UI/UX SPECIFICATIONS
 
 ### 3.1. Trang Lý Thuyết (`/learn/[courseId]/[lessonId]`)
+
 - **Zen / Focus Mode:** Một nút chuyển đổi kích hoạt giao diện mở rộng toàn màn hình: ẩn Sidebar, ẩn Top Navbar, thanh tiến độ bài học chuyển thành đường mỏng 2px ở đầu màn hình.
 - **Video Player Pipeline:** Tự động khôi phục giây học dở (`last_position_seconds`), hỗ trợ phím tắt (`Space`: Play/Pause, `J`/`L`: Back/Forward 10s), chặn download video.
-- **Vocabulary Interaction Floating Panel:** 
+- **Vocabulary Interaction Floating Panel:**
   - Người dùng bôi đen từ/cụm từ trong phần Markdown Text $\rightarrow$ xuất hiện Quick Action Popover (`Translate`, `Listen Pronunciation`, `Save to Error Notebook/Vocab Vault`).
   - Sử dụng Tailwind CSS v4 variables cho Dark Mode mượt mà (`bg-zinc-950`, `text-zinc-100`, `border-zinc-800`).
 
 ### 3.2. Trang Bài Tập Thực Hành (`/practice/[exerciseId]`)
+
 - **Split-View / Full Container Layout:** Tùy chọn 2 cột (Left: ngữ cảnh/audio/bài đọc, Right: danh sách câu hỏi làm bài) hoặc 1 cột tập trung.
 - **Question Navigator:** Mini-map bên cạnh hiển thị trạng thái từng câu (Chưa làm: Xám, Đã điền: Xanh dương, Đánh dấu xem lại: Vàng cờ).
 - **Sticky Control Bar:** Hiển thị Server-Authoritative Countdown Timer, Thanh tiến độ hoàn thành (% câu đã làm), Nút "Lưu nháp" và Nút "Nộp bài" với Modal xác nhận.
@@ -283,6 +288,7 @@ gantt
 ### 🔴 PHASE P0: CORE ENGINE, BẢO MẬT & SERVER INTEGRITY (Sprint 1 - Bắt buộc)
 
 #### Task P0.1: Database Migrations & Private Schema Setup
+
 - **Mục tiêu:** Tạo cấu trúc bảng, chuyển Answer Keys sang `private` schema, tạo RPC function `submit_exercise_attempt`.
 - **Hành động kỹ thuật:**
   - Viết file migration: `supabase/migrations/20261015000000_learning_and_practice_core.sql`.
@@ -291,6 +297,7 @@ gantt
 - **Definition of Done (DoD):** Migration chạy thành công không có lỗi, RLS chặn triệt để người dùng query trực tiếp `private.exercise_answer_keys`.
 
 #### Task P0.2: Upstash Rate Limiting & Server Actions
+
 - **Mục tiêu:** Bảo vệ API submit/draft chống spam và bot attack.
 - **Hành động kỹ thuật:**
   - Tạo Server Action `saveExerciseDraftAction` với rate limit: 30 requests/phút/user.
@@ -300,12 +307,16 @@ gantt
     // src/features/practice/schema.ts
     export const SubmitExerciseSchema = z.object({
       attemptId: z.string().uuid(),
-      answers: z.record(z.string().uuid(), z.union([z.string(), z.array(z.string())])),
+      answers: z.record(
+        z.string().uuid(),
+        z.union([z.string(), z.array(z.string())]),
+      ),
     });
     ```
 - **DoD:** Unit test verify request vượt quá quota trả về mã lỗi `429 Too Many Requests`.
 
 #### Task P0.3: Unified Practice Runner (Giải quyết triệt để Nợ Kỹ Thuật DRY)
+
 - **Mục tiêu:** Xây dựng `GenericPracticeEngine` để tái sử dụng cho Reading, Listening, Grammar và Practice runner chung.
 - **Hành động kỹ thuật:**
   - Tạo `src/features/core-practice/components/generic-practice-engine.tsx`.
@@ -318,6 +329,7 @@ gantt
 ### 🟡 PHASE P1: TÍNH NĂNG HỌC TẬP, UI/UX CHỐNG PHÂN TÂM (Sprint 2)
 
 #### Task P1.1: Interactive Markdown Viewer & Vocabulary Highlighter
+
 - **Mục tiêu:** Hiển thị bài đọc/lý thuyết tối ưu hiệu năng, cho phép tra và lưu từ trực tiếp.
 - **Hành động kỹ thuật:**
   - Sử dụng `next/dynamic` cô lập `react-markdown` và `rehype-highlight` để không phình client bundle ban đầu:
@@ -331,6 +343,7 @@ gantt
 - **DoD:** Bôi đen từ hiển thị menu tức thì (< 50ms), lưu từ vựng cập nhật ngay vào cơ sở dữ liệu.
 
 #### Task P1.2: Video Player with Heartbeat Position Sync
+
 - **Mục tiêu:** Phát video mượt mà và lưu lại giây đang học dở.
 - **Hành động kỹ thuật:**
   - Xây dựng custom hook `useVideoProgressSync({ lessonId, interval: 10000 })`.
@@ -339,6 +352,7 @@ gantt
 - **DoD:** Tải lại trang (F5) video tự động tua đúng vị trí dừng lần cuối; thanh tiến độ bài học cập nhật theo tỷ lệ xem.
 
 #### Task P1.3: Question Type Components Engine
+
 - **Mục tiêu:** Xây dựng các dạng câu hỏi IELTS tương tác cao.
 - **Hành động kỹ thuật:**
   - `MultipleChoiceQuestion.tsx`: Radio/Checkbox option với giao diện chuẩn thi quốc tế.
@@ -351,6 +365,7 @@ gantt
 ### 🟢 PHASE P2: KHẢ NĂNG PHỤC HỒI, OFFLINE ENGINE & TEST SUITE (Sprint 3)
 
 #### Task P2.1: Client-side Disaster Recovery (Offline/Disconnect Resilience)
+
 - **Mục tiêu:** Đảm bảo không mất bài làm khi rớt mạng đột ngột.
 - **Hành động kỹ thuật:**
   - Xây dựng lớp lưu trữ dự phòng `PracticeStorageCache` qua `localStorage` / `IndexedDB`.
@@ -359,6 +374,7 @@ gantt
 - **DoD:** Kiểm thử ngắt mạng (DevTools Network Offline), người dùng tiếp tục làm bài và bật lại mạng, dữ liệu tự đồng bộ không mất ký tự nào.
 
 #### Task P2.2: Automated Test Coverage Suite (Vitest + Playwright)
+
 - **Mục tiêu:** Khóa an toàn toàn bộ tính năng với kiểm thử tự động.
 - **Hành động kỹ thuật:**
   - **Unit Tests (Vitest):**
@@ -423,10 +439,13 @@ src/
 
 ## 6. MA TRẬN ĐÁNH GIÁ VÀ TIÊU CHUẨN NGHIỆM THU (ACCEPTANCE CRITERIA)
 
-| Hạng mục | Tiêu chuẩn Đạt yêu cầu (Pass) | Rủi ro / Điểm cần kiểm soát |
-| :--- | :--- | :--- |
-| **Bảo mật Đáp án** | Zero-leakage: Payload trả về Client trước khi submit không chứa trường đáp án đúng. | Schema isolation: Kiểm tra cẩn thận RLS và không để lộ RPC function ra ngoài schema cho phép. |
-| **Tính Đúng đắn Timer** | Server-Authoritative: Không thể hack thời gian từ Client Local Clock. | Mạng trễ: Cung cấp grace period 15 giây chống timeout do mạng chậm. |
-| **Performance FCP / LCP** | FCP < 1.2s, LCP < 2.0s trên mobile mạng 4G. | Dynamic import triệt để các thư viện nặng (`react-markdown`, Audio Visualizers). |
-| **Trải nghiệm Học tập** | Zen mode loại bỏ phân tâm, tiến độ học dở phục hồi mượt mà. | Tránh spam gọi update database liên tục: bắt buộc dùng kỹ thuật Debounce và Window Beacon/Keepalive. |
+| Hạng mục                  | Tiêu chuẩn Đạt yêu cầu (Pass)                                                       | Rủi ro / Điểm cần kiểm soát                                                                          |
+| :------------------------ | :---------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------- |
+| **Bảo mật Đáp án**        | Zero-leakage: Payload trả về Client trước khi submit không chứa trường đáp án đúng. | Schema isolation: Kiểm tra cẩn thận RLS và không để lộ RPC function ra ngoài schema cho phép.        |
+| **Tính Đúng đắn Timer**   | Server-Authoritative: Không thể hack thời gian từ Client Local Clock.               | Mạng trễ: Cung cấp grace period 15 giây chống timeout do mạng chậm.                                  |
+| **Performance FCP / LCP** | FCP < 1.2s, LCP < 2.0s trên mobile mạng 4G.                                         | Dynamic import triệt để các thư viện nặng (`react-markdown`, Audio Visualizers).                     |
+| **Trải nghiệm Học tập**   | Zen mode loại bỏ phân tâm, tiến độ học dở phục hồi mượt mà.                         | Tránh spam gọi update database liên tục: bắt buộc dùng kỹ thuật Debounce và Window Beacon/Keepalive. |
+
+```
+
 ```

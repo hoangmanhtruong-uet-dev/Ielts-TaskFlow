@@ -9,27 +9,6 @@ export type Json =
 export type Database = {
   private: {
     Tables: {
-      dictation_exercises: { Row: any; Insert: any; Update: any; Relationships: [] };
-      dictation_sentences: { Row: any; Insert: any; Update: any; Relationships: [] };
-      dictation_progress: { Row: any; Insert: any; Update: any; Relationships: [] };
-      user_gamification: {
-        Row: { user_id: string; total_xp: number; streak_freezes_available: number; };
-        Insert: { user_id: string; total_xp?: number; streak_freezes_available?: number; };
-        Update: { user_id?: string; total_xp?: number; streak_freezes_available?: number; };
-        Relationships: [];
-      };
-      xp_events: {
-        Row: { id: string; user_id: string; amount: number; source: string; created_at: string; };
-        Insert: { id?: string; user_id: string; amount: number; source: string; created_at?: string; };
-        Update: { id?: string; user_id?: string; amount?: number; source?: string; created_at?: string; };
-        Relationships: [];
-      };
-      subscriptions: {
-        Row: { user_id: string; plan_id: string; status: string; current_period_end: string; };
-        Insert: { user_id: string; plan_id: string; status: string; current_period_end: string; };
-        Update: { user_id?: string; plan_id?: string; status?: string; current_period_end?: string; };
-        Relationships: [];
-      };
       exercise_answer_keys: {
         Row: {
           case_sensitive: boolean;
@@ -135,12 +114,6 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      fn_submit_dictation_answer: { Args: any; Returns: any };
-      fn_get_user_dictation_stats: { Args: any; Returns: any };
-      award_xp: {
-        Args: { p_user_id: string; p_amount: number; p_source: string; };
-        Returns: void;
-      };
       completed_learner_exists: { Args: never; Returns: boolean };
       count_writing_words: { Args: { input_text: string }; Returns: number };
       exercise_set_is_accessible: {
@@ -285,21 +258,100 @@ export type Database = {
   public: {
     Tables: {
       vocabulary_vault: {
-        Row: { id: string; user_id: string; term: string; created_at: string; };
-        Insert: { id?: string; user_id: string; term: string; created_at?: string; };
-        Update: { id?: string; user_id?: string; term?: string; created_at?: string; };
+        Row: { id: string; user_id: string; term: string; created_at: string };
+        Insert: {
+          id?: string;
+          user_id: string;
+          term: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          term?: string;
+          created_at?: string;
+        };
         Relationships: [];
       };
       user_lesson_progress: {
-        Row: { id: string; user_id: string; lesson_id: string; status: "in_progress" | "completed"; last_position_seconds: number; completion_percentage: number; completed_at: string | null; updated_at: string; };
-        Insert: { id?: string; user_id: string; lesson_id: string; status?: "in_progress" | "completed"; last_position_seconds?: number; completion_percentage?: number; completed_at?: string | null; updated_at?: string; };
-        Update: { id?: string; user_id?: string; lesson_id?: string; status?: "in_progress" | "completed"; last_position_seconds?: number; completion_percentage?: number; completed_at?: string | null; updated_at?: string; };
+        Row: {
+          id: string;
+          user_id: string;
+          lesson_id: string;
+          status: "in_progress" | "completed";
+          last_position_seconds: number;
+          completion_percentage: number;
+          completed_at: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          lesson_id: string;
+          status?: "in_progress" | "completed";
+          last_position_seconds?: number;
+          completion_percentage?: number;
+          completed_at?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          lesson_id?: string;
+          status?: "in_progress" | "completed";
+          last_position_seconds?: number;
+          completion_percentage?: number;
+          completed_at?: string | null;
+          updated_at?: string;
+        };
         Relationships: [];
       };
       exercise_attempts: {
-        Row: { id: string; user_id: string; exercise_id: string; status: "in_progress" | "submitted" | "abandoned"; draft_answers: Json; started_at: string; server_expires_at: string | null; submitted_at: string | null; score: number; max_score: number; accuracy_percentage: number; created_at: string; updated_at: string; };
-        Insert: { id?: string; user_id: string; exercise_id: string; status?: "in_progress" | "submitted" | "abandoned"; draft_answers?: Json; started_at?: string; server_expires_at?: string | null; submitted_at?: string | null; score?: number; max_score?: number; accuracy_percentage?: number; created_at?: string; updated_at?: string; };
-        Update: { id?: string; user_id?: string; exercise_id?: string; status?: "in_progress" | "submitted" | "abandoned"; draft_answers?: Json; started_at?: string; server_expires_at?: string | null; submitted_at?: string | null; score?: number; max_score?: number; accuracy_percentage?: number; created_at?: string; updated_at?: string; };
+        Row: {
+          id: string;
+          user_id: string;
+          exercise_id: string;
+          status: "in_progress" | "submitted" | "abandoned";
+          draft_answers: Json;
+          started_at: string;
+          server_expires_at: string | null;
+          submitted_at: string | null;
+          score: number;
+          max_score: number;
+          accuracy_percentage: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          exercise_id: string;
+          status?: "in_progress" | "submitted" | "abandoned";
+          draft_answers?: Json;
+          started_at?: string;
+          server_expires_at?: string | null;
+          submitted_at?: string | null;
+          score?: number;
+          max_score?: number;
+          accuracy_percentage?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          exercise_id?: string;
+          status?: "in_progress" | "submitted" | "abandoned";
+          draft_answers?: Json;
+          started_at?: string;
+          server_expires_at?: string | null;
+          submitted_at?: string | null;
+          score?: number;
+          max_score?: number;
+          accuracy_percentage?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
         Relationships: [];
       };
       exercise_options: {
@@ -684,6 +736,7 @@ export type Database = {
           exercise_set_version_id: string;
           expires_at: string | null;
           id: string;
+          is_mock: boolean;
           last_saved_at: string;
           max_score: number | null;
           reading_time_limit_seconds: number | null;
@@ -704,6 +757,7 @@ export type Database = {
           exercise_set_version_id: string;
           expires_at?: string | null;
           id?: string;
+          is_mock?: boolean;
           last_saved_at?: string;
           max_score?: number | null;
           reading_time_limit_seconds?: number | null;
@@ -724,6 +778,7 @@ export type Database = {
           exercise_set_version_id?: string;
           expires_at?: string | null;
           id?: string;
+          is_mock?: boolean;
           last_saved_at?: string;
           max_score?: number | null;
           reading_time_limit_seconds?: number | null;
@@ -2049,6 +2104,7 @@ export type Database = {
         Row: {
           created_at: string;
           id: string;
+          is_mock: boolean;
           speaking_set_id: string;
           speaking_set_version_id: string;
           start_idempotency_key: string;
@@ -2062,6 +2118,7 @@ export type Database = {
         Insert: {
           created_at?: string;
           id?: string;
+          is_mock?: boolean;
           speaking_set_id: string;
           speaking_set_version_id: string;
           start_idempotency_key: string;
@@ -2075,6 +2132,7 @@ export type Database = {
         Update: {
           created_at?: string;
           id?: string;
+          is_mock?: boolean;
           speaking_set_id?: string;
           speaking_set_version_id?: string;
           start_idempotency_key?: string;
@@ -2126,7 +2184,7 @@ export type Database = {
           status: string;
           storage_path: string;
           updated_at: string;
-          upload_intent_id: string;
+          upload_intent_id: string | null;
           user_id: string;
         };
         Insert: {
@@ -2145,7 +2203,7 @@ export type Database = {
           status?: string;
           storage_path: string;
           updated_at?: string;
-          upload_intent_id: string;
+          upload_intent_id?: string | null;
           user_id: string;
         };
         Update: {
@@ -2164,7 +2222,7 @@ export type Database = {
           status?: string;
           storage_path?: string;
           updated_at?: string;
-          upload_intent_id?: string;
+          upload_intent_id?: string | null;
           user_id?: string;
         };
         Relationships: [
@@ -2977,6 +3035,7 @@ export type Database = {
           draft_text: string;
           expires_at: string;
           id: string;
+          is_mock: boolean;
           last_saved_at: string;
           minimum_words_met: boolean;
           server_revision: number;
@@ -2999,6 +3058,7 @@ export type Database = {
           draft_text?: string;
           expires_at: string;
           id?: string;
+          is_mock?: boolean;
           last_saved_at?: string;
           minimum_words_met?: boolean;
           server_revision?: number;
@@ -3021,6 +3081,7 @@ export type Database = {
           draft_text?: string;
           expires_at?: string;
           id?: string;
+          is_mock?: boolean;
           last_saved_at?: string;
           minimum_words_met?: boolean;
           server_revision?: number;
@@ -3165,11 +3226,492 @@ export type Database = {
         };
         Relationships: [];
       };
+      app_roles: {
+        Row: {
+          created_at: string;
+          id: string;
+          role: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          role: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          role?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      user_policy_acceptances: {
+        Row: {
+          accepted_at: string;
+          channel: string;
+          id: string;
+          privacy_version: string;
+          terms_version: string;
+          user_id: string;
+        };
+        Insert: {
+          accepted_at?: string;
+          channel?: string;
+          id?: string;
+          privacy_version: string;
+          terms_version: string;
+          user_id: string;
+        };
+        Update: {
+          accepted_at?: string;
+          channel?: string;
+          id?: string;
+          privacy_version?: string;
+          terms_version?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      user_gamification: {
+        Row: {
+          created_at: string;
+          current_level: number;
+          current_streak: number;
+          last_activity_date: string | null;
+          longest_streak: number;
+          streak_freezes_available: number;
+          total_xp: number;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          current_level?: number;
+          current_streak?: number;
+          last_activity_date?: string | null;
+          longest_streak?: number;
+          streak_freezes_available?: number;
+          total_xp?: number;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          current_level?: number;
+          current_streak?: number;
+          last_activity_date?: string | null;
+          longest_streak?: number;
+          streak_freezes_available?: number;
+          total_xp?: number;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      xp_events: {
+        Row: {
+          amount: number;
+          created_at: string;
+          id: string;
+          source: string;
+          user_id: string;
+        };
+        Insert: {
+          amount: number;
+          created_at?: string;
+          id?: string;
+          source: string;
+          user_id: string;
+        };
+        Update: {
+          amount?: number;
+          created_at?: string;
+          id?: string;
+          source?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      weekly_leaderboards: {
+        Row: {
+          created_at: string;
+          id: string;
+          rank: number | null;
+          user_id: string;
+          week_end: string;
+          week_start: string;
+          weekly_xp: number;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          rank?: number | null;
+          user_id: string;
+          week_end: string;
+          week_start: string;
+          weekly_xp?: number;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          rank?: number | null;
+          user_id?: string;
+          week_end?: string;
+          week_start?: string;
+          weekly_xp?: number;
+        };
+        Relationships: [];
+      };
+      subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean;
+          created_at: string;
+          current_period_end: string | null;
+          current_period_start: string;
+          gateway_customer_id: string | null;
+          gateway_subscription_id: string | null;
+          id: string;
+          payment_gateway: string | null;
+          status: string;
+          tier: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          cancel_at_period_end?: boolean;
+          created_at?: string;
+          current_period_end?: string | null;
+          current_period_start?: string;
+          gateway_customer_id?: string | null;
+          gateway_subscription_id?: string | null;
+          id?: string;
+          payment_gateway?: string | null;
+          status?: string;
+          tier?: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          cancel_at_period_end?: boolean;
+          created_at?: string;
+          current_period_end?: string | null;
+          current_period_start?: string;
+          gateway_customer_id?: string | null;
+          gateway_subscription_id?: string | null;
+          id?: string;
+          payment_gateway?: string | null;
+          status?: string;
+          tier?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      dictation_exercises: {
+        Row: {
+          audio_url: string;
+          audio_url_low: string | null;
+          category: string;
+          created_at: string;
+          description: string | null;
+          difficulty: number;
+          duration_seconds: number;
+          id: string;
+          is_published: boolean;
+          thumbnail_url: string | null;
+          title: string;
+          total_sentences: number;
+          updated_at: string;
+        };
+        Insert: {
+          audio_url: string;
+          audio_url_low?: string | null;
+          category?: string;
+          created_at?: string;
+          description?: string | null;
+          difficulty: number;
+          duration_seconds?: number;
+          id?: string;
+          is_published?: boolean;
+          thumbnail_url?: string | null;
+          title: string;
+          total_sentences?: number;
+          updated_at?: string;
+        };
+        Update: {
+          audio_url?: string;
+          audio_url_low?: string | null;
+          category?: string;
+          created_at?: string;
+          description?: string | null;
+          difficulty?: number;
+          duration_seconds?: number;
+          id?: string;
+          is_published?: boolean;
+          thumbnail_url?: string | null;
+          title?: string;
+          total_sentences?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      dictation_sentences: {
+        Row: {
+          end_time: number;
+          exercise_id: string;
+          hint: string | null;
+          id: string;
+          order_index: number;
+          start_time: number;
+          text: string;
+        };
+        Insert: {
+          end_time: number;
+          exercise_id: string;
+          hint?: string | null;
+          id?: string;
+          order_index: number;
+          start_time: number;
+          text: string;
+        };
+        Update: {
+          end_time?: number;
+          exercise_id?: string;
+          hint?: string | null;
+          id?: string;
+          order_index?: number;
+          start_time?: number;
+          text?: string;
+        };
+        Relationships: [];
+      };
+      dictation_attempts: {
+        Row: {
+          accuracy_score: number;
+          correct_words: number;
+          created_at: string;
+          exercise_id: string;
+          id: string;
+          replay_count: number | null;
+          sentence_id: string;
+          time_spent_seconds: number | null;
+          total_words: number;
+          user_id: string;
+          user_input: string;
+        };
+        Insert: {
+          accuracy_score?: number;
+          correct_words?: number;
+          created_at?: string;
+          exercise_id: string;
+          id?: string;
+          replay_count?: number | null;
+          sentence_id: string;
+          time_spent_seconds?: number | null;
+          total_words?: number;
+          user_id: string;
+          user_input: string;
+        };
+        Update: {
+          accuracy_score?: number;
+          correct_words?: number;
+          created_at?: string;
+          exercise_id?: string;
+          id?: string;
+          replay_count?: number | null;
+          sentence_id?: string;
+          time_spent_seconds?: number | null;
+          total_words?: number;
+          user_id?: string;
+          user_input?: string;
+        };
+        Relationships: [];
+      };
+      dictation_progress: {
+        Row: {
+          attempts_count: number;
+          best_score: number;
+          completed: boolean;
+          completed_sentences: number;
+          created_at: string;
+          exercise_id: string;
+          id: string;
+          last_attempted_at: string;
+          latest_score: number;
+          total_sentences: number;
+          user_id: string;
+        };
+        Insert: {
+          attempts_count?: number;
+          best_score?: number;
+          completed?: boolean;
+          completed_sentences?: number;
+          created_at?: string;
+          exercise_id: string;
+          id?: string;
+          last_attempted_at?: string;
+          latest_score?: number;
+          total_sentences?: number;
+          user_id: string;
+        };
+        Update: {
+          attempts_count?: number;
+          best_score?: number;
+          completed?: boolean;
+          completed_sentences?: number;
+          created_at?: string;
+          exercise_id?: string;
+          id?: string;
+          last_attempted_at?: string;
+          latest_score?: number;
+          total_sentences?: number;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      ai_generated_contents: {
+        Row: {
+          content_type: string;
+          created_at: string;
+          id: string;
+          raw_content: string | null;
+          source_url: string | null;
+          status: string;
+          structured_data: Json;
+          updated_at: string;
+        };
+        Insert: {
+          content_type: string;
+          created_at?: string;
+          id?: string;
+          raw_content?: string | null;
+          source_url?: string | null;
+          status?: string;
+          structured_data: Json;
+          updated_at?: string;
+        };
+        Update: {
+          content_type?: string;
+          created_at?: string;
+          id?: string;
+          raw_content?: string | null;
+          source_url?: string | null;
+          status?: string;
+          structured_data?: Json;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      billing_events: {
+        Row: {
+          created_at: string;
+          error_message: string | null;
+          event_type: string;
+          gateway: string;
+          gateway_event_id: string;
+          id: string;
+          payload: Json;
+          processed_at: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          error_message?: string | null;
+          event_type: string;
+          gateway: string;
+          gateway_event_id: string;
+          id?: string;
+          payload: Json;
+          processed_at?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          error_message?: string | null;
+          event_type?: string;
+          gateway?: string;
+          gateway_event_id?: string;
+          id?: string;
+          payload?: Json;
+          processed_at?: string | null;
+        };
+        Relationships: [];
+      };
+      bulk_import_jobs: {
+        Row: {
+          author_id: string;
+          completed_at: string | null;
+          created_at: string;
+          error_log: Json | null;
+          file_url: string;
+          id: string;
+          job_type: string;
+          processed_records: number | null;
+          started_at: string | null;
+          status: string;
+          total_records: number | null;
+          updated_at: string;
+        };
+        Insert: {
+          author_id: string;
+          completed_at?: string | null;
+          created_at?: string;
+          error_log?: Json | null;
+          file_url: string;
+          id?: string;
+          job_type: string;
+          processed_records?: number | null;
+          started_at?: string | null;
+          status?: string;
+          total_records?: number | null;
+          updated_at?: string;
+        };
+        Update: {
+          author_id?: string;
+          completed_at?: string | null;
+          created_at?: string;
+          error_log?: Json | null;
+          file_url?: string;
+          id?: string;
+          job_type?: string;
+          processed_records?: number | null;
+          started_at?: string | null;
+          status?: string;
+          total_records?: number | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
-      [_ in never]: never;
+      admin_users: {
+        Row: {
+          user_id: string;
+        };
+        Relationships: [];
+      };
     };
     Functions: {
+      accept_current_policies: {
+        Args: {
+          p_channel?: string;
+          p_privacy_version: string;
+          p_terms_version: string;
+        };
+        Returns: Database["public"]["Tables"]["user_policy_acceptances"]["Row"];
+      };
+      award_xp: {
+        Args: {
+          target_user_id: string;
+          xp_amount: number;
+          xp_source: string;
+        };
+        Returns: undefined;
+      };
+      buy_streak_freeze: {
+        Args: { p_cost?: number };
+        Returns: Database["public"]["Tables"]["user_gamification"]["Row"];
+      };
       check_exercise_answer: {
         Args: { p_attempt_id: string; p_question_id: string };
         Returns: Json;
@@ -3177,9 +3719,45 @@ export type Database = {
       claim_speaking_audio_cleanup: {
         Args: { p_batch_size?: number };
         Returns: {
+          bucket_id: string;
           id: string;
           storage_path: string;
         }[];
+      };
+      finalize_r2_speaking_upload: {
+        Args: {
+          p_attempt_id: string;
+          p_duration_seconds: number;
+          p_mime_type: string;
+          p_prompt_id: string;
+          p_sha256_checksum: string;
+          p_size_bytes: number;
+          p_storage_path: string;
+        };
+        Returns: Database["public"]["Tables"]["speaking_audio_assets"]["Row"];
+      };
+      fn_get_user_dictation_stats: {
+        Args: { p_user_id?: string };
+        Returns: Json;
+      };
+      fn_submit_dictation_answer: {
+        Args: {
+          p_exercise_id: string;
+          p_replay_count?: number;
+          p_sentence_id: string;
+          p_time_spent?: number;
+          p_user_id?: string | null;
+          p_user_input: string;
+        };
+        Returns: Json;
+      };
+      get_learner_ai_quota_usage: {
+        Args: never;
+        Returns: Json;
+      };
+      save_exercise_draft_json: {
+        Args: { p_answers: Json; p_attempt_id: string };
+        Returns: Database["public"]["Tables"]["exercise_attempts"]["Row"];
       };
       complete_learner_onboarding: {
         Args: never;
@@ -3654,6 +4232,7 @@ export type Database = {
           draft_text: string;
           expires_at: string;
           id: string;
+          is_mock: boolean;
           last_saved_at: string;
           minimum_words_met: boolean;
           server_revision: number;
@@ -3719,6 +4298,7 @@ export type Database = {
           exercise_set_version_id: string;
           expires_at: string | null;
           id: string;
+          is_mock: boolean;
           last_saved_at: string;
           max_score: number | null;
           reading_time_limit_seconds: number | null;
@@ -3805,6 +4385,7 @@ export type Database = {
         Returns: {
           created_at: string;
           id: string;
+          is_mock: boolean;
           speaking_set_id: string;
           speaking_set_version_id: string;
           start_idempotency_key: string;
@@ -3884,6 +4465,7 @@ export type Database = {
           draft_text: string;
           expires_at: string;
           id: string;
+          is_mock: boolean;
           last_saved_at: string;
           minimum_words_met: boolean;
           server_revision: number;
@@ -3916,6 +4498,7 @@ export type Database = {
           exercise_set_version_id: string;
           expires_at: string | null;
           id: string;
+          is_mock: boolean;
           last_saved_at: string;
           max_score: number | null;
           reading_time_limit_seconds: number | null;
@@ -3994,6 +4577,7 @@ export type Database = {
         Returns: {
           created_at: string;
           id: string;
+          is_mock: boolean;
           speaking_set_id: string;
           speaking_set_version_id: string;
           start_idempotency_key: string;
@@ -4019,6 +4603,7 @@ export type Database = {
           draft_text: string;
           expires_at: string;
           id: string;
+          is_mock: boolean;
           last_saved_at: string;
           minimum_words_met: boolean;
           server_revision: number;

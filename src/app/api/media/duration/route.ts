@@ -1,60 +1,81 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { parseBuffer } from "music-metadata";
-import { parseWebmDurationSeconds } from "@/features/speaking/server/webm-duration";
 
-export async function POST(req: NextRequest) {
+import { detectAudioMimeType } from "@/features/speaking/server/audio-verification";
+import { parseWebmDurationSeconds } from "@/features/speaking/server/webm-duration";
+import { mediaRateLimit } from "@/lib/rate-limit";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+
+const MAX_AUDIO_BYTES = 15 * 1024 * 1024;
+
+export async function POST(req: Request) {
   try {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { success: rateAllowed } = await mediaRateLimit.limit(
+      `media_${user.id}`,
+    );
+    if (!rateAllowed) {
+      return NextResponse.json({ error: "Too Many Requests" }, { status: 429 });
+    }
+
     const formData = await req.formData();
-    const file = formData.get("file") as File | null;
-    if (!file) {
+    const file = formData.get("file");
+    if (!(file instanceof File)) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
+    if (file.size < 1 || file.size > MAX_AUDIO_BYTES) {
+      return NextResponse.json(
+        { error: "Audio file size must be between 1 byte and 15MB" },
+        { status: 413 },
+      );
+    }
+
     const bytes = new Uint8Array(await file.arrayBuffer());
-    const mimeType = file.type || detectMimeType(bytes) || "audio/webm";
+    const detectedMimeType = detectAudioMimeType(bytes);
+    if (!detectedMimeType) {
+      return NextResponse.json(
+        { error: "Unsupported or invalid audio signature" },
+        { status: 400 },
+      );
+    }
 
     const metadata = await parseBuffer(
       bytes,
-      { mimeType, size: bytes.byteLength },
-      { duration: true, skipCovers: true }
-    );
+      { mimeType: detectedMimeType, size: bytes.byteLength },
+      { duration: true, skipCovers: true },
+    ).catch(() => null);
 
     const duration =
-      metadata.format.duration ??
-      (mimeType === "audio/webm" ? parseWebmDurationSeconds(bytes) : undefined);
+      metadata?.format.duration ??
+      (detectedMimeType === "audio/webm"
+        ? parseWebmDurationSeconds(bytes)
+        : undefined);
 
     if (!duration || !Number.isFinite(duration)) {
-      return NextResponse.json({ error: "Could not determine duration" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Could not determine duration" },
+        { status: 400 },
+      );
     }
 
-    return NextResponse.json({ durationSeconds: Math.round(duration * 1000) / 1000 });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({
+      durationSeconds: Math.round(duration * 1000) / 1000,
+      mimeType: detectedMimeType,
+    });
+  } catch {
+    return NextResponse.json(
+      { error: "Failed to process audio duration" },
+      { status: 500 },
+    );
   }
-}
-
-function detectMimeType(bytes: Uint8Array): string | null {
-  if (
-    bytes.length >= 4 &&
-    bytes[0] === 0x1a &&
-    bytes[1] === 0x45 &&
-    bytes[2] === 0xdf &&
-    bytes[3] === 0xa3
-  ) {
-    return "audio/webm";
-  }
-  if (
-    bytes.length >= 12 &&
-    String.fromCharCode(...bytes.slice(4, 8)) === "ftyp"
-  ) {
-    return "audio/mp4";
-  }
-  if (
-    bytes.length >= 3 &&
-    (String.fromCharCode(...bytes.slice(0, 3)) === "ID3" ||
-      (bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0))
-  ) {
-    return "audio/mpeg";
-  }
-  return null;
 }

@@ -5,7 +5,7 @@ const { Client } = pg;
 
 const client = new Client({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
+  ssl: { rejectUnauthorized: false },
 });
 
 async function main() {
@@ -25,15 +25,17 @@ async function main() {
     "reading_passages",
     "speaking_sets",
     "writing_tasks",
-    "mock_tests"
+    "mock_tests",
   ];
 
   console.log("=== REMOTE DATABASE ROW COUNTS ===");
   for (const table of tables) {
     try {
-      const res = await client.query(`SELECT count(*)::int as count FROM public.${table};`);
+      const res = await client.query(
+        `SELECT count(*)::int as count FROM public.${table};`,
+      );
       console.log(` - ${table}: ${res.rows[0].count}`);
-    } catch(e) {
+    } catch (e) {
       console.log(` - ${table}: ERROR (${e.message})`);
     }
   }

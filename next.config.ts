@@ -1,19 +1,22 @@
 import type { NextConfig } from "next";
 
 const publicSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const publicSupabaseOrigin = (() => {
-  if (!publicSupabaseUrl) return null;
-
+const parseOrigin = (value?: string): string | null => {
+  if (!value) return null;
   try {
-    return new URL(publicSupabaseUrl).origin;
+    return new URL(value).origin;
   } catch {
     return null;
   }
-})();
+};
+const publicSupabaseOrigin = parseOrigin(publicSupabaseUrl);
 const publicSupabaseWebSocketOrigin = (() => {
   if (!publicSupabaseOrigin) return null;
   return publicSupabaseOrigin.replace(/^http/, "ws");
 })();
+const cdnOrigin =
+  parseOrigin(process.env.NEXT_PUBLIC_CDN_URL) ??
+  parseOrigin(process.env.R2_PUBLIC_URL);
 const isHttpsDeployment =
   process.env.NEXT_PUBLIC_SITE_URL?.startsWith("https://") ?? false;
 const enableHstsPreload = process.env.ENABLE_HSTS_PRELOAD === "true";
@@ -25,12 +28,12 @@ const contentSecurityPolicy = [
   "form-action 'self'",
   "frame-ancestors 'none'",
   "object-src 'none'",
-  `script-src 'self' 'unsafe-inline'${isDevelopment ? " 'unsafe-eval'" : ""}`,
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
-  "font-src 'self' data:",
-  `media-src 'self' blob: https://*.supabase.co${publicSupabaseOrigin ? ` ${publicSupabaseOrigin}` : ""}`,
-  `connect-src 'self' https://*.supabase.co wss://*.supabase.co${publicSupabaseOrigin ? ` ${publicSupabaseOrigin}` : ""}${publicSupabaseWebSocketOrigin ? ` ${publicSupabaseWebSocketOrigin}` : ""}`,
+  `script-src 'self' 'unsafe-inline'${isDevelopment ? " 'unsafe-eval'" : ""} https://client.crisp.chat https://va.vercel-scripts.com`,
+  "style-src 'self' 'unsafe-inline' https://client.crisp.chat",
+  "img-src 'self' data: blob: https://client.crisp.chat",
+  "font-src 'self' data: https://client.crisp.chat",
+  `media-src 'self' blob: https://*.supabase.co https://*.r2.cloudflarestorage.com https://api.dictionaryapi.dev${publicSupabaseOrigin ? ` ${publicSupabaseOrigin}` : ""}${cdnOrigin ? ` ${cdnOrigin}` : ""}`,
+  `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.r2.cloudflarestorage.com https://client.crisp.chat wss://client.relay.crisp.chat https://va.vercel-scripts.com https://vitals.vercel-insights.com${publicSupabaseOrigin ? ` ${publicSupabaseOrigin}` : ""}${publicSupabaseWebSocketOrigin ? ` ${publicSupabaseWebSocketOrigin}` : ""}${cdnOrigin ? ` ${cdnOrigin}` : ""}`,
   ...(isHttpsDeployment ? ["upgrade-insecure-requests"] : []),
 ].join("; ");
 

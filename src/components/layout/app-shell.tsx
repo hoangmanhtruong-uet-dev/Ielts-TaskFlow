@@ -74,24 +74,27 @@ export function AppShell({
 
   return (
     <div className="min-h-[100dvh] bg-[#0C0E1D] text-[#EEF0FF] selection:bg-[#5B5FEF] selection:text-white">
-      <a className="skip-link sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-md focus:bg-[#5B5FEF] focus:px-3 focus:py-2 focus:text-white" href="#main-content">
+      <a
+        className="skip-link sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-md focus:bg-[#5B5FEF] focus:px-3 focus:py-2 focus:text-white"
+        href="#main-content"
+      >
         Skip navigation
       </a>
-      
+
       {/* Top sticky navigation */}
       <header className="sticky top-0 z-40 border-b border-[#2B3060] bg-[#0C0E1D]/88 backdrop-blur-xl">
-        <div className="mx-auto flex h-[68px] w-full max-w-[1240px] items-center gap-3 sm:gap-7 px-4 sm:px-6 lg:px-12">
+        <div className="mx-auto flex h-[68px] w-full max-w-[1240px] items-center gap-3 px-4 sm:gap-7 sm:px-6 lg:px-12">
           {/* Brand */}
           <Link
             href="/dashboard"
             prefetch={false}
-            className="flex items-center gap-3 font-extrabold text-[19px] tracking-[-0.02em] text-[#EEF0FF] whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F6E85C] rounded-lg"
+            className="flex items-center gap-3 rounded-lg text-[19px] font-extrabold tracking-[-0.02em] whitespace-nowrap text-[#EEF0FF] focus-visible:ring-2 focus-visible:ring-[#F6E85C] focus-visible:outline-none"
             aria-label="Indigo Scholar"
           >
             <span className="grid size-[34px] place-items-center rounded-[10px] bg-[#5B5FEF] text-[13px] font-extrabold text-white shadow-sm">
               IS
             </span>
-            <span className="hidden sm:inline font-['Bricolage_Grotesque',system-ui,sans-serif]">
+            <span className="font-display hidden sm:inline">
               Indigo Scholar
             </span>
           </Link>
@@ -99,7 +102,7 @@ export function AppShell({
           {/* Horizontal scrollable links */}
           <nav
             aria-label="Main navigation"
-            className="flex flex-1 items-center gap-0.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="flex flex-1 [scrollbar-width:none] items-center gap-0.5 overflow-x-auto [&::-webkit-scrollbar]:hidden"
           >
             {navigation.map((item) => {
               const active = isCurrentRoute(pathname, item.href);
@@ -110,10 +113,10 @@ export function AppShell({
                   prefetch={false}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "relative whitespace-nowrap rounded-[10px] px-3.5 py-2 text-[14.5px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F6E85C]",
+                    "relative rounded-[10px] px-3.5 py-2 text-[14.5px] font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-[#F6E85C] focus-visible:outline-none",
                     active
                       ? "font-semibold text-[#EEF0FF]"
-                      : "text-[#98A0CF] hover:text-[#EEF0FF]"
+                      : "text-[#98A0CF] hover:text-[#EEF0FF]",
                   )}
                 >
                   {item.label}
@@ -136,7 +139,7 @@ export function AppShell({
             aria-label={`User account: ${account.label}`}
             aria-expanded={mobileOpen}
             aria-controls="account-drawer"
-            className="grid size-9 shrink-0 place-items-center rounded-full border-2 border-[#1B1F40] bg-[#5B5FEF] text-sm font-bold text-white transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F6E85C]"
+            className="grid size-9 shrink-0 place-items-center rounded-full border-2 border-[#1B1F40] bg-[#5B5FEF] text-sm font-bold text-white transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-[#F6E85C] focus-visible:outline-none"
           >
             {initial}
           </button>
@@ -144,10 +147,7 @@ export function AppShell({
       </header>
 
       {/* Main Content */}
-      <main
-        id="main-content"
-        className="w-full flex-1 pb-20 lg:pb-0"
-      >
+      <main id="main-content" className="w-full flex-1 pb-20 lg:pb-0">
         {children}
       </main>
 
@@ -173,7 +173,7 @@ export function AppShell({
                 <span className="grid size-8 place-items-center rounded-lg bg-[#5B5FEF] text-xs font-extrabold text-white">
                   IS
                 </span>
-                <span className="font-['Bricolage_Grotesque',system-ui,sans-serif] font-bold text-lg">
+                <span className="font-display text-lg font-bold">
                   Indigo Scholar
                 </span>
               </div>
@@ -210,7 +210,7 @@ export function AppShell({
                 href="/pricing"
                 prefetch={false}
                 onClick={() => setMobileOpen(false)}
-                className="flex min-h-11 items-center gap-3 rounded-xl px-3 font-semibold text-[#F6E85C] hover:bg-[#1B1F40] transition-colors"
+                className="flex min-h-11 items-center gap-3 rounded-xl px-3 font-semibold text-[#F6E85C] transition-colors hover:bg-[#1B1F40]"
               >
                 <Sparkles aria-hidden="true" size={18} />
                 Upgrade to Pro
@@ -219,7 +219,7 @@ export function AppShell({
                 href="/profile"
                 prefetch={false}
                 onClick={() => setMobileOpen(false)}
-                className="flex min-h-11 items-center gap-3 rounded-xl px-3 font-semibold text-[#EEF0FF] hover:bg-[#1B1F40] transition-colors"
+                className="flex min-h-11 items-center gap-3 rounded-xl px-3 font-semibold text-[#EEF0FF] transition-colors hover:bg-[#1B1F40]"
               >
                 <UserRound aria-hidden="true" size={18} />
                 Profile
@@ -228,14 +228,14 @@ export function AppShell({
                 href="/settings"
                 prefetch={false}
                 onClick={() => setMobileOpen(false)}
-                className="flex min-h-11 items-center gap-3 rounded-xl px-3 font-semibold text-[#EEF0FF] hover:bg-[#1B1F40] transition-colors"
+                className="flex min-h-11 items-center gap-3 rounded-xl px-3 font-semibold text-[#EEF0FF] transition-colors hover:bg-[#1B1F40]"
               >
                 <Settings aria-hidden="true" size={18} />
                 Settings
               </Link>
             </div>
 
-            <div className="mt-auto pt-4 border-t border-[#2B3060]">
+            <div className="mt-auto border-t border-[#2B3060] pt-4">
               <LogoutButton className="w-full text-left" />
             </div>
           </aside>
@@ -250,7 +250,8 @@ export function AppShell({
         <div className="mx-auto grid max-w-lg grid-cols-4 gap-1">
           {mobileNavigation.map((item) => {
             const learningRoute =
-              pathname.startsWith("/learn/") || pathname.startsWith("/practice/");
+              pathname.startsWith("/learn/") ||
+              pathname.startsWith("/practice/");
             const active = learningRoute
               ? item.href === "/roadmap"
               : isCurrentRoute(pathname, item.href);
@@ -262,14 +263,14 @@ export function AppShell({
                 prefetch={false}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-xl px-1 text-[10px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F6E85C]",
-                  active ? "text-[#F6E85C]" : "text-[#98A0CF]"
+                  "flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-xl px-1 text-[10px] font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-[#F6E85C] focus-visible:outline-none",
+                  active ? "text-[#F6E85C]" : "text-[#98A0CF]",
                 )}
               >
                 <span
                   className={cn(
                     "grid size-8 place-items-center rounded-full transition-colors",
-                    active ? "bg-[#5B5FEF] text-white" : "text-[#98A0CF]"
+                    active ? "bg-[#5B5FEF] text-white" : "text-[#98A0CF]",
                   )}
                 >
                   <Icon aria-hidden="true" size={17} strokeWidth={1.9} />

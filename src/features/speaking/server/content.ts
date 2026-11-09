@@ -7,6 +7,7 @@ import {
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireCompletedOnboarding } from "@/features/onboarding/server/learner-profile";
 import { getSpeakingAiConfiguration } from "@/features/speaking/server/ai-review";
+import { createSpeakingAudioReadUrl } from "@/features/speaking/server/storage";
 
 export type SpeakingCatalogItem = {
   slug: string;
@@ -28,7 +29,7 @@ export class SpeakingReadError extends Error {
 }
 
 export async function getSpeakingCatalog(): Promise<SpeakingCatalogItem[]> {
-  await requireCompletedOnboarding();
+  const { account } = await requireCompletedOnboarding();
   const supabase = await createSupabaseServerClient();
   const { data: sets, error } = await supabase
     .from("speaking_sets")
@@ -49,6 +50,8 @@ export async function getSpeakingCatalog(): Promise<SpeakingCatalogItem[]> {
     supabase
       .from("speaking_attempts")
       .select("id, speaking_set_id, status, created_at")
+      .eq("user_id", account.user.id)
+      .eq("is_mock", false)
       .in("speaking_set_id", setIds)
       .order("created_at", { ascending: false }),
   ]);
@@ -90,10 +93,13 @@ export async function getSpeakingCatalog(): Promise<SpeakingCatalogItem[]> {
   });
 }
 
-export async function getSpeakingPracticePage(setSlug: string) {
+export async function getSpeakingPracticePage(
+  setSlug: string,
+  options?: { mockAttemptId?: string },
+) {
   const parsed = speakingSlugSchema.safeParse(setSlug);
   if (!parsed.success) return null;
-  await requireCompletedOnboarding();
+  const { account } = await requireCompletedOnboarding();
   const supabase = await createSupabaseServerClient();
   const { data: set, error } = await supabase
     .from("speaking_sets")
@@ -106,6 +112,7 @@ export async function getSpeakingPracticePage(setSlug: string) {
     supabase
       .from("speaking_attempts")
       .select("*")
+      .eq("user_id", account.user.id)
       .eq("speaking_set_id", set.id)
       .order("created_at", { ascending: false }),
     supabase
@@ -116,9 +123,16 @@ export async function getSpeakingPracticePage(setSlug: string) {
   ]);
   if (attemptsResult.error || versionsResult.error)
     throw new SpeakingReadError();
-  const attempt = attemptsResult.data.find(
-    (item) => item.status === "in_progress",
-  );
+  const attempt = options?.mockAttemptId
+    ? attemptsResult.data.find(
+        (item) =>
+          item.id === options.mockAttemptId &&
+          item.status === "in_progress" &&
+          Boolean(item.is_mock),
+      )
+    : attemptsResult.data.find(
+        (item) => item.status === "in_progress" && !item.is_mock,
+      );
   const version =
     versionsResult.data.find(
       (item) => item.id === attempt?.speaking_set_version_id,
@@ -155,10 +169,13 @@ export async function getSpeakingPracticePage(setSlug: string) {
     assets
       .filter((asset) => asset.status === "ready")
       .map(async (asset) => {
-        const { data } = await supabase.storage
-          .from(asset.bucket_id)
-          .createSignedUrl(asset.storage_path, 600);
-        if (data?.signedUrl) audioUrls.set(asset.id, data.signedUrl);
+        const signedUrl = await createSpeakingAudioReadUrl(
+          supabase,
+          asset.bucket_id,
+          asset.storage_path,
+          600,
+        );
+        if (signedUrl) audioUrls.set(asset.id, signedUrl);
       }),
   );
   return {
@@ -175,8 +192,9 @@ export async function getSpeakingPracticePage(setSlug: string) {
     },
     attempt: attempt ? { id: attempt.id, startedAt: attempt.started_at } : null,
     latestAttemptId:
-      attemptsResult.data.find((item) => item.status === "submitted")?.id ??
-      null,
+      attemptsResult.data.find(
+        (item) => item.status === "submitted" && !item.is_mock,
+      )?.id ?? null,
     prompts: promptsResult.data.map((prompt) => {
       const response = responseRows.find(
         (item) => item.prompt_id === prompt.id,
@@ -211,7 +229,7 @@ export async function getSpeakingAttemptReview(
 ) {
   const parsed = speakingRouteSchema.safeParse({ setSlug, attemptId });
   if (!parsed.success || !parsed.data.attemptId) return null;
-  await requireCompletedOnboarding();
+  const { account } = await requireCompletedOnboarding();
   const supabase = await createSupabaseServerClient();
   const { data: set, error: setError } = await supabase
     .from("speaking_sets")
@@ -223,6 +241,7 @@ export async function getSpeakingAttemptReview(
     .from("speaking_attempts")
     .select("*")
     .eq("id", parsed.data.attemptId)
+    .eq("user_id", account.user.id)
     .eq("speaking_set_id", set.id)
     .eq("status", "submitted")
     .maybeSingle();
@@ -232,7 +251,6 @@ export async function getSpeakingAttemptReview(
     versionResult,
     promptsResult,
     responsesResult,
-    runsResult,
     feedbackRunsResult,
     dbConfigResult,
   ] = await Promise.all([
@@ -251,10 +269,6 @@ export async function getSpeakingAttemptReview(
       .select("id, prompt_id, audio_asset_id")
       .eq("attempt_id", attempt.id),
     supabase
-      .from("speaking_transcript_runs")
-      .select("id, response_id, status, error_code, requested_at")
-      .order("requested_at", { ascending: false }),
-    supabase
       .from("speaking_feedback_runs")
       .select("id, status, error_code, requested_at")
       .eq("attempt_id", attempt.id)
@@ -265,7 +279,6 @@ export async function getSpeakingAttemptReview(
     versionResult.error ||
     promptsResult.error ||
     responsesResult.error ||
-    runsResult.error ||
     feedbackRunsResult.error ||
     dbConfigResult.error ||
     !versionResult.data
@@ -276,7 +289,14 @@ export async function getSpeakingAttemptReview(
     item.audio_asset_id ? [item.audio_asset_id] : [],
   );
   const responseIds = responsesResult.data.map((item) => item.id);
-  const [assetsResult, transcriptsResult] = await Promise.all([
+  const [runsResult, assetsResult, transcriptsResult] = await Promise.all([
+    responseIds.length
+      ? supabase
+          .from("speaking_transcript_runs")
+          .select("id, response_id, status, error_code, requested_at")
+          .in("response_id", responseIds)
+          .order("requested_at", { ascending: false })
+      : Promise.resolve({ data: [], error: null }),
     assetIds.length
       ? supabase
           .from("speaking_audio_assets")
@@ -290,15 +310,18 @@ export async function getSpeakingAttemptReview(
           .in("response_id", responseIds)
       : Promise.resolve({ data: [], error: null }),
   ]);
-  if (assetsResult.error || transcriptsResult.error)
+  if (runsResult.error || assetsResult.error || transcriptsResult.error)
     throw new SpeakingReadError();
   const urls = new Map<string, string>();
   await Promise.all(
     (assetsResult.data ?? []).map(async (asset) => {
-      const { data } = await supabase.storage
-        .from(asset.bucket_id)
-        .createSignedUrl(asset.storage_path, 600);
-      if (data?.signedUrl) urls.set(asset.id, data.signedUrl);
+      const signedUrl = await createSpeakingAudioReadUrl(
+        supabase,
+        asset.bucket_id,
+        asset.storage_path,
+        600,
+      );
+      if (signedUrl) urls.set(asset.id, signedUrl);
     }),
   );
   const readyFeedbackRun = feedbackRunsResult.data.find(
@@ -377,11 +400,13 @@ export async function getSpeakingAttemptReview(
 }
 
 export async function getRecentSpeakingAttempts(limit = 8) {
-  await requireCompletedOnboarding();
+  const { account } = await requireCompletedOnboarding();
   const supabase = await createSupabaseServerClient();
   const { data: attempts, error } = await supabase
     .from("speaking_attempts")
     .select("id, speaking_set_id, speaking_set_version_id, submitted_at")
+    .eq("user_id", account.user.id)
+    .eq("is_mock", false)
     .eq("status", "submitted")
     .order("submitted_at", { ascending: false })
     .limit(limit);
@@ -450,12 +475,12 @@ function parseSpeakingFeedbackSnapshot(feedback: {
   estimated_lexical_band: number | null;
   estimated_grammar_band: number | null;
   estimated_pronunciation_band: number | null;
-  strengths: any;
-  suggestions: any;
+  strengths: unknown;
+  suggestions: unknown;
 }): SpeakingFeedbackSnapshot {
   const toNumber = (value: number | null) =>
     value === null ? null : Number(value);
-  const toStrings = (value: Error | unknown) =>
+  const toStrings = (value: unknown) =>
     Array.isArray(value)
       ? value.filter((item): item is string => typeof item === "string")
       : [];
@@ -521,6 +546,7 @@ export async function getSpeakingImprovementReview(
 ) {
   const current = await getSpeakingAttemptReview(setSlug, attemptId);
   if (!current) return null;
+  const { account } = await requireCompletedOnboarding();
   const supabase = await createSupabaseServerClient();
   const { data: set, error: setError } = await supabase
     .from("speaking_sets")
@@ -533,6 +559,7 @@ export async function getSpeakingImprovementReview(
   const { data: previousAttempt, error: attemptError } = await supabase
     .from("speaking_attempts")
     .select("id, submitted_at")
+    .eq("user_id", account.user.id)
     .eq("speaking_set_id", set.id)
     .eq("status", "submitted")
     .lt("submitted_at", current.attempt.submittedAt)

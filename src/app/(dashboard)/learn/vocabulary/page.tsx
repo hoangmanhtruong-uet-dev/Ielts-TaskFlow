@@ -36,7 +36,7 @@ export default async function VocabularyPage() {
         <Bell aria-label="Notifications" size={19} className="text-[#3f28c9]" />
       </header>
 
-      <main className="space-y-7 px-4 py-5 sm:px-6">
+      <div className="space-y-7 px-4 py-5 sm:px-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Vocabulary</h1>
           <p className="mt-1 text-sm text-[#746e80]">
@@ -107,7 +107,7 @@ export default async function VocabularyPage() {
         ) : null}
 
         <VocabularyCatalog entries={entries} />
-      </main>
+      </div>
     </div>
   );
 }

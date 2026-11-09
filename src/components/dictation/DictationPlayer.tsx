@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import React, { useCallback, useEffect } from 'react';
-import type { DictationExercise, DictationSentence } from '@/types/dictation';
-import { useDictationAudio } from '@/hooks/useDictationAudio';
-import { useDictationSession } from '@/hooks/useDictationSession';
-import { DictationAudioControls } from './DictationAudioControls';
-import { DictationProgressBar } from './DictationProgressBar';
-import { DictationSentenceInput } from './DictationSentenceInput';
-import { DictationResultPanel } from './DictationResultPanel';
+import React, { useCallback, useEffect, useRef } from "react";
+import type { DictationExercise, DictationSentence } from "@/types/dictation";
+import { useDictationAudio } from "@/hooks/useDictationAudio";
+import { useDictationSession } from "@/hooks/useDictationSession";
+import { DictationAudioControls } from "./DictationAudioControls";
+import { DictationProgressBar } from "./DictationProgressBar";
+import { DictationSentenceInput } from "./DictationSentenceInput";
+import { DictationResultPanel } from "./DictationResultPanel";
 
 interface Props {
   exercise: DictationExercise;
@@ -30,7 +30,7 @@ export function DictationPlayer({ exercise, sentences }: Props) {
     if (session.currentSentence) {
       audio.playSentence(
         session.currentSentence.start_time,
-        session.currentSentence.end_time
+        session.currentSentence.end_time,
       );
     }
   }, [audio, session.currentSentence]);
@@ -38,31 +38,36 @@ export function DictationPlayer({ exercise, sentences }: Props) {
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyboard = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.code === 'Space') {
+      if (e.ctrlKey && e.code === "Space") {
         e.preventDefault();
         handleReplaySentence();
       }
     };
 
-    window.addEventListener('keydown', handleKeyboard);
-    return () => window.removeEventListener('keydown', handleKeyboard);
+    window.addEventListener("keydown", handleKeyboard);
+    return () => window.removeEventListener("keydown", handleKeyboard);
   }, [handleReplaySentence]);
+
+  const { isLoading: isAudioLoading, playSentence: playAudioSentence } = audio;
+  const hasAutoPlayedRef = useRef(false);
 
   // Auto-play first sentence on mount
   useEffect(() => {
-    if (sentences.length > 0 && !audio.isLoading) {
-      const timer = setTimeout(() => {
-        audio.playSentence(sentences[0].start_time, sentences[0].end_time);
-      }, 500);
-      return () => clearTimeout(timer);
+    if (hasAutoPlayedRef.current || sentences.length === 0 || isAudioLoading) {
+      return;
     }
-  }, [audio.isLoading]); 
+    const timer = setTimeout(() => {
+      hasAutoPlayedRef.current = true;
+      playAudioSentence(sentences[0].start_time, sentences[0].end_time);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [isAudioLoading, playAudioSentence, sentences]);
 
   const handleSubmit = useCallback(
     async (userInput: string) => {
       return session.submitAnswer(userInput, audio.replayCount);
     },
-    [session, audio.replayCount]
+    [session, audio.replayCount],
   );
 
   const handleNext = useCallback(() => {
@@ -96,12 +101,12 @@ export function DictationPlayer({ exercise, sentences }: Props) {
   const completedIds = new Set(session.results.keys());
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="mx-auto max-w-3xl space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-800">{exercise.title}</h1>
         {exercise.description && (
-          <p className="text-gray-500 mt-1">{exercise.description}</p>
+          <p className="mt-1 text-gray-500">{exercise.description}</p>
         )}
       </div>
 
@@ -134,6 +139,7 @@ export function DictationPlayer({ exercise, sentences }: Props) {
       {/* Input */}
       {session.currentSentence && (
         <DictationSentenceInput
+          key={session.currentSentence.id}
           sentenceId={session.currentSentence.id}
           hint={session.currentSentence.hint}
           isSubmitting={session.isSubmitting}
@@ -147,7 +153,7 @@ export function DictationPlayer({ exercise, sentences }: Props) {
       )}
 
       {/* Keyboard shortcuts hint */}
-      <div className="text-center text-xs text-gray-400 space-x-4">
+      <div className="space-x-4 text-center text-xs text-gray-400">
         <span>Ctrl+Space: Nghe lại</span>
         <span>Enter: Kiểm tra / Câu tiếp</span>
       </div>

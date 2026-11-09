@@ -174,12 +174,13 @@ export async function getReadingCatalog(): Promise<ReadingCatalogItem[]> {
 
 export async function getReadingPracticePage(
   exerciseSlug: string,
+  options?: { mockAttemptId?: string },
 ): Promise<ReadingPracticePageData | null> {
   const route = readingRouteSchema
     .pick({ exerciseSlug: true })
     .safeParse({ exerciseSlug });
   if (!route.success) return null;
-  await requireCompletedOnboarding();
+  const { account } = await requireCompletedOnboarding();
   const supabase = await createSupabaseServerClient();
 
   const { data: exercise, error: exerciseError } = await supabase
@@ -202,16 +203,24 @@ export async function getReadingPracticePage(
     supabase
       .from("learner_attempts")
       .select(
-        "id, exercise_set_version_id, status, last_saved_at, submitted_at, created_at",
+        "id, exercise_set_version_id, status, is_mock, last_saved_at, submitted_at, created_at",
       )
+      .eq("user_id", account.user.id)
       .eq("exercise_set_id", exercise.id)
       .order("created_at", { ascending: false }),
   ]);
   if (versionsResult.error || attemptsResult.error)
     throw new ReadingReadError();
-  const activeAttempt = attemptsResult.data.find(
-    (item) => item.status === "in_progress",
-  );
+  const activeAttempt = options?.mockAttemptId
+    ? attemptsResult.data.find(
+        (item) =>
+          item.id === options.mockAttemptId &&
+          item.status === "in_progress" &&
+          Boolean(item.is_mock),
+      )
+    : attemptsResult.data.find(
+        (item) => item.status === "in_progress" && !item.is_mock,
+      );
   const version =
     versionsResult.data.find(
       (item) => item.id === activeAttempt?.exercise_set_version_id,
@@ -402,7 +411,9 @@ export async function getReadingPracticePage(
           }
         : null,
     latestResultId:
-      attemptsResult.data.find((item) => item.status === "scored")?.id ?? null,
+      attemptsResult.data.find(
+        (item) => item.status === "scored" && !item.is_mock,
+      )?.id ?? null,
   };
 }
 
@@ -421,6 +432,9 @@ export async function getReadingPracticeResult(
   const parsed = readingPracticeResultSchema.safeParse(data);
   if (!parsed.success)
     throw new ReadingReadError("Kết quả Reading không hợp lệ.");
+  const questionIds = parsed.data.questions.map(
+    (question) => question.questionId,
+  );
   const [
     { data: exercise },
     { data: version },
@@ -438,10 +452,13 @@ export async function getReadingPracticeResult(
       .select("title, summary")
       .eq("id", parsed.data.exerciseSetVersionId)
       .maybeSingle(),
-    supabase
-      .from("exercise_options")
-      .select("id, label, position")
-      .order("position"),
+    questionIds.length
+      ? supabase
+          .from("exercise_options")
+          .select("id, label, position")
+          .in("question_id", questionIds)
+          .order("position")
+      : Promise.resolve({ data: [], error: null }),
   ]);
   if (optionsError) throw new ReadingReadError();
   if (!exercise || !version) return null;

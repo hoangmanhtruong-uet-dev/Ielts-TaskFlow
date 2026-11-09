@@ -25,7 +25,7 @@ import { FaqAccordion } from "@/components/shared/faq-accordion";
 export const metadata: Metadata = {
   title: "Học IELTS có lộ trình",
   description:
-    "IELTS Flow xây lộ trình từ mục tiêu, quỹ thời gian và kết quả luyện tập thực tế của bạn.",
+    "Indigo Scholar xây lộ trình từ mục tiêu, quỹ thời gian và kết quả luyện tập thực tế của bạn.",
 };
 
 const learningRhythm = [
@@ -53,7 +53,7 @@ const learningRhythm = [
 
 const faqs = [
   {
-    question: "IELTS Flow xây lộ trình học như thế nào?",
+    question: "Indigo Scholar xây lộ trình học như thế nào?",
     answer:
       "Lộ trình dựa trên mục tiêu, quỹ thời gian, kỹ năng ưu tiên và kết quả luyện tập đã lưu của bạn. Nội dung tiếp theo được đề xuất từ dữ liệu học thật, không phải tiến độ minh họa.",
   },
@@ -70,7 +70,7 @@ const faqs = [
   {
     question: "Tiến độ được ghi nhận ra sao?",
     answer:
-      "IELTS Flow chỉ hiển thị hoạt động, kết quả và bài đã hoàn thành từ dữ liệu thật của tài khoản. Hệ thống không tạo điểm số hoặc thành tích giả.",
+      "Indigo Scholar chỉ hiển thị hoạt động, kết quả và bài đã hoàn thành từ dữ liệu thật của tài khoản. Hệ thống không tạo điểm số hoặc thành tích giả.",
   },
 ];
 
@@ -115,17 +115,19 @@ export default function HomePage() {
                 />
                 Lộ trình hiểu bạn
               </div>
-              <RevealFade>
-                <h1 className="mt-5 text-4xl leading-[1.1] font-extrabold tracking-tighter text-[var(--foreground)] sm:text-5xl lg:text-[3.55rem]">
-                  Học đúng bài, tiến bộ rõ mỗi ngày
-                </h1>
-              </RevealFade>
+              <h1 className="mt-5 text-4xl leading-[1.1] font-extrabold tracking-tighter text-[var(--foreground)] sm:text-5xl lg:text-[3.55rem]">
+                Học đúng bài, tiến bộ rõ mỗi ngày
+              </h1>
               <p className="mt-5 max-w-[48ch] text-base leading-7 text-[var(--muted-foreground)] sm:text-lg">
                 Indigo Scholar biến mục tiêu và kết quả luyện tập của bạn thành
                 một hành trình học dễ theo, dễ duy trì.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-                <Button asChild size="lg" className="sm:min-w-48 active:scale-[0.98] transition-transform">
+                <Button
+                  asChild
+                  size="lg"
+                  className="transition-transform active:scale-[0.98] sm:min-w-48"
+                >
                   <Link href="/register">
                     Bắt đầu học
                     <ArrowRight
@@ -195,7 +197,7 @@ export default function HomePage() {
             </RevealFade>
 
             <div className="mt-10 grid gap-4 lg:grid-cols-12">
-              <article className="group relative overflow-hidden rounded-[2rem] bg-[var(--primary)] p-7 text-white shadow-[0_18px_50px_rgb(var(--shadow-color)/0.18)] hover:-translate-y-1 hover:shadow-xl transition-all duration-300 sm:p-9 lg:col-span-7 lg:min-h-80">
+              <article className="group relative overflow-hidden rounded-[2rem] bg-[var(--primary)] p-7 text-white shadow-[0_18px_50px_rgb(var(--shadow-color)/0.18)] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:p-9 lg:col-span-7 lg:min-h-80">
                 <div
                   aria-hidden="true"
                   className="absolute -right-14 -bottom-16 size-56 rounded-full bg-white/10"
@@ -210,7 +212,7 @@ export default function HomePage() {
                 </p>
               </article>
 
-              <article className="rounded-[2rem] border border-[var(--border)] bg-[var(--accent-subtle)] p-7 hover:-translate-y-1 hover:shadow-lg transition-all duration-300 sm:p-8 lg:col-span-5">
+              <article className="rounded-[2rem] border border-[var(--border)] bg-[var(--accent-subtle)] p-7 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg sm:p-8 lg:col-span-5">
                 <NotebookPen
                   aria-hidden="true"
                   size={30}
@@ -226,7 +228,7 @@ export default function HomePage() {
                 </p>
               </article>
 
-              <article className="rounded-[2rem] border border-[var(--primary-soft)] bg-[var(--primary-subtle)] p-7 hover:-translate-y-1 hover:shadow-lg transition-all duration-300 sm:p-8 lg:col-span-5">
+              <article className="rounded-[2rem] border border-[var(--primary-soft)] bg-[var(--primary-subtle)] p-7 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg sm:p-8 lg:col-span-5">
                 <div
                   className="flex gap-3 text-[var(--primary)]"
                   aria-hidden="true"
@@ -243,7 +245,7 @@ export default function HomePage() {
                 </p>
               </article>
 
-              <article className="rounded-[2rem] border border-[var(--border)] bg-[var(--surface-raised)] p-7 shadow-[0_18px_50px_rgb(var(--shadow-color)/0.08)] hover:-translate-y-1 hover:shadow-xl transition-all duration-300 sm:p-9 lg:col-span-7">
+              <article className="rounded-[2rem] border border-[var(--border)] bg-[var(--surface-raised)] p-7 shadow-[0_18px_50px_rgb(var(--shadow-color)/0.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:p-9 lg:col-span-7">
                 <CheckCircle2
                   aria-hidden="true"
                   size={32}
@@ -326,7 +328,7 @@ export default function HomePage() {
                 id="faq-title"
                 className="mt-5 text-3xl font-extrabold tracking-tighter sm:text-4xl"
               >
-                Bạn hỏi, IELTS Flow trả lời
+                Bạn hỏi, Indigo Scholar trả lời
               </h2>
               <p className="mt-4 max-w-md leading-7 text-[var(--muted-foreground)]">
                 Những điều quan trọng trước khi bạn bắt đầu một lộ trình học
@@ -363,7 +365,7 @@ export default function HomePage() {
               <Button
                 asChild
                 size="lg"
-                className="relative mt-8 bg-white text-[var(--primary)] shadow-[0_5px_0_#d3def8] hover:bg-[var(--accent-subtle)] active:translate-y-1 active:shadow-none transition-all"
+                className="relative mt-8 bg-white text-[var(--primary)] shadow-[0_5px_0_#d3def8] transition-all hover:bg-[var(--accent-subtle)] active:translate-y-1 active:shadow-none"
               >
                 <Link href="/register">
                   Bắt đầu học ngay
@@ -383,15 +385,27 @@ export default function HomePage() {
           <div className="flex flex-wrap gap-5">
             <Link
               className="font-semibold hover:text-[var(--primary)] focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:outline-none"
+              href="/pricing"
+            >
+              Bảng giá
+            </Link>
+            <Link
+              className="font-semibold hover:text-[var(--primary)] focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:outline-none"
               href="/terms"
             >
-              Terms of Service
+              Điều khoản sử dụng
             </Link>
             <Link
               className="font-semibold hover:text-[var(--primary)] focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:outline-none"
               href="/privacy"
             >
-              Privacy Policy
+              Chính sách quyền riêng tư
+            </Link>
+            <Link
+              className="font-semibold hover:text-[var(--primary)] focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:outline-none"
+              href="/refund"
+            >
+              Chính sách hoàn tiền
             </Link>
             <Link
               className="font-semibold hover:text-[var(--primary)] focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:outline-none"
@@ -407,10 +421,12 @@ export default function HomePage() {
             </Link>
           </div>
         </Container>
-        <Container className="mt-8 pt-8 border-t border-[var(--border)] text-xs text-[var(--muted-foreground)]">
+        <Container className="mt-8 border-t border-[var(--border)] pt-8 text-xs text-[var(--muted-foreground)]">
           <p className="max-w-3xl">
-            IELTS is a registered trademark of University of Cambridge ESOL, the British Council, and IDP Education Australia. 
-            This website is not affiliated, approved or endorsed by the University of Cambridge ESOL, the British Council, and IDP Education Australia.
+            IELTS is a registered trademark of University of Cambridge ESOL, the
+            British Council, and IDP Education Australia. This website is not
+            affiliated, approved or endorsed by the University of Cambridge
+            ESOL, the British Council, and IDP Education Australia.
           </p>
         </Container>
       </footer>

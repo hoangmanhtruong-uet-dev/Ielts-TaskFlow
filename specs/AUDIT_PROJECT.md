@@ -23,18 +23,18 @@ Codebase đang vận hành trên nền tảng công nghệ hiện đại, kết 
 
 ### 2. Tiến độ Tính năng (Feature Inventory)
 
-| Phân hệ / Kỹ năng | Mức độ Hoàn thiện | Mô tả Hiện trạng Chi tiết |
-| :--- | :--- | :--- |
-| **Reading Engine** | **Hoàn thành (Done)** | Interface Split-view (văn bản bên trái, câu hỏi bên phải), Passage Viewer, Debounced Draft Autosave qua PostgreSQL RPC, Server-Authoritative Timer, Answer Key bảo mật trong `private` schema. |
-| **Listening Engine** | **Hoàn thành (Done)** | Audio Player stream qua Cloudflare R2 / Supabase Storage, Playback rate policy (chặn tua bài trong thi), Fill-in-blanks & MCQs runner, tích hợp Dictation practice. |
-| **Writing Engine** | **Hoàn thành (Done)** | Task 1 & Task 2 runners, Real-time Word Counter, Immutable Submission, Asynchronous AI Feedback với OpenAI Structured Outputs + HMAC SHA-256 Signature verification. |
-| **Speaking Engine** | **Hoàn thành (Done)** | Web Audio API Recorder, Waveform Visualizer, Storage Direct Upload qua Presigned URLs, WebM/M4A duration parser, Transcript & AI assessment pipeline. |
-| **Authentication & Profile** | **Hoàn thành (Done)** | Supabase Auth (Email/Pass, Anonymous Guest Mode), Router Protection Middleware (`proxy.ts`), Session Management, Profile settings & target score configuration. |
-| **Progressive Onboarding** | **Hoàn thành (Done)** | Onboarding Wizard 4 bước thu thập target band, commitment time, daily goals. Cho phép Skip để vào thẳng Dashboard. |
-| **Dashboard & Progress** | **Hoàn thành (Done)** | Dashboard tổng hợp Daily Plan, Heatmap học tập 5 tuần, Skill Progress Cards, CEFR level indicator, Fast Quiz inline component. |
-| **Learner Analytics** | **Hoàn thành (Done)** | Phase 10B Analytics Engine: Accuracy rate tracking theo Taxonomy tags (Skill $\rightarrow$ Question Type $\rightarrow$ Grammar/Vocab tag), Weak Areas Alerting (< 70% accuracy). |
-| **Smart Error Notebook** | **Hoàn thành (Done)** | Sổ lỗi tự động trích xuất câu sai từ Reading/Listening/Grammar kèm giải thích, quản lý vòng đời lỗi (`Unresolved` $\rightarrow$ `Reviewing` $\rightarrow$ `Mastered`). |
-| **Supabase Integration** | **Hoàn thành (Done)** | 43 Migration SQL files trong `supabase/migrations/`, RLS policy phủ 100% user tables, RPC functions với `SECURITY INVOKER` / `SECURITY DEFINER` phân quyền gắt gao. |
+| Phân hệ / Kỹ năng            | Mức độ Hoàn thiện     | Mô tả Hiện trạng Chi tiết                                                                                                                                                                      |
+| :--------------------------- | :-------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Reading Engine**           | **Hoàn thành (Done)** | Interface Split-view (văn bản bên trái, câu hỏi bên phải), Passage Viewer, Debounced Draft Autosave qua PostgreSQL RPC, Server-Authoritative Timer, Answer Key bảo mật trong `private` schema. |
+| **Listening Engine**         | **Hoàn thành (Done)** | Audio Player stream qua Cloudflare R2 / Supabase Storage, Playback rate policy (chặn tua bài trong thi), Fill-in-blanks & MCQs runner, tích hợp Dictation practice.                            |
+| **Writing Engine**           | **Hoàn thành (Done)** | Task 1 & Task 2 runners, Real-time Word Counter, Immutable Submission, Asynchronous AI Feedback với OpenAI Structured Outputs + HMAC SHA-256 Signature verification.                           |
+| **Speaking Engine**          | **Hoàn thành (Done)** | Web Audio API Recorder, Waveform Visualizer, Storage Direct Upload qua Presigned URLs, WebM/M4A duration parser, Transcript & AI assessment pipeline.                                          |
+| **Authentication & Profile** | **Hoàn thành (Done)** | Supabase Auth (Email/Pass, Anonymous Guest Mode), Router Protection Middleware (`proxy.ts`), Session Management, Profile settings & target score configuration.                                |
+| **Progressive Onboarding**   | **Hoàn thành (Done)** | Onboarding Wizard 4 bước thu thập target band, commitment time, daily goals. Cho phép Skip để vào thẳng Dashboard.                                                                             |
+| **Dashboard & Progress**     | **Hoàn thành (Done)** | Dashboard tổng hợp Daily Plan, Heatmap học tập 5 tuần, Skill Progress Cards, CEFR level indicator, Fast Quiz inline component.                                                                 |
+| **Learner Analytics**        | **Hoàn thành (Done)** | Phase 10B Analytics Engine: Accuracy rate tracking theo Taxonomy tags (Skill $\rightarrow$ Question Type $\rightarrow$ Grammar/Vocab tag), Weak Areas Alerting (< 70% accuracy).               |
+| **Smart Error Notebook**     | **Hoàn thành (Done)** | Sổ lỗi tự động trích xuất câu sai từ Reading/Listening/Grammar kèm giải thích, quản lý vòng đời lỗi (`Unresolved` $\rightarrow$ `Reviewing` $\rightarrow$ `Mastered`).                         |
+| **Supabase Integration**     | **Hoàn thành (Done)** | 43 Migration SQL files trong `supabase/migrations/`, RLS policy phủ 100% user tables, RPC functions với `SECURITY INVOKER` / `SECURITY DEFINER` phân quyền gắt gao.                            |
 
 ---
 
@@ -53,12 +53,13 @@ Codebase đang vận hành trên nền tảng công nghệ hiện đại, kết 
 > [!WARNING]  
 > **Trùng lặp lớn giữa các Skill Runners:**  
 > Bốn component runner kỹ năng chính có dung lượng rất lớn và bị trùng lặp logic tới **35% - 40%**:
+>
 > - `src/features/reading/components/reading-runner.tsx` (23.4 KB)
 > - `src/features/listening/components/listening-runner.tsx` (23.6 KB)
 > - `src/features/writing/components/writing-runner.tsx` (19.0 KB)
 > - `src/features/speaking/components/speaking-runner.tsx` (17.7 KB)
 > - `src/features/practice/components/practice-runner.tsx` (22.8 KB)
-> 
+>
 > Cả 5 component trên đều tự khai báo lại state đếm ngược (countdown timer), dialog xác nhận nộp bài (confirm submit modal), thanh chuyển câu hỏi (question navigator), và xử lý autosave nháp. Việc này làm tăng tổng dung lượng bundle và gây khó khăn khi cần sửa đổi UI/UX chuẩn cho toàn ứng dụng.
 
 ---
@@ -205,19 +206,21 @@ gantt
 
 ## PHẦN 5: KẾT LUẬN & ĐÁNH GIÁ TỔNG QUAN
 
-Codebase dự án `App-hoc-tieng-anh` hiện tại có **nền tảng kiến trúc xuất sắc**, tuân thủ nguyên tắc Server-First, bảo mật dữ liệu cao (cô lập Answer Keys ở database level, mã hóa HMAC SHA-256 cho kết quả AI) và hệ thống kiểm thử tự động (Vitest + Playwright) rất đáng tin cậy. 
+Codebase dự án `App-hoc-tieng-anh` hiện tại có **nền tảng kiến trúc xuất sắc**, tuân thủ nguyên tắc Server-First, bảo mật dữ liệu cao (cô lập Answer Keys ở database level, mã hóa HMAC SHA-256 cho kết quả AI) và hệ thống kiểm thử tự động (Vitest + Playwright) rất đáng tin cậy.
 
-Những vấn đề tồn tại chủ yếu nằm ở **nợ kỹ thuật tái cấu trúc code (DRY)** khi 4 kỹ năng được phát triển song song và **cần tối ưu hóa bundle size / Server boundaries**. 
+Những vấn đề tồn tại chủ yếu nằm ở **nợ kỹ thuật tái cấu trúc code (DRY)** khi 4 kỹ năng được phát triển song song và **cần tối ưu hóa bundle size / Server boundaries**.
 
 Việc thực thi nghiêm túc **Action Plan P0 và P1** trong 2 sprint tới sẽ đưa codebase đạt tiêu chuẩn kỹ thuật cấp doanh nghiệp (Production-ready Enterprise Grade), sẵn sàng mở rộng quy mô phục vụ hàng chục ngàn học viên thi IELTS đồng thời.
 
 # Yêu cầu phát triển Module Học Tập IELTS
 
 **Mục tiêu:** Lên kế hoạch xây dựng UI/UX, Tính năng và Logic cho các trang:
+
 1. Trang học lý thuyết (Video, Markdown text, Highlight từ vựng...)
 2. Trang làm bài tập thực hành (Multiple choice, Fill in blanks, Matching...)
 
 **Yêu cầu cụ thể:**
+
 - UI/UX: Cần hiện đại, chống phân tâm, có chế độ Dark mode, thanh tiến độ học tập rõ ràng.
 - Tính năng: Có chấm điểm tự động, lưu trạng thái bài học (đang học dở).
 - Logic: Validate dữ liệu bài tập qua Server Action, chống spam, giới hạn thời gian làm bài.

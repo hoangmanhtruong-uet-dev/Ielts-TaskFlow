@@ -1,113 +1,235 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import localforage from "localforage";
+
 import { saveExerciseDraftAction } from "../api/save-draft-action";
+
+export type AutosaveStatus =
+  "idle" | "saving" | "saved" | "error" | "offline_saved";
 
 export function useAutosaveDraft({
   attemptId,
+  storageKey,
   answers,
-  intervalMs = 5000,
+  onServerSync,
+  debounceMs = 2000,
+  intervalMs = 15000,
   enabled = true,
 }: {
   attemptId: string;
-  answers: Record<string, string | string[] | Record<string, string>>;
+  storageKey?: string;
+  answers: Record<string, string | string[] | Record<string, unknown>>;
+  onServerSync?: (
+    answers: Record<string, string | string[] | Record<string, unknown>>,
+  ) => Promise<boolean>;
+  debounceMs?: number;
   intervalMs?: number;
   enabled?: boolean;
 }) {
-  const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error" | "offline_saved">("idle");
-  const [isOnline, setIsOnline] = useState(true);
-  const lastSavedAnswersRef = useRef(JSON.stringify(answers));
-  const answersRef = useRef(answers);
+  const [status, setStatus] = useState<AutosaveStatus>("idle");
+  const [isOnline, setIsOnline] = useState(() =>
+    typeof navigator === "undefined" ? true : navigator.onLine,
+  );
 
-  // Initialize network status
+  const resolvedStorageKey =
+    storageKey || (attemptId ? `draft_${attemptId}` : "");
+
+  const answersRef = useRef(answers);
+  const lastSyncedSnapshotRef = useRef(JSON.stringify(answers));
+  const isDirtyRef = useRef(false);
+  const inFlightPromiseRef = useRef<Promise<boolean> | null>(null);
+  const pendingResyncRef = useRef(false);
+  const onServerSyncRef = useRef(onServerSync);
+  const executeSaveRef = useRef<(force?: boolean) => Promise<boolean>>(
+    async () => true,
+  );
+
+  useEffect(() => {
+    onServerSyncRef.current = onServerSync;
+  }, [onServerSync]);
+
+  useEffect(() => {
+    answersRef.current = answers;
+    const serialized = JSON.stringify(answers);
+    isDirtyRef.current = serialized !== lastSyncedSnapshotRef.current;
+  }, [answers]);
+
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
-    
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
     };
   }, []);
 
-  // Keep ref up to date to avoid dependency changes in effect
-  useEffect(() => {
-    answersRef.current = answers;
-  }, [answers]);
+  const executeSave = useCallback(
+    async (force = false): Promise<boolean> => {
+      if (!enabled) return true;
+      if (!attemptId && !onServerSyncRef.current) return true;
 
-  const saveDraft = useCallback(async () => {
-    if (!enabled || !attemptId) return;
+      const snapshotToSave = JSON.stringify(answersRef.current);
+      const needsSync =
+        snapshotToSave !== lastSyncedSnapshotRef.current || isDirtyRef.current;
 
-    const currentAnswersString = JSON.stringify(answersRef.current);
-    if (currentAnswersString === lastSavedAnswersRef.current) {
-      // Nothing changed
-      return;
-    }
-
-    setStatus("saving");
-    try {
-      if (!isOnline) {
-        // Offline: save to localforage
-        await localforage.setItem(`draft_${attemptId}`, answersRef.current);
-        lastSavedAnswersRef.current = currentAnswersString;
-        setStatus("offline_saved");
-        return;
+      if (!needsSync && !force) {
+        return true;
       }
 
-      const res = await saveExerciseDraftAction({
-        attemptId,
-        answers: answersRef.current,
-      });
-
-      if (res.success) {
-        lastSavedAnswersRef.current = currentAnswersString;
-        setStatus("saved");
-        setTimeout(() => setStatus("idle"), 2000);
-        // Clear local draft once synced
-        await localforage.removeItem(`draft_${attemptId}`);
-      } else {
-        setStatus("error");
+      if (inFlightPromiseRef.current) {
+        pendingResyncRef.current = true;
+        return inFlightPromiseRef.current;
       }
-    } catch (err) {
-      console.error("Draft save error:", err);
-      // Fallback to localforage on error
-      await localforage.setItem(`draft_${attemptId}`, answersRef.current);
-      setStatus("offline_saved");
-    }
-  }, [attemptId, enabled, isOnline]);
 
-  // Sync offline drafts when coming back online
-  useEffect(() => {
-    if (isOnline && enabled) {
-      localforage.getItem(`draft_${attemptId}`).then((localDraft) => {
-        if (localDraft) {
-          saveDraft(); // Will sync localDraft because answersRef should contain it or newer
+      const run = async (): Promise<boolean> => {
+        const currentOnline =
+          typeof navigator !== "undefined"
+            ? navigator.onLine && isOnline
+            : isOnline;
+
+        setStatus("saving");
+
+        const currentAnswers = answersRef.current;
+        const currentSnapshot = JSON.stringify(currentAnswers);
+
+        if (!currentOnline) {
+          if (resolvedStorageKey) {
+            await localforage
+              .setItem(resolvedStorageKey, currentAnswers)
+              .catch(() => {});
+          }
+          setStatus("offline_saved");
+          return false;
         }
+
+        try {
+          let synced = false;
+          if (onServerSyncRef.current) {
+            synced = await onServerSyncRef.current(currentAnswers);
+          } else if (attemptId) {
+            const res = await saveExerciseDraftAction({
+              attemptId,
+              answers: currentAnswers as Record<
+                string,
+                string | string[] | Record<string, string>
+              >,
+            });
+            synced = res.success;
+          }
+
+          if (synced) {
+            lastSyncedSnapshotRef.current = currentSnapshot;
+            isDirtyRef.current =
+              JSON.stringify(answersRef.current) !== currentSnapshot;
+            setStatus("saved");
+            if (resolvedStorageKey) {
+              await localforage.removeItem(resolvedStorageKey).catch(() => {});
+            }
+            return true;
+          }
+
+          if (resolvedStorageKey) {
+            await localforage
+              .setItem(resolvedStorageKey, currentAnswers)
+              .catch(() => {});
+          }
+          setStatus("error");
+          return false;
+        } catch {
+          if (resolvedStorageKey) {
+            await localforage
+              .setItem(resolvedStorageKey, currentAnswers)
+              .catch(() => {});
+          }
+          setStatus(currentOnline ? "error" : "offline_saved");
+          return false;
+        }
+      };
+
+      const promise = run().finally(() => {
+        inFlightPromiseRef.current = null;
       });
-    }
-  }, [isOnline, attemptId, enabled, saveDraft]);
+      inFlightPromiseRef.current = promise;
 
-  // Periodic autosave
+      const firstOk = await promise;
+
+      if (
+        pendingResyncRef.current ||
+        JSON.stringify(answersRef.current) !== snapshotToSave
+      ) {
+        pendingResyncRef.current = false;
+        return await executeSaveRef.current(false);
+      }
+
+      return firstOk;
+    },
+    [attemptId, enabled, isOnline, resolvedStorageKey],
+  );
+
+  useEffect(() => {
+    executeSaveRef.current = executeSave;
+  }, [executeSave]);
+
+  // Debounced autosave whenever answers diverge from last server-synced snapshot
   useEffect(() => {
     if (!enabled) return;
-    const interval = setInterval(saveDraft, intervalMs);
+    if (JSON.stringify(answers) === lastSyncedSnapshotRef.current) return;
+
+    const timer = setTimeout(() => {
+      void executeSave(false);
+    }, debounceMs);
+
+    return () => clearTimeout(timer);
+  }, [answers, debounceMs, enabled, executeSave]);
+
+  // Sync any unsaved/offline drafts automatically when transitioning back online
+  const wasOfflineRef = useRef(!isOnline);
+  useEffect(() => {
+    const transitionedOnline = wasOfflineRef.current && isOnline;
+    wasOfflineRef.current = !isOnline;
+    if (!transitionedOnline || !enabled) return;
+    void executeSave(true);
+  }, [isOnline, enabled, executeSave]);
+
+  // Periodic fallback interval
+  useEffect(() => {
+    if (!enabled || intervalMs <= 0) return;
+    const interval = setInterval(() => {
+      if (
+        isDirtyRef.current ||
+        status === "offline_saved" ||
+        status === "error"
+      ) {
+        void executeSave(false);
+      }
+    }, intervalMs);
     return () => clearInterval(interval);
-  }, [saveDraft, intervalMs, enabled]);
+  }, [executeSave, intervalMs, enabled, status]);
 
-  // Save on page hide/unload
+  // Flush on page hide and warn user if unsaved changes exist before unload
   useEffect(() => {
     if (!enabled) return;
-    
+
     const handleVisibilityChange = () => {
-      if (document.visibilityState === "hidden") {
-        saveDraft();
+      if (document.visibilityState === "hidden" && isDirtyRef.current) {
+        void executeSave(false);
       }
     };
 
-    const handleBeforeUnload = () => {
-      saveDraft();
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (
+        isDirtyRef.current ||
+        Boolean(inFlightPromiseRef.current) ||
+        status === "offline_saved" ||
+        status === "error"
+      ) {
+        void executeSave(false);
+        event.preventDefault();
+        event.returnValue = "";
+      }
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
@@ -117,7 +239,36 @@ export function useAutosaveDraft({
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, [saveDraft, enabled]);
+  }, [executeSave, enabled, status]);
 
-  return { status, forceSave: saveDraft };
+  const flushNow = useCallback(async (): Promise<boolean> => {
+    if (!enabled) return true;
+    if (inFlightPromiseRef.current) {
+      pendingResyncRef.current = true;
+      await inFlightPromiseRef.current;
+    }
+    if (
+      isDirtyRef.current ||
+      JSON.stringify(answersRef.current) !== lastSyncedSnapshotRef.current
+    ) {
+      return await executeSave(true);
+    }
+    return true;
+  }, [enabled, executeSave]);
+
+  const clearLocalDraft = useCallback(async () => {
+    isDirtyRef.current = false;
+    lastSyncedSnapshotRef.current = JSON.stringify(answersRef.current);
+    if (resolvedStorageKey) {
+      await localforage.removeItem(resolvedStorageKey).catch(() => {});
+    }
+  }, [resolvedStorageKey]);
+
+  return {
+    status,
+    isOnline,
+    forceSave: flushNow,
+    flushNow,
+    clearLocalDraft,
+  };
 }

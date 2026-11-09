@@ -1,7 +1,29 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  useSyncExternalStore,
+} from "react";
 import * as THREE from "three";
+
+const subscribeNoop = () => () => {};
+let cachedTrajectoryWebGL: boolean | null = null;
+function getWebGLSupport(): boolean {
+  if (cachedTrajectoryWebGL !== null) return cachedTrajectoryWebGL;
+  try {
+    const canvas = document.createElement("canvas");
+    cachedTrajectoryWebGL = Boolean(
+      window.WebGLRenderingContext &&
+      (canvas.getContext("webgl") || canvas.getContext("experimental-webgl")),
+    );
+  } catch {
+    cachedTrajectoryWebGL = false;
+  }
+  return cachedTrajectoryWebGL;
+}
 
 export interface TrajectoryWeek {
   id: number;
@@ -15,18 +37,25 @@ interface ScoreTrajectory3DProps {
   weeks: TrajectoryWeek[];
   selectedWeekIndex: number;
   onSelectWeek: (index: number) => void;
+  targetBand?: number | null;
 }
 
 export function ScoreTrajectory3D({
   weeks,
   selectedWeekIndex,
   onSelectWeek,
+  targetBand = null,
 }: ScoreTrajectory3DProps) {
   const mountRef = useRef<HTMLDivElement>(null);
-  const [webGLSupported, setWebGLSupported] = useState(true);
+  const initialWebGL = useSyncExternalStore(
+    subscribeNoop,
+    getWebGLSupport,
+    () => true,
+  );
+  const [rendererFailed, setRendererFailed] = useState(false);
+  const webGLSupported = initialWebGL && !rendererFailed;
   const [is3DView, setIs3DView] = useState(true);
 
-  // Drag rotation state
   const camState = useRef({
     theta: 0.18,
     phi: 1.18,
@@ -37,17 +66,16 @@ export function ScoreTrajectory3D({
   });
 
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const hasEnoughPoints = weeks.length >= 2;
 
   const toggleCameraView = useCallback(() => {
     setIs3DView((prev) => {
       const next = !prev;
       if (camState.current) {
         if (!next) {
-          // 2D front view
           camState.current.theta = 0;
           camState.current.phi = Math.PI / 2;
         } else {
-          // 3D perspective
           camState.current.theta = 0.22;
           camState.current.phi = 1.18;
         }
@@ -57,23 +85,7 @@ export function ScoreTrajectory3D({
   }, []);
 
   useEffect(() => {
-    // Check WebGL availability
-    const checkWebGL = () => {
-      try {
-        const canvas = document.createElement("canvas");
-        return !!(
-          window.WebGLRenderingContext &&
-          (canvas.getContext("webgl") || canvas.getContext("experimental-webgl"))
-        );
-      } catch {
-        return false;
-      }
-    };
-
-    if (!checkWebGL()) {
-      setWebGLSupported(false);
-      return;
-    }
+    if (!hasEnoughPoints || !initialWebGL) return;
 
     const container = mountRef.current;
     if (!container) return;
@@ -93,11 +105,10 @@ export function ScoreTrajectory3D({
       container.innerHTML = "";
       container.appendChild(renderer.domElement);
     } catch {
-      setWebGLSupported(false);
+      queueMicrotask(() => setRendererFailed(true));
       return;
     }
 
-    // Lights
     scene.add(new THREE.AmbientLight(0x94a3b8, 0.9));
     const dirLight = new THREE.DirectionalLight(0x818cf8, 1.6);
     dirLight.position.set(8, 16, 12);
@@ -107,12 +118,10 @@ export function ScoreTrajectory3D({
     pointLight.position.set(4, 5, 4);
     scene.add(pointLight);
 
-    // Floor Grid
     const grid = new THREE.GridHelper(24, 24, 0x2e3250, 0x171929);
     grid.position.y = -2.2;
     scene.add(grid);
 
-    // Build Spline Curve & Orbs
     const count = weeks.length;
     const points: THREE.Vector3[] = weeks.map((w, idx) => {
       const x = (idx - (count - 1) / 2) * 2.8;
@@ -131,7 +140,6 @@ export function ScoreTrajectory3D({
     const tubeMesh = new THREE.Mesh(tubeGeo, tubeMat);
     scene.add(tubeMesh);
 
-    // Orbs for week nodes
     const orbs: THREE.Mesh[] = [];
     points.forEach((pt, idx) => {
       const isSelected = idx === selectedWeekIndex;
@@ -149,7 +157,6 @@ export function ScoreTrajectory3D({
       orbs.push(mesh);
     });
 
-    // Pointer Interaction (Raycasting & Orbit rotation)
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
 
@@ -168,7 +175,7 @@ export function ScoreTrajectory3D({
       camState.current.theta -= dx * 0.007;
       camState.current.phi = Math.max(
         0.65,
-        Math.min(1.48, camState.current.phi - dy * 0.006)
+        Math.min(1.48, camState.current.phi - dy * 0.006),
       );
     };
 
@@ -177,7 +184,7 @@ export function ScoreTrajectory3D({
       camState.current.isDragging = false;
       const dist = Math.hypot(
         e.clientX - camState.current.downMouse.x,
-        e.clientY - camState.current.downMouse.y
+        e.clientY - camState.current.downMouse.y,
       );
       if (dist < 6) {
         const rect = renderer.domElement.getBoundingClientRect();
@@ -186,7 +193,7 @@ export function ScoreTrajectory3D({
         raycaster.setFromCamera(pointer, camera);
         const hits = raycaster.intersectObjects(orbs);
         if (hits.length > 0) {
-          const hitIdx = hits[0].object.userData.index;
+          const hitIdx = hits[0].object.userData.index as number;
           onSelectWeek(hitIdx);
         }
       }
@@ -207,12 +214,9 @@ export function ScoreTrajectory3D({
     };
     window.addEventListener("resize", onResize);
 
-    // Animation Loop
     let frameId: number;
     const animate = () => {
       frameId = requestAnimationFrame(animate);
-
-      // Camera positioning from spherical coordinates
       const r = camState.current.radius;
       const t = camState.current.theta;
       const p = camState.current.phi;
@@ -237,134 +241,168 @@ export function ScoreTrajectory3D({
         container.innerHTML = "";
       }
     };
-  }, [weeks, selectedWeekIndex, onSelectWeek]);
+  }, [hasEnoughPoints, initialWebGL, weeks, selectedWeekIndex, onSelectWeek]);
 
-  const activeWeek = weeks[selectedWeekIndex] || weeks[weeks.length - 1];
+  const activeWeek =
+    weeks[selectedWeekIndex] ?? weeks[weeks.length - 1] ?? null;
 
   return (
-    <div className="rounded-2xl bg-[#141621] border border-[#232637] p-5 sm:p-6 shadow-xl">
-      {/* Header & Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+    <div className="rounded-2xl border border-[#232637] bg-[#141621] p-5 shadow-xl sm:p-6">
+      <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
         <div>
-          <h2 className="text-base sm:text-lg font-extrabold text-white">
-            Xu hướng điểm số qua các tuần
+          <h2 className="text-base font-extrabold text-white sm:text-lg">
+            Xu hướng điểm số theo dữ liệu thực
           </h2>
           <p className="text-xs text-gray-400">
-            Mô phỏng sự tăng trưởng Band điểm tổng kết (Kéo chuột để xoay góc nhìn 3D)
+            Tính từ các lần thi thử & luyện tập đã nộp trong hệ thống
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2 text-xs font-semibold text-gray-200">
-            <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 shadow-[0_0_8px_#6366f1]" />
-            <span>Band Dự phóng</span>
+            <span className="h-2.5 w-2.5 rounded-full bg-indigo-500 shadow-[0_0_8px_#6366f1]" />
+            <span>Band ước tính</span>
           </div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-gray-400">
-            <span className="w-2.5 h-2.5 rounded-full bg-gray-500" />
-            <span>Mục tiêu (7.5)</span>
-          </div>
-          <button
-            onClick={toggleCameraView}
-            className="px-2.5 py-1 rounded-lg bg-[#1d2030] hover:bg-indigo-600/30 border border-indigo-500/30 text-[11px] font-bold text-indigo-300 flex items-center gap-1.5 transition"
-            aria-label="Chuyển góc nhìn 3D hoặc 2D"
-          >
-            <span>Góc nhìn: {is3DView ? "3D" : "2D"}</span>
-          </button>
-        </div>
-      </div>
-
-      {/* 3D Stage / 2D SVG Fallback */}
-      <div className="relative w-full h-[330px] sm:h-[360px] rounded-xl bg-[#0e1018] border border-[#1f2233] overflow-hidden">
-        {/* Dashed Target 7.5 line */}
-        <div className="absolute top-12 left-8 right-8 border-t-2 border-dashed border-gray-500/45 pointer-events-none z-10 flex justify-end">
-          <span className="-mt-5 px-2 py-0.5 rounded bg-[#141621]/90 text-[10px] font-bold text-gray-400 border border-white/10">
-            Target Band 7.5
-          </span>
-        </div>
-
-        {webGLSupported ? (
-          <div
-            ref={mountRef}
-            className="w-full h-full cursor-grab active:cursor-grabbing"
-            data-testid="trajectory-3d-canvas"
-          />
-        ) : (
-          /* SVG Interactive 2D Graph Fallback */
-          <div className="w-full h-full p-6 flex flex-col justify-end">
-            <svg className="w-full h-48 overflow-visible" viewBox="0 0 600 200">
-              <polyline
-                fill="none"
-                stroke="#6366f1"
-                strokeWidth="4"
-                points={weeks
-                  .map((w, idx) => {
-                    const x = 50 + idx * 100;
-                    const y = 180 - (w.band - 5.0) * 60;
-                    return `${x},${y}`;
-                  })
-                  .join(" ")}
-              />
-              {weeks.map((w, idx) => {
-                const x = 50 + idx * 100;
-                const y = 180 - (w.band - 5.0) * 60;
-                const isSelected = idx === selectedWeekIndex;
-                return (
-                  <circle
-                    key={w.id}
-                    cx={x}
-                    cy={y}
-                    r={isSelected ? 9 : 6}
-                    fill={isSelected ? "#818cf8" : "#6366f1"}
-                    stroke="#fff"
-                    strokeWidth={isSelected ? 3 : 1}
-                    className="cursor-pointer"
-                    onClick={() => onSelectWeek(idx)}
-                  />
-                );
-              })}
-            </svg>
-          </div>
-        )}
-
-        {/* Selected Week Mini HUD Pill */}
-        <div className="absolute top-3 left-3 z-20 glass-panel px-3.5 py-2 rounded-xl flex items-center gap-3 pointer-events-none">
-          <div className="w-2.5 h-8 rounded-full bg-indigo-500" />
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-extrabold text-white">
-                {activeWeek.label}
-              </span>
-              <span className="px-2 py-0.5 rounded bg-indigo-600 text-[11px] font-black text-white">
-                Band {activeWeek.band.toFixed(1)}
-              </span>
+          {targetBand !== null ? (
+            <div className="flex items-center gap-2 text-xs font-semibold text-gray-400">
+              <span className="h-2.5 w-2.5 rounded-full bg-gray-500" />
+              <span>Mục tiêu ({targetBand.toFixed(1)})</span>
             </div>
-            <p className="text-[11px] text-gray-300">{activeWeek.note}</p>
-          </div>
+          ) : null}
+          {hasEnoughPoints ? (
+            <button
+              onClick={toggleCameraView}
+              className="flex items-center gap-1.5 rounded-lg border border-indigo-500/30 bg-[#1d2030] px-2.5 py-1 text-[11px] font-bold text-indigo-300 transition hover:bg-indigo-600/30"
+              aria-label="Chuyển góc nhìn 3D hoặc 2D"
+            >
+              <span>Góc nhìn: {is3DView ? "3D" : "2D"}</span>
+            </button>
+          ) : null}
         </div>
       </div>
 
-      {/* Week Selector Footer Bar */}
-      <div className="grid grid-cols-6 gap-2 mt-3 pt-2 border-t border-[#232637]/60 text-center">
-        {weeks.map((w, idx) => {
-          const isSelected = idx === selectedWeekIndex;
-          return (
-            <button
-              key={w.id}
-              onClick={() => onSelectWeek(idx)}
-              className={`p-2 rounded-xl border text-center transition-all ${
-                isSelected
-                  ? "bg-indigo-600/30 border-indigo-500 text-white shadow-md shadow-indigo-600/20"
-                  : "bg-[#191c2a] border-transparent text-gray-400 hover:text-white hover:border-[#232637]"
-              }`}
-            >
-              <span className="text-[11px] block font-semibold">{w.label}</span>
-              <span className="text-xs font-black block text-indigo-400">
-                Band {w.band.toFixed(1)}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+      {!hasEnoughPoints ? (
+        <div className="flex h-[240px] w-full flex-col items-center justify-center rounded-xl border border-[#1f2233] bg-[#0e1018] p-6 text-center">
+          <p className="mb-1 text-sm font-bold text-white">
+            Chưa đủ dữ liệu qua các mốc để vẽ biểu đồ quỹ đạo
+          </p>
+          <p className="max-w-md text-xs text-gray-400">
+            Hoàn thành ít nhất 2 bài luyện tập có chấm điểm hoặc đề thi thử
+            (Mock Test) ở các mốc khác nhau để xem xu hướng Band điểm thực tế.
+          </p>
+        </div>
+      ) : (
+        <>
+          <div className="relative h-[330px] w-full overflow-hidden rounded-xl border border-[#1f2233] bg-[#0e1018] sm:h-[360px]">
+            {targetBand !== null ? (
+              <div className="pointer-events-none absolute top-12 right-8 left-8 z-10 flex justify-end border-t-2 border-dashed border-gray-500/45">
+                <span className="-mt-5 rounded border border-white/10 bg-[#141621]/90 px-2 py-0.5 text-[10px] font-bold text-gray-400">
+                  Target Band {targetBand.toFixed(1)}
+                </span>
+              </div>
+            ) : null}
+
+            {webGLSupported ? (
+              <div
+                ref={mountRef}
+                className="h-full w-full cursor-grab active:cursor-grabbing"
+                data-testid="trajectory-3d-canvas"
+              />
+            ) : (
+              <div className="flex h-full w-full flex-col justify-end p-6">
+                <svg
+                  className="h-48 w-full overflow-visible"
+                  viewBox="0 0 600 200"
+                >
+                  <polyline
+                    fill="none"
+                    stroke="#6366f1"
+                    strokeWidth="4"
+                    points={weeks
+                      .map((w, idx) => {
+                        const x =
+                          50 + idx * (500 / Math.max(1, weeks.length - 1));
+                        const y = Math.min(
+                          185,
+                          Math.max(20, 180 - (w.band - 4.0) * 32),
+                        );
+                        return `${x},${y}`;
+                      })
+                      .join(" ")}
+                  />
+                  {weeks.map((w, idx) => {
+                    const x = 50 + idx * (500 / Math.max(1, weeks.length - 1));
+                    const y = Math.min(
+                      185,
+                      Math.max(20, 180 - (w.band - 4.0) * 32),
+                    );
+                    const isSelected = idx === selectedWeekIndex;
+                    return (
+                      <circle
+                        key={w.id}
+                        cx={x}
+                        cy={y}
+                        r={isSelected ? 9 : 6}
+                        fill={isSelected ? "#818cf8" : "#6366f1"}
+                        stroke="#fff"
+                        strokeWidth={isSelected ? 3 : 1}
+                        className="cursor-pointer"
+                        onClick={() => onSelectWeek(idx)}
+                      />
+                    );
+                  })}
+                </svg>
+              </div>
+            )}
+
+            {activeWeek ? (
+              <div className="glass-panel pointer-events-none absolute top-3 left-3 z-20 flex items-center gap-3 rounded-xl px-3.5 py-2">
+                <div className="h-8 w-2.5 rounded-full bg-indigo-500" />
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-extrabold text-white">
+                      {activeWeek.label}
+                    </span>
+                    <span className="rounded bg-indigo-600 px-2 py-0.5 text-[11px] font-black text-white">
+                      Band {activeWeek.band.toFixed(1)}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-gray-300">{activeWeek.note}</p>
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          <div
+            className="mt-3 grid gap-2 border-t border-[#232637]/60 pt-2 text-center"
+            style={{
+              gridTemplateColumns: `repeat(${Math.min(6, weeks.length)}, minmax(0, 1fr))`,
+            }}
+          >
+            {weeks.map((w, idx) => {
+              const isSelected = idx === selectedWeekIndex;
+              return (
+                <button
+                  key={w.id}
+                  onClick={() => onSelectWeek(idx)}
+                  className={`rounded-xl border p-2 text-center transition-all ${
+                    isSelected
+                      ? "border-indigo-500 bg-indigo-600/30 text-white shadow-md shadow-indigo-600/20"
+                      : "border-transparent bg-[#191c2a] text-gray-400 hover:border-[#232637] hover:text-white"
+                  }`}
+                >
+                  <span className="block text-[11px] font-semibold">
+                    {w.label}
+                  </span>
+                  <span className="block text-xs font-black text-indigo-400">
+                    Band {w.band.toFixed(1)}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 }

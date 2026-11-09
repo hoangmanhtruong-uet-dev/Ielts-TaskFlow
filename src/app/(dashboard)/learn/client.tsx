@@ -1,8 +1,14 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+} from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import "./learn.css";
 
 export interface LearnItem {
@@ -40,7 +46,7 @@ const DEFAULT_ITEMS: LearnItem[] = [
     desc: "Luyện nghe audio bản xứ, chỉnh tốc độ, bài tập điền từ và trắc nghiệm kèm transcript tương tác sau khi nộp.",
     meta: "4 Parts • 25m",
     href: "/practice/listening",
-    p: 45,
+    p: 0,
   },
   {
     id: "re",
@@ -48,12 +54,12 @@ const DEFAULT_ITEMS: LearnItem[] = [
     cat: ["skill"],
     ic: "Re",
     a: "#5EE0A0",
-    tag: "KHO 50+ PASSAGES",
+    tag: "READING ACADEMIC",
     title: "Reading Practice",
     desc: "Kho bài đọc chuẩn đề thi thật, tra từ một chạm, highlight dẫn chứng và phân tích đáp án chi tiết.",
     meta: "3 Passages • 60m",
     href: "/practice/reading",
-    p: 70,
+    p: 0,
   },
   {
     id: "wr",
@@ -67,7 +73,7 @@ const DEFAULT_ITEMS: LearnItem[] = [
     desc: "Luyện Task 1 và Task 2 có đếm từ tự động, gợi ý dàn ý, lưu nháp liên tục và AI chấm chi tiết theo 4 tiêu chí.",
     meta: "Task 1 & 2 • 60m",
     href: "/practice/writing",
-    p: 20,
+    p: 0,
   },
   {
     id: "sp",
@@ -93,7 +99,7 @@ const DEFAULT_ITEMS: LearnItem[] = [
     title: "Thi thử (Mock Test Room)",
     desc: "Mô phỏng giao diện thi trên máy tính (Computer-delivered IELTS) chuẩn IDP/BC, chia đôi màn hình, highlight và ghi chú.",
     meta: "4 Skills • 3h",
-    href: "/practice/mock-tests",
+    href: "/mock-tests",
     p: 0,
   },
   {
@@ -105,8 +111,8 @@ const DEFAULT_ITEMS: LearnItem[] = [
     tag: "SMART LOG",
     title: "Sổ tay lỗi sai",
     desc: "Tự động gom các câu làm sai, phân loại theo dạng bài và gợi ý bài tập khắc phục điểm yếu.",
-    meta: "24 lỗi cần ôn lại",
-    href: "/learn/mistakes",
+    meta: "Tổng hợp từ bài làm",
+    href: "/error-notebook",
     p: 0,
   },
   {
@@ -118,9 +124,9 @@ const DEFAULT_ITEMS: LearnItem[] = [
     tag: "OXFORD 3000/5000",
     title: "Vocabulary Foundation",
     desc: "Bộ từ vựng học thuật theo chủ đề, ví dụ ngữ cảnh, phát âm chuẩn IPA và bài tập phản xạ.",
-    meta: "1,200 từ đã lưu",
+    meta: "Kho từ vựng cá nhân",
     href: "/learn/vocabulary",
-    p: 35,
+    p: 0,
   },
   {
     id: "gr",
@@ -131,9 +137,9 @@ const DEFAULT_ITEMS: LearnItem[] = [
     tag: "IELTS & GIAO TIẾP",
     title: "Grammar Intensive",
     desc: "Hệ thống ngữ pháp trọng tâm, phân tích lỗi sai kinh điển và bài tập ứng dụng tự động chấm.",
-    meta: "18/25 chủ điểm",
+    meta: "Ngữ pháp trọng tâm",
     href: "/learn/grammar",
-    p: 60,
+    p: 0,
   },
   {
     id: "mod-foundations",
@@ -190,9 +196,27 @@ const DEFAULT_ITEMS: LearnItem[] = [
 ];
 
 const SECTIONS: LearnSection[] = [
-  { id: "skills", title: "Bốn kỹ năng IELTS", sub: "Nghe, đọc, viết, nói", cls: "four", isHorizontal: false },
-  { id: "more", title: "Thi thử và ôn lỗi sai", sub: "Kiểm tra và lấp lỗ hổng", cls: "two", isHorizontal: true },
-  { id: "found", title: "Nền tảng", sub: "Từ vựng và ngữ pháp", cls: "two", isHorizontal: true },
+  {
+    id: "skills",
+    title: "Bốn kỹ năng IELTS",
+    sub: "Nghe, đọc, viết, nói",
+    cls: "four",
+    isHorizontal: false,
+  },
+  {
+    id: "more",
+    title: "Thi thử và ôn lỗi sai",
+    sub: "Kiểm tra và lấp lỗ hổng",
+    cls: "two",
+    isHorizontal: true,
+  },
+  {
+    id: "found",
+    title: "Nền tảng",
+    sub: "Từ vựng và ngữ pháp",
+    cls: "two",
+    isHorizontal: true,
+  },
 ];
 
 const TABS = [
@@ -232,7 +256,6 @@ export function LearnClient({
   continueLesson,
   initialItems = DEFAULT_ITEMS,
 }: LearnClientProps) {
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   const urlTab = searchParams.get("tab") || "all";
@@ -248,18 +271,15 @@ export function LearnClient({
   const filterWrapRef = useRef<HTMLDivElement>(null);
 
   // Sync state with URL params
-  const updateUrl = useCallback(
-    (tab: string, f: string, q: string) => {
-      const params = new URLSearchParams();
-      if (tab !== "all") params.set("tab", tab);
-      if (f !== "all") params.set("f", f);
-      if (q.trim()) params.set("q", q.trim());
-      const queryStr = params.toString();
-      const newPath = queryStr ? `/learn?${queryStr}` : "/learn";
-      window.history.replaceState(null, "", newPath);
-    },
-    []
-  );
+  const updateUrl = useCallback((tab: string, f: string, q: string) => {
+    const params = new URLSearchParams();
+    if (tab !== "all") params.set("tab", tab);
+    if (f !== "all") params.set("f", f);
+    if (q.trim()) params.set("q", q.trim());
+    const queryStr = params.toString();
+    const newPath = queryStr ? `/learn?${queryStr}` : "/learn";
+    window.history.replaceState(null, "", newPath);
+  }, []);
 
   const handleTabChange = (tabKey: string) => {
     setActiveTab(tabKey);
@@ -334,7 +354,7 @@ export function LearnClient({
     if (!q) return true;
     const normQ = normalize(q);
     const target = normalize(
-      `${item.title} ${item.desc} ${item.tag} ${item.meta}`
+      `${item.title} ${item.desc} ${item.tag} ${item.meta}`,
     );
     return target.includes(normQ);
   }, []);
@@ -352,11 +372,18 @@ export function LearnClient({
         (it) =>
           checkTab(it, tab.key) &&
           checkFilter(it, activeFilter) &&
-          checkQuery(it, searchQuery)
+          checkQuery(it, searchQuery),
       ).length;
     }
     return counts;
-  }, [initialItems, activeFilter, searchQuery, checkTab, checkFilter, checkQuery]);
+  }, [
+    initialItems,
+    activeFilter,
+    searchQuery,
+    checkTab,
+    checkFilter,
+    checkQuery,
+  ]);
 
   // Filtered visible items
   const visibleItems = useMemo(() => {
@@ -364,14 +391,22 @@ export function LearnClient({
       (it) =>
         checkTab(it, activeTab) &&
         checkFilter(it, activeFilter) &&
-        checkQuery(it, searchQuery)
+        checkQuery(it, searchQuery),
     );
-  }, [initialItems, activeTab, activeFilter, searchQuery, checkTab, checkFilter, checkQuery]);
+  }, [
+    initialItems,
+    activeTab,
+    activeFilter,
+    searchQuery,
+    checkTab,
+    checkFilter,
+    checkQuery,
+  ]);
 
   // Continue lesson values
   const continueTitle =
-    continueLesson?.title || "Listening Section 2: Campus Accommodation";
-  const continueProgress = continueLesson?.progressPercent ?? 60;
+    continueLesson?.title || "Tiếp tục lộ trình IELTS của bạn";
+  const continueProgress = continueLesson?.progressPercent ?? 0;
   const continueHref = continueLesson?.href || "/practice/listening";
 
   return (
@@ -461,9 +496,7 @@ export function LearnClient({
                   <path d="M3 5h18l-7 8v6l-4 2v-8z" />
                 </svg>
                 <span>Lọc kết quả</span>
-                {activeFilter !== "all" ? (
-                  <b id="fcount">1</b>
-                ) : null}
+                {activeFilter !== "all" ? <b id="fcount">1</b> : null}
               </button>
 
               <div
@@ -488,7 +521,11 @@ export function LearnClient({
           </div>
 
           {/* Tabs */}
-          <div className="tabs" role="tablist" aria-label="Phân loại kỹ năng học">
+          <div
+            className="tabs"
+            role="tablist"
+            aria-label="Phân loại kỹ năng học"
+          >
             {TABS.map((tab) => {
               const isSelected = activeTab === tab.key;
               const count = tabCounts[tab.key] ?? 0;
@@ -526,7 +563,9 @@ export function LearnClient({
             </div>
           ) : (
             SECTIONS.map((sec) => {
-              const sectionItems = visibleItems.filter((it) => it.sec === sec.id);
+              const sectionItems = visibleItems.filter(
+                (it) => it.sec === sec.id,
+              );
               if (sectionItems.length === 0) return null;
 
               return (
@@ -546,7 +585,11 @@ export function LearnClient({
 
                       if (sec.isHorizontal) {
                         return (
-                          <article key={item.id} className="card h" style={style}>
+                          <article
+                            key={item.id}
+                            className="card h"
+                            style={style}
+                          >
                             <div className="ic">{item.ic}</div>
                             <div className="body">
                               <span className="tag">{item.tag}</span>
@@ -559,7 +602,11 @@ export function LearnClient({
                               <div className="track">
                                 <i style={{ width: `${item.p}%` }} />
                               </div>
-                              <Link href={item.href} prefetch={false} className="cta">
+                              <Link
+                                href={item.href}
+                                prefetch={false}
+                                className="cta"
+                              >
                                 {ctaText}
                               </Link>
                             </div>
@@ -582,7 +629,11 @@ export function LearnClient({
                           <div className="track">
                             <i style={{ width: `${item.p}%` }} />
                           </div>
-                          <Link href={item.href} prefetch={false} className="cta">
+                          <Link
+                            href={item.href}
+                            prefetch={false}
+                            className="cta"
+                          >
                             {ctaText}
                           </Link>
                         </article>

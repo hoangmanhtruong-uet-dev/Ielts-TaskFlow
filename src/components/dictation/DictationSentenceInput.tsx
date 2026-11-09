@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
-import type { DictationSubmitResult } from '@/types/dictation';
-import { DictationDiffView } from './DictationDiffView';
+import React, { useState, useCallback, useRef, useEffect } from "react";
+import type { DictationSubmitResult } from "@/types/dictation";
+import { DictationDiffView } from "./DictationDiffView";
 
 interface Props {
   sentenceId: string;
@@ -15,7 +15,7 @@ interface Props {
 }
 
 export function DictationSentenceInput({
-  sentenceId,
+  sentenceId: _sentenceId,
   hint,
   isSubmitting,
   existingResult,
@@ -23,21 +23,16 @@ export function DictationSentenceInput({
   onNext,
   isLast,
 }: Props) {
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
   const [result, setResult] = useState<DictationSubmitResult | null>(
-    existingResult ?? null
+    existingResult ?? null,
   );
   const [showHint, setShowHint] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Reset khi chuyển câu
   useEffect(() => {
-    
-    setInput('');
-    setResult(existingResult ?? null);
-    setShowHint(false);
     inputRef.current?.focus();
-  }, [sentenceId, existingResult]);
+  }, []);
 
   const handleSubmit = useCallback(async () => {
     if (!input.trim() || isSubmitting) return;
@@ -47,7 +42,7 @@ export function DictationSentenceInput({
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
+      if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
         if (result) {
           onNext();
@@ -56,13 +51,13 @@ export function DictationSentenceInput({
         }
       }
     },
-    [result, handleSubmit, onNext]
+    [result, handleSubmit, onNext],
   );
 
   const getScoreColor = (score: number) => {
-    if (score >= 90) return 'text-green-600';
-    if (score >= 70) return 'text-yellow-600';
-    return 'text-red-600';
+    if (score >= 90) return "text-green-600";
+    if (score >= 70) return "text-yellow-600";
+    return "text-red-600";
   };
 
   return (
@@ -72,12 +67,12 @@ export function DictationSentenceInput({
         <div>
           <button
             onClick={() => setShowHint(!showHint)}
-            className="text-sm text-blue-600 hover:text-blue-700 underline"
+            className="text-sm text-blue-600 underline hover:text-blue-700"
           >
-            {showHint ? 'Ẩn gợi ý' : 'Xem gợi ý'}
+            {showHint ? "Ẩn gợi ý" : "Xem gợi ý"}
           </button>
           {showHint && (
-            <p className="mt-1 text-sm text-gray-500 italic bg-yellow-50 p-2 rounded">
+            <p className="mt-1 rounded bg-yellow-50 p-2 text-sm text-gray-500 italic">
               💡 {hint}
             </p>
           )}
@@ -95,10 +90,7 @@ export function DictationSentenceInput({
             placeholder="Nghe và gõ lại câu bạn nghe được..."
             rows={3}
             disabled={isSubmitting}
-            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl
-                       focus:border-blue-500 focus:ring-2 focus:ring-blue-200
-                       disabled:opacity-50 resize-none text-lg
-                       transition-colors"
+            className="w-full resize-none rounded-xl border-2 border-gray-200 px-4 py-3 text-lg transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-200 disabled:opacity-50"
             autoFocus
           />
           <div className="flex items-center justify-between">
@@ -108,21 +100,19 @@ export function DictationSentenceInput({
             <button
               onClick={handleSubmit}
               disabled={!input.trim() || isSubmitting}
-              className="px-6 py-2.5 bg-green-600 text-white rounded-lg font-medium
-                         hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed
-                         transition-colors"
+              className="rounded-lg bg-green-600 px-6 py-2.5 font-medium text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {isSubmitting ? 'Đang kiểm tra...' : 'Kiểm tra ✓'}
+              {isSubmitting ? "Đang kiểm tra..." : "Kiểm tra ✓"}
             </button>
           </div>
         </div>
       ) : (
         /* Result display */
         <div className="space-y-4">
-          <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
+          <div className="flex items-center gap-4 rounded-xl bg-gray-50 p-4">
             <div
               className={`text-3xl font-bold ${getScoreColor(
-                result.accuracy_score
+                result.accuracy_score,
               )}`}
             >
               {result.accuracy_score}%
@@ -133,10 +123,10 @@ export function DictationSentenceInput({
               </p>
               <p>
                 {result.accuracy_score >= 90
-                  ? '🎉 Xuất sắc!'
+                  ? "🎉 Xuất sắc!"
                   : result.accuracy_score >= 70
-                  ? '👍 Khá tốt!'
-                  : '💪 Cần luyện thêm!'}
+                    ? "👍 Khá tốt!"
+                    : "💪 Cần luyện thêm!"}
               </p>
             </div>
           </div>
@@ -150,19 +140,17 @@ export function DictationSentenceInput({
             <button
               onClick={() => {
                 setResult(null);
-                setInput('');
+                setInput("");
               }}
-              className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg
-                         hover:bg-gray-50 transition-colors"
+              className="rounded-lg border border-gray-300 px-4 py-2 text-gray-600 transition-colors hover:bg-gray-50"
             >
               Thử lại
             </button>
             <button
               onClick={onNext}
-              className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium
-                         hover:bg-blue-700 transition-colors"
+              className="rounded-lg bg-blue-600 px-6 py-2.5 font-medium text-white transition-colors hover:bg-blue-700"
             >
-              {isLast ? 'Xem kết quả' : 'Câu tiếp theo →'}
+              {isLast ? "Xem kết quả" : "Câu tiếp theo →"}
             </button>
           </div>
         </div>

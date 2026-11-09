@@ -10,7 +10,7 @@ import { isSafeContentHref } from "@/features/learning/model";
 
 export function LessonMarkdown({ children }: { children: string }) {
   return (
-    <div className="relative lesson-markdown">
+    <div className="lesson-markdown relative">
       <VocabHighlightPopover />
       <ReactMarkdown
         skipHtml

@@ -26,14 +26,21 @@ describe("LearnClient Component", () => {
           progressPercent: 60,
           href: "/practice/listening",
         }}
-      />
+      />,
     );
 
-    expect(screen.getByRole("heading", { level: 1, name: "Thư viện học" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Thư viện học" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("Tiếp tục học")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 2, name: /Listening Section 2/ })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 2, name: /Listening Section 2/ }),
+    ).toBeInTheDocument();
     expect(screen.getByText("Tiến độ 60%")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Làm tiếp ngay" })).toHaveAttribute("href", "/practice/listening");
+    expect(screen.getByRole("link", { name: "Làm tiếp ngay" })).toHaveAttribute(
+      "href",
+      "/practice/listening",
+    );
   });
 
   it("renders tabs with count badges and allows switching tabs", () => {
@@ -43,26 +50,48 @@ describe("LearnClient Component", () => {
     expect(allTabs.length).toBe(5);
 
     // Initial tab is "Tất cả"
-    expect(screen.getByRole("tab", { name: /Tất cả/ })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: /Tất cả/ })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
 
     // All 3 sections are visible initially
-    expect(screen.getByRole("heading", { level: 2, name: "Bốn kỹ năng IELTS" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 2, name: "Thi thử và ôn lỗi sai" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 2, name: "Nền tảng" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Bốn kỹ năng IELTS" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Thi thử và ôn lỗi sai" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Nền tảng" }),
+    ).toBeInTheDocument();
 
     // Switch to "4 Kỹ năng IELTS"
     fireEvent.click(screen.getByRole("tab", { name: /4 Kỹ năng IELTS/ }));
 
-    expect(screen.getByRole("tab", { name: /4 Kỹ năng IELTS/ })).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByRole("heading", { level: 2, name: "Bốn kỹ năng IELTS" })).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { level: 2, name: "Thi thử và ôn lỗi sai" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("heading", { level: 2, name: "Nền tảng" })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("tab", { name: /4 Kỹ năng IELTS/ }),
+    ).toHaveAttribute("aria-selected", "true");
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Bốn kỹ năng IELTS" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", {
+        level: 2,
+        name: "Thi thử và ôn lỗi sai",
+      }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { level: 2, name: "Nền tảng" }),
+    ).not.toBeInTheDocument();
   });
 
   it("filters items by keyword search", () => {
     render(<LearnClient />);
 
-    const searchInput = screen.getByLabelText(/Tìm kiếm bài luyện hoặc kỹ năng/i);
+    const searchInput = screen.getByLabelText(
+      /Tìm kiếm bài luyện hoặc kỹ năng/i,
+    );
     expect(searchInput).toBeInTheDocument();
 
     // Type "Speaking"
@@ -79,7 +108,9 @@ describe("LearnClient Component", () => {
     const filterButton = screen.getByRole("button", { name: /Lọc kết quả/i });
     fireEvent.click(filterButton);
 
-    const aiFilterOption = screen.getByRole("menuitemradio", { name: "Có AI chấm" });
+    const aiFilterOption = screen.getByRole("menuitemradio", {
+      name: "Có AI chấm",
+    });
     fireEvent.click(aiFilterOption);
 
     // Only Writing and Speaking have AI
@@ -92,23 +123,31 @@ describe("LearnClient Component", () => {
   it("displays empty state when no cards match and resets on button click", () => {
     render(<LearnClient />);
 
-    const searchInput = screen.getByLabelText(/Tìm kiếm bài luyện hoặc kỹ năng/i);
+    const searchInput = screen.getByLabelText(
+      /Tìm kiếm bài luyện hoặc kỹ năng/i,
+    );
     fireEvent.change(searchInput, { target: { value: "xyz_not_found_123" } });
 
-    expect(screen.getByRole("heading", { level: 2, name: "Không tìm thấy bài nào" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Không tìm thấy bài nào" }),
+    ).toBeInTheDocument();
 
     const resetButton = screen.getByRole("button", { name: "Xoá bộ lọc" });
     fireEvent.click(resetButton);
 
     // After reset, search input is empty and cards are restored
     expect(searchInput).toHaveValue("");
-    expect(screen.getByRole("heading", { level: 2, name: "Bốn kỹ năng IELTS" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Bốn kỹ năng IELTS" }),
+    ).toBeInTheDocument();
   });
 
   it("focuses search input when pressing '/' key", () => {
     render(<LearnClient />);
 
-    const searchInput = screen.getByLabelText(/Tìm kiếm bài luyện hoặc kỹ năng/i);
+    const searchInput = screen.getByLabelText(
+      /Tìm kiếm bài luyện hoặc kỹ năng/i,
+    );
     expect(document.activeElement).not.toBe(searchInput);
 
     fireEvent.keyDown(document, { key: "/" });

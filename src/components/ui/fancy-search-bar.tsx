@@ -14,12 +14,17 @@ export function FancySearchBar() {
       <div className="fs-border"></div>
 
       <div className="fs-main">
-        <input placeholder="Search..." type="text" name="text" className="fs-input" />
+        <input
+          placeholder="Search..."
+          type="text"
+          name="text"
+          className="fs-input"
+        />
         <div className="fs-input-mask"></div>
         <div className="fs-pink-mask"></div>
         <div className="fs-filterBorder"></div>
-        
-        <div className="fs-filter-icon cursor-pointer hover:brightness-125 transition-all">
+
+        <div className="fs-filter-icon cursor-pointer transition-all hover:brightness-125">
           <svg
             preserveAspectRatio="none"
             height="27"
@@ -37,7 +42,7 @@ export function FancySearchBar() {
             ></path>
           </svg>
         </div>
-        
+
         <div className="fs-search-icon">
           <svg
             xmlns="http://www.w3.org/2000/svg"

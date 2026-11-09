@@ -31,7 +31,7 @@ const TIPS: TipItem[] = [
     category: "Grammar",
     text: "Mistakes you revisit the same day stick far better than ones left for the weekend.",
     actionLabel: "Review mistakes",
-    href: "/learn/mistakes",
+    href: "/error-notebook",
   },
   {
     title: "Short sessions beat long ones",
@@ -69,7 +69,7 @@ export function TipsCarousel() {
         <Link
           href={current.href}
           prefetch={false}
-          className="inline-block mt-3 font-medium transition-colors hover:text-[#EEF0FF]"
+          className="mt-3 inline-block font-medium transition-colors hover:text-[#EEF0FF]"
         >
           {current.actionLabel} &rarr;
         </Link>

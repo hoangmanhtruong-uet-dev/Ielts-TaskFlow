@@ -41,7 +41,7 @@ export default async function GrammarPage() {
         <Bell aria-label="Notifications" size={19} className="text-[#3f28c9]" />
       </header>
 
-      <main className="space-y-7 px-4 py-5 sm:px-6">
+      <div className="space-y-7 px-4 py-5 sm:px-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Grammar</h1>
           <p className="mt-1 text-sm text-[#746e80]">
@@ -88,7 +88,7 @@ export default async function GrammarPage() {
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-base font-bold">Needs Review</h2>
               <Link
-                href="/learn/mistakes"
+                href="/error-notebook"
                 className="text-xs font-bold text-[#4c31d4]"
               >
                 View all
@@ -139,7 +139,7 @@ export default async function GrammarPage() {
         ) : null}
 
         <GrammarCatalog topics={topics} />
-      </main>
+      </div>
     </div>
   );
 }

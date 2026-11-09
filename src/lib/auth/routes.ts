@@ -4,11 +4,21 @@ export const protectedRoutePrefixes = [
   "/dashboard",
   "/learn",
   "/roadmap",
+  "/plans",
   "/progress",
+  "/resources",
   "/practice",
+  "/dictation",
   "/mock-tests",
+  "/mock-test",
+  "/error-notebook",
+  "/leaderboard",
+  "/community",
+  "/vocabulary",
+  "/ai-studio",
   "/profile",
   "/settings",
+  "/admin",
 ] as const;
 
 export const guestOnlyRoutes = ["/login", "/register"] as const;
@@ -23,6 +33,12 @@ export function isProtectedRoute(pathname: string) {
   );
 }
 
+export function isAdminRoute(pathname: string) {
+  return matchesPrefix(pathname, "/admin");
+}
+
 export function isGuestOnlyRoute(pathname: string) {
   return guestOnlyRoutes.some((route) => pathname === route);
 }
+
+export const isAuthRoute = isGuestOnlyRoute;

@@ -21,7 +21,7 @@ describe("DynamicQuestionRenderer", () => {
         question={question}
         draft={{ answerText: "", selectedOptionIds: [] }}
         onChange={onChange}
-      />
+      />,
     );
 
     const falseRadio = screen.getByRole("radio", { name: "FALSE" });
@@ -49,7 +49,7 @@ describe("DynamicQuestionRenderer", () => {
         draft={{ answerText: "sunlight", selectedOptionIds: [] }}
         maxAnswerWords={2}
         onChange={onChange}
-      />
+      />,
     );
 
     const input = screen.getByPlaceholderText("Điền từ...");
@@ -80,10 +80,12 @@ describe("DynamicQuestionRenderer", () => {
         question={question}
         draft={{ answerText: "", selectedOptionIds: [] }}
         onChange={onChange}
-      />
+      />,
     );
 
-    expect(screen.getByText(/-- Chọn tiêu đề từ danh sách --/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/-- Chọn tiêu đề từ danh sách --/i),
+    ).toBeInTheDocument();
   });
 
   it("renders MultipleChoiceCard for multiple_choice", () => {
@@ -103,7 +105,7 @@ describe("DynamicQuestionRenderer", () => {
         question={question}
         draft={{ answerText: "", selectedOptionIds: [] }}
         onChange={onChange}
-      />
+      />,
     );
 
     const parisRadio = screen.getByRole("radio", { name: "Paris" });
@@ -132,12 +134,14 @@ describe("DynamicQuestionRenderer", () => {
         question={question}
         draft={{ answerText: "", selectedOptionIds: [] }}
         onChange={onChange}
-      />
+      />,
     );
 
     // Map canvas and compass should be present
     expect(screen.getByText("Main Entrance")).toBeInTheDocument();
-    expect(screen.getByText("Bản đồ vị trí (Nhấp vào ký tự A-G để chọn đáp án)")).toBeInTheDocument();
+    expect(
+      screen.getByText("Bản đồ vị trí (Nhấp vào ký tự A-G để chọn đáp án)"),
+    ).toBeInTheDocument();
 
     // Click pin A
     const pinA = screen.getByRole("button", { name: "Vị trí A" });
@@ -145,7 +149,7 @@ describe("DynamicQuestionRenderer", () => {
     expect(onChange).toHaveBeenCalledWith(
       expect.objectContaining({
         answerText: "A",
-      })
+      }),
     );
 
     // Zoom modal toggle
@@ -155,7 +159,9 @@ describe("DynamicQuestionRenderer", () => {
 
     const closeBtn = screen.getByRole("button", { name: "Xong" });
     fireEvent.click(closeBtn);
-    expect(screen.queryByText("Bản đồ vị trí chi tiết")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Bản đồ vị trí chi tiết"),
+    ).not.toBeInTheDocument();
   });
 
   it("renders MatchingPillSelector when type is matching", () => {
@@ -176,7 +182,7 @@ describe("DynamicQuestionRenderer", () => {
         question={question}
         draft={{ answerText: "", selectedOptionIds: [] }}
         onChange={onChange}
-      />
+      />,
     );
 
     // Options box should list choices

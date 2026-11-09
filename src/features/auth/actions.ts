@@ -2,6 +2,11 @@
 
 import { redirect } from "next/navigation";
 
+import {
+  clearOtpContextCookie,
+  readOtpContextCookie,
+  setOtpContextCookie,
+} from "@/lib/auth/otp-context";
 import { getSafeRedirectPath } from "@/lib/auth/safe-redirect";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { logServerEvent } from "@/server/observability/logger";
@@ -54,7 +59,7 @@ export async function registerAction(
 
   try {
     const supabase = await createSupabaseServerClient();
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: result.data.email,
       password: result.data.password,
       options: {
@@ -80,6 +85,18 @@ export async function registerAction(
         message: mapAuthError(error),
         requestId,
       };
+    }
+
+    if (data?.session) {
+      try {
+        await supabase.rpc("accept_current_policies", {
+          p_terms_version: TERMS_VERSION,
+          p_privacy_version: PRIVACY_VERSION,
+          p_channel: "email_signup",
+        });
+      } catch {
+        // Policy acceptance is also enforced at onboarding if needed.
+      }
     }
 
     return {
@@ -127,7 +144,7 @@ export async function loginAction(
 
   try {
     const supabase = await createSupabaseServerClient();
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email: result.data.email,
       password: result.data.password,
     });
@@ -145,6 +162,18 @@ export async function loginAction(
         message: mapAuthError(error),
         requestId,
       };
+    }
+
+    if (data?.user?.user_metadata?.terms_version) {
+      try {
+        await supabase.rpc("accept_current_policies", {
+          p_terms_version: TERMS_VERSION,
+          p_privacy_version: PRIVACY_VERSION,
+          p_channel: "email_signup",
+        });
+      } catch {
+        // Non-fatal
+      }
     }
   } catch (error) {
     logServerEvent("error", {
@@ -191,26 +220,27 @@ export async function forgotPasswordAction(
 
   const { identifier, channel } = result.data;
   const isEmail = channel === "email" || identifier.includes("@");
-  
+  const normalizedIdentifier = isEmail ? identifier.toLowerCase() : identifier;
+
   try {
     const supabase = await createSupabaseServerClient();
     let error;
 
     if (isEmail) {
       const res = await supabase.auth.signInWithOtp({
-        email: identifier,
+        email: normalizedIdentifier,
         options: {
           shouldCreateUser: false,
-        }
+        },
       });
       error = res.error;
     } else {
       const res = await supabase.auth.signInWithOtp({
-        phone: identifier,
+        phone: normalizedIdentifier,
         options: {
           channel: channel === "whatsapp" ? "whatsapp" : "sms",
           shouldCreateUser: false,
-        }
+        },
       });
       error = res.error;
     }
@@ -223,7 +253,6 @@ export async function forgotPasswordAction(
         stage: "request recovery otp",
         errorCode: error.code ?? "AUTH_PROVIDER_ERROR",
       });
-      // Continue anyway to prevent enumeration
     }
   } catch (error) {
     logServerEvent("error", {
@@ -236,9 +265,18 @@ export async function forgotPasswordAction(
     });
   }
 
-  const actualChannel = isEmail ? "email" : channel === "whatsapp" ? "whatsapp" : "sms";
-  
-  redirect(`/verify-otp?target=${encodeURIComponent(identifier)}&channel=${actualChannel}`);
+  const actualChannel = isEmail
+    ? "email"
+    : channel === "whatsapp"
+      ? "whatsapp"
+      : "sms";
+
+  await setOtpContextCookie({
+    identifier: normalizedIdentifier,
+    channel: actualChannel,
+  });
+
+  redirect("/verify-otp");
 }
 
 export async function verifyOtpAction(
@@ -247,9 +285,9 @@ export async function verifyOtpAction(
 ): Promise<ActionState<VerifyOtpField>> {
   const requestId = await getServerRequestId();
   const result = verifyOtpSchema.safeParse({
-    identifier: valueOf(formData, "identifier"),
+    identifier: valueOf(formData, "identifier") || undefined,
     token: valueOf(formData, "token"),
-    type: valueOf(formData, "type"),
+    type: valueOf(formData, "type") || undefined,
   });
 
   if (!result.success) {
@@ -261,14 +299,29 @@ export async function verifyOtpAction(
     };
   }
 
+  const otpCookie = await readOtpContextCookie();
+  const resolvedIdentifier =
+    otpCookie?.identifier || result.data.identifier?.trim() || "";
+  const resolvedChannel = otpCookie?.channel || result.data.type;
+
+  if (!resolvedIdentifier) {
+    return {
+      status: "error",
+      message:
+        "Phiên xác thực OTP đã hết hạn. Vui lòng quay lại trang Quên mật khẩu để gửi lại mã.",
+      requestId,
+    };
+  }
+
   try {
     const supabase = await createSupabaseServerClient();
-    const { identifier, token, type } = result.data;
-    
-    // Type is 'email', 'sms', or 'whatsapp'. Wait, Supabase verifyOtp takes 'email', 'sms' etc.
-    const verifyType = type === "email" ? "email" : "sms"; // Actually supabase verifyOtp takes 'sms' for both sms/whatsapp
-    const params = type === "email" ? { email: identifier, token, type: 'email' as const } : { phone: identifier, token, type: 'sms' as const };
-    
+    const { token } = result.data;
+
+    const params =
+      resolvedChannel === "email"
+        ? { email: resolvedIdentifier, token, type: "email" as const }
+        : { phone: resolvedIdentifier, token, type: "sms" as const };
+
     const { error } = await supabase.auth.verifyOtp(params);
 
     if (error) {
@@ -285,6 +338,8 @@ export async function verifyOtpAction(
         requestId,
       };
     }
+
+    await clearOtpContextCookie();
   } catch (error) {
     logServerEvent("error", {
       event: "auth.verify_otp.failed",
@@ -301,11 +356,11 @@ export async function verifyOtpAction(
     };
   }
 
-    return {
-      status: "success",
-      message: "Xác thực thành công!",
-      requestId,
-    };
+  return {
+    status: "success",
+    message: "Xác thực thành công!",
+    requestId,
+  };
 }
 
 export async function resetPasswordAction(

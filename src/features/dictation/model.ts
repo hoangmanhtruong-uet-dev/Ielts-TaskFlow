@@ -11,6 +11,7 @@ export type DictationSentence = {
 };
 
 export type DictationExercise = {
+  dbExerciseId?: string;
   slug: string;
   title: string;
   description: string;
@@ -78,7 +79,7 @@ export function levenshteinDistance(a: string, b: string): number {
         matrix[i][j] = Math.min(
           matrix[i - 1][j] + 1,
           matrix[i][j - 1] + 1,
-          matrix[i - 1][j - 1] + 1
+          matrix[i - 1][j - 1] + 1,
         );
       }
     }
@@ -89,7 +90,10 @@ export function levenshteinDistance(a: string, b: string): number {
 /**
  * Computes a detailed word-level diff between target text and user text.
  */
-export function diffSentenceText(targetText: string, userText: string): SentenceDiffResult {
+export function diffSentenceText(
+  targetText: string,
+  userText: string,
+): SentenceDiffResult {
   const targetWords = tokenizeWords(targetText);
   const userWords = tokenizeWords(userText);
 
@@ -110,7 +114,9 @@ export function diffSentenceText(targetText: string, userText: string): Sentence
   }
 
   // Cost matrix
-  const dp: number[][] = Array.from({ length: n + 1 }, () => Array(m + 1).fill(0));
+  const dp: number[][] = Array.from({ length: n + 1 }, () =>
+    Array(m + 1).fill(0),
+  );
   for (let i = 0; i <= n; i++) dp[i][0] = i * 10;
   for (let j = 0; j <= m; j++) dp[0][j] = j * 10;
 
@@ -123,11 +129,12 @@ export function diffSentenceText(targetText: string, userText: string): Sentence
         dp[i][j] = dp[i - 1][j - 1];
       } else {
         const dist = levenshteinDistance(t, u);
-        const subCost = dist <= 2 && Math.min(t.length, u.length) > 2 ? 4 + dist : 10;
+        const subCost =
+          dist <= 2 && Math.min(t.length, u.length) > 2 ? 4 + dist : 10;
         dp[i][j] = Math.min(
           dp[i - 1][j] + 10, // missing target word
           dp[i][j - 1] + 10, // extra user word
-          dp[i - 1][j - 1] + subCost // substitution / typo
+          dp[i - 1][j - 1] + subCost, // substitution / typo
         );
       }
     }
@@ -151,7 +158,8 @@ export function diffSentenceText(targetText: string, userText: string): Sentence
         continue;
       }
       const dist = levenshteinDistance(t, u);
-      const subCost = dist <= 2 && Math.min(t.length, u.length) > 2 ? 4 + dist : 10;
+      const subCost =
+        dist <= 2 && Math.min(t.length, u.length) > 2 ? 4 + dist : 10;
       if (dp[i][j] === dp[i - 1][j - 1] + subCost) {
         diffItems.unshift({ word: t, status: "typo", userWord: u });
         i--;
@@ -163,17 +171,29 @@ export function diffSentenceText(targetText: string, userText: string): Sentence
       diffItems.unshift({ word: targetWords[i - 1], status: "missing" });
       i--;
     } else if (j > 0 && dp[i][j] === dp[i][j - 1] + 10) {
-      diffItems.unshift({ word: userWords[j - 1], status: "extra", userWord: userWords[j - 1] });
+      diffItems.unshift({
+        word: userWords[j - 1],
+        status: "extra",
+        userWord: userWords[j - 1],
+      });
       j--;
     } else if (i > 0 && j > 0) {
-      diffItems.unshift({ word: targetWords[i - 1], status: "typo", userWord: userWords[j - 1] });
+      diffItems.unshift({
+        word: targetWords[i - 1],
+        status: "typo",
+        userWord: userWords[j - 1],
+      });
       i--;
       j--;
     } else if (i > 0) {
       diffItems.unshift({ word: targetWords[i - 1], status: "missing" });
       i--;
     } else {
-      diffItems.unshift({ word: userWords[j - 1], status: "extra", userWord: userWords[j - 1] });
+      diffItems.unshift({
+        word: userWords[j - 1],
+        status: "extra",
+        userWord: userWords[j - 1],
+      });
       j--;
     }
   }

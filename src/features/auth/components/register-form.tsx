@@ -2,37 +2,26 @@
 
 import { CircleCheck } from "lucide-react";
 import Link from "next/link";
-import { useActionState, useEffect, useRef } from "react";
-import { useFormStatus } from "react-dom";
+import { useActionState, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import type { ActionState } from "@/features/auth/action-state";
 import { registerAction } from "@/features/auth/actions";
-import { SocialAuthButtons } from "./social-auth-buttons";
 
-import styles from "./register-form.module.css";
+import { PasswordInput } from "./password-input";
+import { SocialAuthButtons } from "./social-auth-buttons";
+import { AuthSubmitButton } from "./submit-button";
 
 type RegisterField =
-  | "displayName"
-  | "email"
-  | "password"
-  | "confirmPassword"
-  | "acceptPolicies";
+  "displayName" | "email" | "password" | "confirmPassword" | "acceptPolicies";
 
 const initialState: ActionState<RegisterField> = { status: "idle" };
-
-function SubmitButton() {
-  const { pending } = useFormStatus();
-  return (
-    <button className={styles.submit} disabled={pending}>
-      {pending ? "Đang xử lý..." : "Submit"}
-    </button>
-  );
-}
 
 export function RegisterForm() {
   const [state, formAction] = useActionState(registerAction, initialState);
   const formRef = useRef<HTMLFormElement>(null);
+  const [acceptedPolicies, setAcceptedPolicies] = useState(false);
+  const policyCheckboxRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (state.status !== "error") return;
@@ -74,107 +63,180 @@ export function RegisterForm() {
   const policiesError = state.fieldErrors?.acceptPolicies?.[0];
 
   return (
-    <form ref={formRef} action={formAction} className={styles.form} noValidate>
-      <p className={styles.title}>Register</p>
-      <p className={styles.message}>Signup now and get full access to our app.</p>
+    <div className="surface-card p-6 sm:p-8">
+      {state.message && state.status === "error" ? (
+        <div
+          role="alert"
+          className="mb-5 rounded-xl border border-[var(--destructive-soft)] bg-[var(--destructive-subtle)] p-3.5 text-sm text-[var(--destructive)]"
+        >
+          <p className="font-medium">{state.message}</p>
+          {state.requestId ? (
+            <span
+              data-testid="request-id"
+              className="mt-1 block text-xs font-medium opacity-80"
+            >
+              Mã yêu cầu: {state.requestId}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
 
-      <label className={styles.inputContainer}>
-        <input
-          name="displayName"
-          className={styles.input}
-          type="text"
-          placeholder=""
-          required
-          aria-invalid={Boolean(displayNameError)}
-        />
-        <span>Họ và tên</span>
-        {displayNameError && (
-          <span className={styles.errorText}>{displayNameError}</span>
-        )}
-      </label>
+      <form ref={formRef} action={formAction} className="space-y-5" noValidate>
+        <div className="space-y-2">
+          <label
+            htmlFor="register-display-name"
+            className="block text-sm font-semibold text-[var(--foreground)]"
+          >
+            Họ và tên
+          </label>
+          <input
+            id="register-display-name"
+            name="displayName"
+            type="text"
+            autoComplete="name"
+            maxLength={100}
+            required
+            aria-invalid={Boolean(displayNameError)}
+            aria-describedby={
+              displayNameError ? "register-display-name-error" : undefined
+            }
+            className="h-12 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--surface)] px-3 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] focus-visible:border-[var(--primary)] focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:outline-none"
+            placeholder="Nguyễn Minh Anh…"
+          />
+          {displayNameError ? (
+            <p
+              id="register-display-name-error"
+              className="text-sm text-[var(--destructive)]"
+            >
+              {displayNameError}
+            </p>
+          ) : null}
+        </div>
 
-      <label className={styles.inputContainer}>
-        <input
-          name="email"
-          className={styles.input}
-          type="email"
-          placeholder=""
-          required
-          aria-invalid={Boolean(emailError)}
-        />
-        <span>Email</span>
-        {emailError && (
-          <span className={styles.errorText}>{emailError}</span>
-        )}
-      </label>
+        <div className="space-y-2">
+          <label
+            htmlFor="register-email"
+            className="block text-sm font-semibold text-[var(--foreground)]"
+          >
+            Email
+          </label>
+          <input
+            id="register-email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            spellCheck={false}
+            inputMode="email"
+            maxLength={254}
+            required
+            aria-invalid={Boolean(emailError)}
+            aria-describedby={emailError ? "register-email-error" : undefined}
+            className="h-12 w-full rounded-xl border border-[var(--border-strong)] bg-[var(--surface)] px-3 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] focus-visible:border-[var(--primary)] focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:outline-none"
+            placeholder="ban@example.com…"
+          />
+          {emailError ? (
+            <p
+              id="register-email-error"
+              className="text-sm text-[var(--destructive)]"
+            >
+              {emailError}
+            </p>
+          ) : null}
+        </div>
 
-      <label className={styles.inputContainer}>
-        <input
+        <PasswordInput
+          id="register-password"
           name="password"
-          className={styles.input}
-          type="password"
-          placeholder=""
-          required
-          aria-invalid={Boolean(passwordError)}
+          label="Mật khẩu"
+          autoComplete="new-password"
+          minLength={8}
+          error={passwordError}
         />
-        <span>Password</span>
-        {passwordError && (
-          <span className={styles.errorText}>{passwordError}</span>
-        )}
-      </label>
 
-      <label className={styles.inputContainer}>
-        <input
+        <PasswordInput
+          id="register-confirm-password"
           name="confirmPassword"
-          className={styles.input}
-          type="password"
-          placeholder=""
-          required
-          aria-invalid={Boolean(confirmPasswordError)}
+          label="Xác nhận mật khẩu"
+          autoComplete="new-password"
+          minLength={8}
+          error={confirmPasswordError}
         />
-        <span>Confirm password</span>
-        {confirmPasswordError && (
-          <span className={styles.errorText}>{confirmPasswordError}</span>
-        )}
-      </label>
 
-      <label className={styles.checkboxContainer}>
-        <input
-          name="acceptPolicies"
-          type="checkbox"
-          required
-          aria-invalid={Boolean(policiesError)}
+        <div className="space-y-2">
+          <label
+            htmlFor="register-accept-policies"
+            className="flex items-start gap-3 text-sm leading-6 text-[var(--muted-foreground)]"
+          >
+            <input
+              ref={policyCheckboxRef}
+              id="register-accept-policies"
+              name="acceptPolicies"
+              type="checkbox"
+              required
+              checked={acceptedPolicies}
+              onChange={(event) => setAcceptedPolicies(event.target.checked)}
+              aria-invalid={Boolean(policiesError)}
+              aria-describedby={
+                policiesError ? "register-policies-error" : undefined
+              }
+              className="mt-1 size-4 shrink-0 rounded border-[var(--border-strong)] accent-[var(--primary)]"
+            />
+            <span>
+              Tôi đã đọc và đồng ý với{" "}
+              <Link
+                href="/terms"
+                className="font-semibold text-[var(--primary)] underline underline-offset-2"
+              >
+                Điều khoản sử dụng
+              </Link>{" "}
+              và{" "}
+              <Link
+                href="/privacy"
+                className="font-semibold text-[var(--primary)] underline underline-offset-2"
+              >
+                Chính sách quyền riêng tư
+              </Link>
+              .
+            </span>
+          </label>
+          {policiesError ? (
+            <p
+              id="register-policies-error"
+              className="text-sm text-[var(--destructive)]"
+            >
+              {policiesError}
+            </p>
+          ) : null}
+        </div>
+
+        <AuthSubmitButton
+          idleLabel="Tạo tài khoản"
+          pendingLabel="Đang tạo tài khoản..."
         />
-        <span>
-          Tôi đã đọc và đồng ý với <Link href="/terms">Điều khoản sử dụng</Link> và{" "}
-          <Link href="/privacy">Chính sách quyền riêng tư</Link>.
+      </form>
+
+      <div className="my-5 flex items-center gap-3">
+        <div className="h-px flex-1 bg-[var(--border)]" />
+        <span className="text-xs font-medium text-[var(--muted-foreground)]">
+          Hoặc đăng ký nhanh với
         </span>
-      </label>
-      {policiesError && (
-        <span className={styles.errorText} style={{ marginTop: "-10px" }}>
-          {policiesError}
-        </span>
-      )}
-
-      {state.message && state.status === "error" && (
-        <p className={styles.errorText} style={{ textAlign: "center" }}>
-          {state.message}
-        </p>
-      )}
-
-      <SubmitButton />
-
-      <div className={styles.socialMessage}>
-        <div className={styles.line}></div>
-        <p className={styles.message}>Signup with social accounts</p>
-        <div className={styles.line}></div>
+        <div className="h-px flex-1 bg-[var(--border)]" />
       </div>
 
-      <SocialAuthButtons styles={styles} />
+      <SocialAuthButtons
+        consentAccepted={acceptedPolicies}
+        onRequireConsent={() => policyCheckboxRef.current?.focus()}
+      />
 
-      <p className={styles.signin}>
-        Already have an account? <Link href="/login">Signin</Link>
+      <p className="mt-5 text-center text-sm text-[var(--muted-foreground)]">
+        Đã có tài khoản?{" "}
+        <Link
+          href="/login"
+          className="font-semibold text-[var(--primary)] hover:underline focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:outline-none"
+        >
+          Đăng nhập
+        </Link>
       </p>
-    </form>
+    </div>
   );
 }

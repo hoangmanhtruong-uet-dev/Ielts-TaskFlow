@@ -13,35 +13,40 @@ interface QueuedDraft {
 }
 
 export function useDisasterRecovery(
-  onFlushQueue: (attemptId: string, answers: Record<string, AnswerValue>) => Promise<boolean>
+  onFlushQueue: (
+    attemptId: string,
+    answers: Record<string, AnswerValue>,
+  ) => Promise<boolean>,
 ) {
   // Save a draft to local indexedDB queue when offline
   const queueDraftOffline = useCallback(
     async (attemptId: string, answers: Record<string, AnswerValue>) => {
       try {
-        const queue: QueuedDraft[] = (await localforage.getItem(DRAFT_QUEUE_KEY)) || [];
-        
+        const queue: QueuedDraft[] =
+          (await localforage.getItem(DRAFT_QUEUE_KEY)) || [];
+
         // Remove older drafts for the same attempt
-        const filteredQueue = queue.filter(q => q.attemptId !== attemptId);
-        
+        const filteredQueue = queue.filter((q) => q.attemptId !== attemptId);
+
         filteredQueue.push({
           attemptId,
           answers,
           timestamp: Date.now(),
         });
-        
+
         await localforage.setItem(DRAFT_QUEUE_KEY, filteredQueue);
       } catch (error) {
         console.error("Failed to queue draft offline", error);
       }
     },
-    []
+    [],
   );
 
   // Flush the queue when online
   const flushQueue = useCallback(async () => {
     try {
-      const queue: QueuedDraft[] = (await localforage.getItem(DRAFT_QUEUE_KEY)) || [];
+      const queue: QueuedDraft[] =
+        (await localforage.getItem(DRAFT_QUEUE_KEY)) || [];
       if (queue.length === 0) return;
 
       const remainingQueue: QueuedDraft[] = [];
@@ -65,7 +70,7 @@ export function useDisasterRecovery(
     };
 
     window.addEventListener("online", handleOnline);
-    
+
     // Initial flush in case we start online with queued items
     if (navigator.onLine) {
       flushQueue();

@@ -5,7 +5,7 @@ const { Client } = pg;
 
 const client = new Client({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
+  ssl: { rejectUnauthorized: false },
 });
 
 async function main() {
@@ -16,13 +16,18 @@ async function main() {
     WHERE table_schema = 'public' 
     ORDER BY table_name;
   `);
-  console.log("Existing tables in public schema (" + tables.rows.length + " tables):");
-  console.log(tables.rows.map(r => r.table_name));
+  console.log(
+    "Existing tables in public schema (" + tables.rows.length + " tables):",
+  );
+  console.log(tables.rows.map((r) => r.table_name));
 
   const schemas = await client.query(`
     SELECT schema_name FROM information_schema.schemata;
   `);
-  console.log("Schemas:", schemas.rows.map(r => r.schema_name));
+  console.log(
+    "Schemas:",
+    schemas.rows.map((r) => r.schema_name),
+  );
 
   await client.end();
 }

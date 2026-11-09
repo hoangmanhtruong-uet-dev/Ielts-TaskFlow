@@ -57,13 +57,20 @@ describe("DictationClient Component", () => {
   it("renders dictation library with header, stats, and 7 default lessons", () => {
     render(<DictationClient />);
 
-    expect(screen.getByRole("heading", { level: 1, name: "Luyện nghe chép chính tả" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", {
+        level: 1,
+        name: "Luyện nghe chép chính tả",
+      }),
+    ).toBeInTheDocument();
     expect(screen.getByText("Câu đã luyện")).toBeInTheDocument();
     expect(screen.getByText("Độ chính xác trung bình")).toBeInTheDocument();
     expect(screen.getByText(/Bài đã hoàn thành/)).toBeInTheDocument();
 
     // Default lessons
-    expect(screen.getByText("Daily Conversation: At the Coffee Shop")).toBeInTheDocument();
+    expect(
+      screen.getByText("Daily Conversation: At the Coffee Shop"),
+    ).toBeInTheDocument();
     expect(screen.getByText("Asking for Directions")).toBeInTheDocument();
     expect(screen.getByText("Everyday Life")).toBeInTheDocument();
     expect(screen.getByText("Office Meeting Talk")).toBeInTheDocument();
@@ -78,8 +85,12 @@ describe("DictationClient Component", () => {
     const searchInput = screen.getByLabelText("Tìm bài");
     fireEvent.change(searchInput, { target: { value: "Coffee" } });
 
-    expect(screen.getByText("Daily Conversation: At the Coffee Shop")).toBeInTheDocument();
-    expect(screen.queryByText("Sleep and Memory Study")).not.toBeInTheDocument();
+    expect(
+      screen.getByText("Daily Conversation: At the Coffee Shop"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Sleep and Memory Study"),
+    ).not.toBeInTheDocument();
 
     // Clear search
     fireEvent.change(searchInput, { target: { value: "" } });
@@ -96,18 +107,30 @@ describe("DictationClient Component", () => {
   it("opens modal and creates a custom lesson from text", () => {
     render(<DictationClient />);
 
-    const newBtn = screen.getByRole("button", { name: /\+ Tạo bài từ văn bản/i });
+    const newBtn = screen.getByRole("button", {
+      name: /\+ Tạo bài từ văn bản/i,
+    });
     fireEvent.click(newBtn);
 
-    expect(screen.getByRole("heading", { level: 2, name: "Tạo bài từ văn bản của bạn" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", {
+        level: 2,
+        name: "Tạo bài từ văn bản của bạn",
+      }),
+    ).toBeInTheDocument();
 
     const titleInput = screen.getByPlaceholderText("Tên bài (không bắt buộc)");
-    const textArea = screen.getByPlaceholderText("Dán đoạn văn tiếng Anh ở đây...");
+    const textArea = screen.getByPlaceholderText(
+      "Dán đoạn văn tiếng Anh ở đây...",
+    );
 
-    fireEvent.change(titleInput, { target: { value: "My Custom IELTS Speech" } });
+    fireEvent.change(titleInput, {
+      target: { value: "My Custom IELTS Speech" },
+    });
     fireEvent.change(textArea, {
       target: {
-        value: "Learning English with dictation is remarkably effective. Regular practice ensures rapid vocabulary retention.",
+        value:
+          "Learning English with dictation is remarkably effective. Regular practice ensures rapid vocabulary retention.",
       },
     });
 
@@ -124,12 +147,16 @@ describe("DictationClient Component", () => {
     const noteBtn = screen.getByRole("button", { name: /Sổ từ nghe sai/i });
     fireEvent.click(noteBtn);
 
-    expect(screen.getByRole("heading", { level: 2, name: "Sổ từ nghe sai" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Sổ từ nghe sai" }),
+    ).toBeInTheDocument();
 
     const closeBtn = screen.getByRole("button", { name: "Đóng" });
     fireEvent.click(closeBtn);
 
-    expect(screen.queryByRole("heading", { level: 2, name: "Sổ từ nghe sai" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { level: 2, name: "Sổ từ nghe sai" }),
+    ).not.toBeInTheDocument();
   });
 
   it("starts a lesson, supports hint, checking answer, and advances", async () => {
@@ -140,7 +167,12 @@ describe("DictationClient Component", () => {
     fireEvent.click(card);
 
     // Now in Player view
-    expect(screen.getByRole("heading", { level: 2, name: "Daily Conversation: At the Coffee Shop" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", {
+        level: 2,
+        name: "Daily Conversation: At the Coffee Shop",
+      }),
+    ).toBeInTheDocument();
     expect(screen.getByText(/Câu 1 \//)).toBeInTheDocument();
 
     // Toggle mode to Cloze and back
@@ -159,7 +191,9 @@ describe("DictationClient Component", () => {
 
     // Type full answer
     const input = screen.getByLabelText("Câu trả lời");
-    fireEvent.change(input, { target: { value: "Hi can I get a medium latte please" } });
+    fireEvent.change(input, {
+      target: { value: "Hi can I get a medium latte please" },
+    });
 
     // Click Check
     const checkBtn = screen.getByRole("button", { name: /Kiểm tra/i });
@@ -167,7 +201,9 @@ describe("DictationClient Component", () => {
 
     // Results diff is shown
     expect(screen.getByText(/Chính xác|Gần đúng/)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Câu tiếp/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Câu tiếp/i }),
+    ).toBeInTheDocument();
 
     // Advance to next sentence
     const nextBtn = screen.getByRole("button", { name: /Câu tiếp/i });
@@ -188,19 +224,53 @@ describe("DictationClient Component", () => {
       const revealBtn = screen.getByRole("button", { name: "Xem đáp án" });
       fireEvent.click(revealBtn);
 
-      const nextBtn = screen.getByRole("button", { name: i === 3 ? /Xem kết quả/i : /Câu tiếp/i });
+      const nextBtn = screen.getByRole("button", {
+        name: i === 3 ? /Xem kết quả/i : /Câu tiếp/i,
+      });
       fireEvent.click(nextBtn);
     }
 
     // Now in Result view
     expect(screen.getByText("Từng câu")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Làm lại bài" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Về thư viện" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Làm lại bài" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Về thư viện" }),
+    ).toBeInTheDocument();
 
     // Return to library
     const libBtn = screen.getByRole("button", { name: "Về thư viện" });
     fireEvent.click(libBtn);
 
-    expect(screen.getByRole("heading", { level: 1, name: "Luyện nghe chép chính tả" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", {
+        level: 1,
+        name: "Luyện nghe chép chính tả",
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("safely escapes XSS payloads in user dictation input without dangerouslySetInnerHTML or nested main", () => {
+    const { container } = render(<DictationClient />);
+
+    // No nested <main> landmarks inside DictationClient
+    expect(container.querySelectorAll("main")).toHaveLength(0);
+
+    fireEvent.click(screen.getByText("Daily Conversation: At the Coffee Shop"));
+    const input = screen.getByLabelText("Câu trả lời");
+
+    const xssPayload = `<img src=x onerror=alert(1)> <script>window.__dictationXss=true</script>`;
+    fireEvent.change(input, { target: { value: xssPayload } });
+    fireEvent.click(screen.getByRole("button", { name: /Kiểm tra/i }));
+
+    // Ensure no injected <img> or <script> DOM elements exist and payload renders as plain text
+    expect(container.querySelector("img")).toBeNull();
+    expect(container.querySelector("script")).toBeNull();
+    expect(
+      (window as unknown as { __dictationXss?: boolean }).__dictationXss,
+    ).toBeUndefined();
+    expect(screen.getByText("<img")).toBeInTheDocument();
+    expect(screen.getByText("onerror=alert(1)>")).toBeInTheDocument();
   });
 });

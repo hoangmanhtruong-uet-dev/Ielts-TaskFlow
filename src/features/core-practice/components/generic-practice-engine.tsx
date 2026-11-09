@@ -1,13 +1,20 @@
 "use client";
 
-import { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Loader2,
+  Save,
+  WifiOff,
+} from "lucide-react";
+
 import { ServerTimer } from "./server-timer";
 import { SubmitConfirmModal } from "./submit-confirm-modal";
 import { QuestionNavigator } from "./question-navigator";
 import { useAutosaveDraft } from "../hooks/use-autosave-draft";
 import { submitExerciseAction } from "../api/submit-attempt-action";
-import { Loader2, Save } from "lucide-react";
 
 export interface QuestionDefinition {
   id: string;
@@ -15,13 +22,15 @@ export interface QuestionDefinition {
   question_type?: string;
 }
 
-export type AnswerValue = string | string[] | Record<string, any>;
+export type AnswerValue = string | string[] | Record<string, unknown>;
 
 export interface GenericPracticeEngineProps {
   attemptId?: string;
   serverExpiresAt?: string | null;
   serverNow?: string;
   expiresAt?: string | null;
+  autoSubmitOnMountExpired?: boolean;
+  enableAutosave?: boolean;
   title?: string;
   domain?: string;
   categoryLabel?: string;
@@ -42,7 +51,7 @@ export interface GenericPracticeEngineProps {
     answers: Record<string, AnswerValue>;
     setAnswer: (questionId: string, value: AnswerValue) => void;
   }) => React.ReactNode;
-  contextContent?: React.ReactNode; // For reading passage or listening audio
+  contextContent?: React.ReactNode;
 }
 
 export function GenericPracticeEngine({
@@ -50,9 +59,9 @@ export function GenericPracticeEngine({
   serverExpiresAt = null,
   serverNow,
   expiresAt,
-  title,
+  autoSubmitOnMountExpired = false,
+  enableAutosave,
   domain,
-  categoryLabel,
   isSubmitting: externalIsSubmitting,
   onSaveDraft,
   onSubmit,
@@ -65,58 +74,96 @@ export function GenericPracticeEngine({
   contextContent,
 }: GenericPracticeEngineProps) {
   const router = useRouter();
-  const [answers, setAnswers] = useState<Record<string, AnswerValue>>(initialAnswers);
+  const [answers, setAnswers] =
+    useState<Record<string, AnswerValue>>(initialAnswers);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const submittingRef = useRef(false);
 
-  // Draft autosave
-  const [saveStatusText, setSaveStatusText] = useState<string>("");
-  const isFirstRender = useRef(true);
+  const shouldAutosave =
+    enableAutosave ??
+    Boolean(onSaveDraft || (domain !== "speaking" && attemptId));
 
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-    if (!onSaveDraft) return;
-    const timer = setTimeout(async () => {
-      setSaveStatusText("saving...");
-      try {
-        const ok = await onSaveDraft(answers);
-        if (ok) setSaveStatusText("saved");
-      } catch {
-        setSaveStatusText("error");
-      }
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, [answers, onSaveDraft]);
-
-  const { status: saveStatus, forceSave } = useAutosaveDraft({
+  const {
+    status: saveStatus,
+    isOnline,
+    flushNow,
+    clearLocalDraft,
+  } = useAutosaveDraft({
     attemptId,
-    answers,
+    storageKey: attemptId
+      ? `draft_${domain || "practice"}_${attemptId}`
+      : undefined,
+    answers: answers as Record<
+      string,
+      string | string[] | Record<string, unknown>
+    >,
+    onServerSync: onSaveDraft
+      ? (draftAnswers) =>
+          onSaveDraft(draftAnswers as Record<string, AnswerValue>)
+      : undefined,
+    debounceMs: 2000,
     intervalMs: 15000,
+    enabled: shouldAutosave,
   });
 
   const setAnswer = useCallback((questionId: string, value: AnswerValue) => {
     setAnswers((prev) => ({ ...prev, [questionId]: value }));
   }, []);
 
-  const handleManualSave = () => {
-    forceSave();
-  };
+  const handleManualSave = useCallback(() => {
+    setSubmitError(null);
+    void flushNow();
+  }, [flushNow]);
 
   const unansweredCount = useMemo(() => {
     return questions.filter((q) => {
       const val = answers[q.id];
-      return val === undefined || val === "" || (Array.isArray(val) && val.length === 0) || (typeof val === "object" && Object.keys(val).length === 0);
+      if (val === undefined || val === "") return true;
+      if (Array.isArray(val)) return val.length === 0;
+      if (typeof val === "object" && val !== null) {
+        if ("selectedOptionIds" in val || "answerText" in val) {
+          const text = String(
+            (val as { answerText?: string }).answerText ?? "",
+          ).trim();
+          const selected = Array.isArray(
+            (val as { selectedOptionIds?: unknown[] }).selectedOptionIds,
+          )
+            ? (val as { selectedOptionIds: unknown[] }).selectedOptionIds
+            : [];
+          return !text && selected.length === 0;
+        }
+        return Object.keys(val).length === 0;
+      }
+      return false;
     }).length;
   }, [questions, answers]);
 
   const navQuestions = useMemo(() => {
     return questions.map((q, i) => {
       const val = answers[q.id];
-      const hasAnswer = val !== undefined && val !== "" && (!Array.isArray(val) || val.length > 0) && (typeof val !== "object" || Object.keys(val).length > 0);
+      let hasAnswer = false;
+      if (typeof val === "string") {
+        hasAnswer = val.trim().length > 0;
+      } else if (Array.isArray(val)) {
+        hasAnswer = val.length > 0;
+      } else if (typeof val === "object" && val !== null) {
+        if ("selectedOptionIds" in val || "answerText" in val) {
+          const text = String(
+            (val as { answerText?: string }).answerText ?? "",
+          ).trim();
+          const selected = Array.isArray(
+            (val as { selectedOptionIds?: unknown[] }).selectedOptionIds,
+          )
+            ? (val as { selectedOptionIds: unknown[] }).selectedOptionIds
+            : [];
+          hasAnswer = text.length > 0 || selected.length > 0;
+        } else {
+          hasAnswer = Object.keys(val).length > 0;
+        }
+      }
       return {
         id: q.id,
         index: i,
@@ -125,124 +172,255 @@ export function GenericPracticeEngine({
     });
   }, [questions, answers]);
 
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  const submitAttempt = useCallback(
+    async (options?: { forceExpireSubmit?: boolean }) => {
+      if (submittingRef.current) return;
+      submittingRef.current = true;
+      setIsSubmitting(true);
+      setSubmitError(null);
 
-  const submitAttempt = async () => {
-    setIsSubmitting(true);
-    setSubmitError(null);
-    try {
-      await forceSave(); // ensure latest draft is saved
+      try {
+        if (shouldAutosave) {
+          const flushed = await flushNow();
+          if (!flushed && !options?.forceExpireSubmit) {
+            setIsSubmitModalOpen(false);
+            setSubmitError(
+              "Không thể đồng bộ bản nháp lên máy chủ. Hãy kiểm tra kết nối và lưu nháp lại trước khi nộp.",
+            );
+            return;
+          }
+        }
 
-      if (onSubmit) {
-        await onSubmit(answers);
-        return;
-      }
+        if (onSubmit) {
+          await onSubmit(answers);
+          await clearLocalDraft();
+          return;
+        }
 
-      const res = await submitExerciseAction({
-        attemptId,
-        answers,
-      });
+        const res = await submitExerciseAction({
+          attemptId,
+          answers: answers as Record<
+            string,
+            string | string[] | Record<string, string>
+          >,
+        });
 
-      if (res.success) {
-        // Navigate to results page
-        router.push(`/practice/result/${attemptId}`);
-      } else {
+        if (res.success) {
+          await clearLocalDraft();
+          router.push(`/practice/result/${attemptId}`);
+        } else {
+          setIsSubmitModalOpen(false);
+          setSubmitError(
+            res.error || "Có lỗi xảy ra khi nộp bài. Vui lòng thử lại.",
+          );
+        }
+      } catch (err) {
         setIsSubmitModalOpen(false);
-        setSubmitError(res.error || "Có lỗi xảy ra khi nộp bài. Vui lòng thử lại.");
+        setSubmitError(
+          err instanceof Error && err.message
+            ? err.message
+            : "Có lỗi xảy ra khi nộp bài. Vui lòng thử lại.",
+        );
+      } finally {
+        submittingRef.current = false;
+        setIsSubmitting(false);
       }
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+    },
+    [
+      answers,
+      attemptId,
+      clearLocalDraft,
+      flushNow,
+      onSubmit,
+      router,
+      shouldAutosave,
+    ],
+  );
 
   const handleExpire = useCallback(() => {
-    // Automatically submit when time is up
-    submitAttempt();
-  }, [attemptId, answers]); 
+    void submitAttempt({ forceExpireSubmit: true });
+  }, [submitAttempt]);
 
   const currentQuestion = questions[currentIndex];
+  const combinedSubmitting = isSubmitting || Boolean(externalIsSubmitting);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] max-w-7xl mx-auto w-full">
+    <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-7xl flex-col lg:h-[calc(100vh-4rem)]">
       {/* Sticky Top Bar */}
-      <div className="flex-none bg-white dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 p-4 sticky top-0 z-40 flex items-center justify-between">
-        <ServerTimer serverExpiresAt={serverExpiresAt || expiresAt} serverNow={serverNow} onExpire={handleExpire} />
-        
+      <div className="sticky top-0 z-40 flex flex-none flex-wrap items-center justify-between gap-3 border-b border-zinc-200 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-950">
+        <ServerTimer
+          serverExpiresAt={serverExpiresAt || expiresAt}
+          serverNow={serverNow}
+          onExpire={handleExpire}
+          autoSubmitOnMountExpired={autoSubmitOnMountExpired}
+        />
+
         {renderTopHeaderExtra?.()}
-        
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-sm text-zinc-500">
-            {(saveStatus === "saving" || saveStatusText === "saving...") && <Loader2 className="w-4 h-4 animate-spin" />}
-            {saveStatusText ? (
-              <span className="text-emerald-600 font-medium">{saveStatusText}</span>
-            ) : (
-              <>
-                {saveStatus === "saved" && <span className="text-green-600 dark:text-green-500 flex items-center gap-1"><Save className="w-3.5 h-3.5"/> Đã lưu nháp</span>}
-                {saveStatus === "error" && <span className="text-red-500">Lỗi lưu nháp</span>}
-              </>
-            )}
-          </div>
-          
+
+        <div className="ml-auto flex items-center gap-3">
+          {shouldAutosave ? (
+            <div className="flex items-center gap-1.5 text-xs text-zinc-500">
+              {saveStatus === "saving" ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-indigo-500" />
+                  <span>Đang lưu...</span>
+                </>
+              ) : null}
+              {saveStatus === "saved" ? (
+                <span
+                  aria-label="Đã lưu nháp lên máy chủ"
+                  className="flex items-center gap-1 font-medium text-emerald-600 dark:text-emerald-400"
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  <span>saved</span>
+                </span>
+              ) : null}
+              {saveStatus === "offline_saved" || !isOnline ? (
+                <span className="flex items-center gap-1 font-medium text-amber-600 dark:text-amber-400">
+                  <WifiOff className="h-3.5 w-3.5" />
+                  <span>Lưu tạm ngoại tuyến</span>
+                </span>
+              ) : null}
+              {saveStatus === "error" ? (
+                <button
+                  type="button"
+                  onClick={handleManualSave}
+                  className="flex items-center gap-1 font-medium text-rose-600 underline hover:text-rose-700"
+                >
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                  <span>Lỗi lưu nháp - Thử lại</span>
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+
+          {shouldAutosave ? (
+            <button
+              type="button"
+              onClick={handleManualSave}
+              disabled={saveStatus === "saving" || combinedSubmitting}
+              className="flex items-center gap-1.5 rounded-lg bg-zinc-100 px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-200 disabled:opacity-50 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+            >
+              <Save className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Lưu nháp</span>
+            </button>
+          ) : null}
+
           <button
-            onClick={handleManualSave}
-            className="px-3 py-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-300 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 rounded-lg transition-colors"
-          >
-            Lưu nháp
-          </button>
-          
-          <button
+            type="button"
             onClick={() => setIsSubmitModalOpen(true)}
-            className="px-4 py-1.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm"
+            disabled={combinedSubmitting}
+            className="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-50"
           >
-            Nộp bài
+            {combinedSubmitting ? "Đang nộp..." : "Nộp bài"}
           </button>
         </div>
       </div>
 
+      {submitError ? (
+        <div
+          role="alert"
+          className="mx-4 mt-3 flex items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700"
+        >
+          <span className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            {submitError}
+          </span>
+          {shouldAutosave ? (
+            <button
+              type="button"
+              onClick={handleManualSave}
+              className="shrink-0 rounded-lg bg-rose-600 px-3 py-1 text-xs font-bold text-white hover:bg-rose-700"
+            >
+              Lưu lại ngay
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
+      {/* Mobile Question Switcher */}
+      {questions.length > 1 ? (
+        <div className="flex items-center gap-1.5 overflow-x-auto border-b border-zinc-200 bg-white px-4 py-2 lg:hidden dark:border-zinc-800 dark:bg-zinc-900">
+          {navQuestions.map((q) => (
+            <button
+              key={q.id}
+              type="button"
+              onClick={() => setCurrentIndex(q.index)}
+              className={`h-8 min-w-8 shrink-0 rounded-lg px-2 text-xs font-bold transition-colors ${
+                q.index === currentIndex
+                  ? "bg-blue-600 text-white"
+                  : q.status === "answered"
+                    ? "bg-blue-100 text-blue-700"
+                    : "bg-zinc-100 text-zinc-600"
+              }`}
+            >
+              {q.index + 1}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
       {/* Main Content Area */}
-      <div className="flex-1 overflow-hidden grid lg:grid-cols-12 gap-6 p-4 md:p-6 bg-zinc-50 dark:bg-zinc-950">
-        
+      <div className="grid flex-1 gap-6 overflow-y-auto bg-zinc-50 p-4 md:p-6 lg:grid-cols-12 lg:overflow-hidden dark:bg-zinc-950">
         {/* Context / Passage Column */}
         {(contextContent || renderSidePanel) && (
-          <div className="lg:col-span-6 h-full overflow-y-auto bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm">
+          <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm lg:col-span-6 lg:h-full lg:overflow-y-auto dark:border-zinc-800 dark:bg-zinc-900">
             {contextContent || renderSidePanel?.()}
           </div>
         )}
 
         {/* Question Area Column */}
-        <div className={`${contextContent || renderSidePanel ? "lg:col-span-4" : "lg:col-span-8"} h-full overflow-y-auto bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm flex flex-col`}>
+        <div
+          className={`${
+            contextContent || renderSidePanel
+              ? "lg:col-span-4"
+              : "lg:col-span-8"
+          } flex flex-col rounded-xl border border-zinc-200 bg-white p-6 shadow-sm lg:h-full lg:overflow-y-auto dark:border-zinc-800 dark:bg-zinc-900`}
+        >
           <div className="flex-1">
             {currentQuestion ? (
-              (children?.({ currentQuestion, answers, setAnswer }) || 
-               renderQuestionArea?.({ currentQuestion, answers, setAnswer }))
+              children?.({ currentQuestion, answers, setAnswer }) ||
+              renderQuestionArea?.({ currentQuestion, answers, setAnswer })
             ) : (
-              <div className="text-center text-zinc-500 mt-10">Không có câu hỏi nào.</div>
+              <div className="mt-10 text-center text-zinc-500">
+                Không có câu hỏi nào.
+              </div>
             )}
           </div>
-          
-          <div className="mt-8 flex items-center justify-between pt-4 border-t border-zinc-100 dark:border-zinc-800">
-            <button
-              disabled={currentIndex === 0}
-              onClick={() => setCurrentIndex((p) => p - 1)}
-              className="px-4 py-2 text-sm font-medium border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-lg transition-colors disabled:opacity-50"
-            >
-              Câu trước
-            </button>
-            <span className="text-sm font-medium text-zinc-500">
-              {currentIndex + 1} / {questions.length}
-            </span>
-            <button
-              disabled={currentIndex === questions.length - 1}
-              onClick={() => setCurrentIndex((p) => p + 1)}
-              className="px-4 py-2 text-sm font-medium bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-lg transition-colors disabled:opacity-50"
-            >
-              Câu tiếp
-            </button>
-          </div>
+
+          {questions.length > 1 ? (
+            <div className="mt-8 flex items-center justify-between border-t border-zinc-100 pt-4 dark:border-zinc-800">
+              <button
+                type="button"
+                disabled={currentIndex === 0}
+                onClick={() => setCurrentIndex((p) => p - 1)}
+                className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium transition-colors hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
+              >
+                Câu trước
+              </button>
+              <span className="text-sm font-medium text-zinc-500">
+                {currentIndex + 1} / {questions.length}
+              </span>
+              <button
+                type="button"
+                disabled={currentIndex === questions.length - 1}
+                onClick={() => setCurrentIndex((p) => p + 1)}
+                className="rounded-lg bg-zinc-100 px-4 py-2 text-sm font-medium transition-colors hover:bg-zinc-200 disabled:opacity-50 dark:bg-zinc-800 dark:hover:bg-zinc-700"
+              >
+                Câu tiếp
+              </button>
+            </div>
+          ) : null}
         </div>
 
         {/* Navigator Column */}
-        <div className={`${contextContent ? "lg:col-span-2" : "lg:col-span-4"} h-full overflow-y-auto hidden lg:block`}>
+        <div
+          className={`${
+            contextContent || renderSidePanel
+              ? "lg:col-span-2"
+              : "lg:col-span-4"
+          } hidden h-full overflow-y-auto lg:block`}
+        >
           <QuestionNavigator
             questions={navQuestions}
             currentIndex={currentIndex}
@@ -254,8 +432,10 @@ export function GenericPracticeEngine({
       <SubmitConfirmModal
         isOpen={isSubmitModalOpen}
         onClose={() => setIsSubmitModalOpen(false)}
-        onConfirm={submitAttempt}
-        isSubmitting={isSubmitting}
+        onConfirm={() => {
+          void submitAttempt();
+        }}
+        isSubmitting={combinedSubmitting}
         unansweredCount={unansweredCount}
       />
     </div>

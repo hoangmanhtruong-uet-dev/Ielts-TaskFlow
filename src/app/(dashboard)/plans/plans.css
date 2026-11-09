@@ -1,14 +1,14 @@
 :root {
-  --ink: #0C0E1D;
+  --ink: #0c0e1d;
   --panel: #141731;
-  --panel2: #1B1F40;
-  --line: #2B3060;
-  --text: #EEF0FF;
-  --mute: #98A0CF;
-  --indigo: #5B5FEF;
-  --indigo-hi: #7C80FF;
-  --mark: #F6E85C;
-  --ok: #5EE0A0;
+  --panel2: #1b1f40;
+  --line: #2b3060;
+  --text: #eef0ff;
+  --mute: #98a0cf;
+  --indigo: #5b5fef;
+  --indigo-hi: #7c80ff;
+  --mark: #f6e85c;
+  --ok: #5ee0a0;
   --head: "Bricolage Grotesque", "Be Vietnam Pro", system-ui, sans-serif;
   --body: "Be Vietnam Pro", system-ui, sans-serif;
 }
@@ -47,7 +47,11 @@
 }
 
 .plans-mk {
-  background: linear-gradient(transparent 58%, rgba(246, 232, 92, 0.9) 58% 92%, transparent 92%);
+  background: linear-gradient(
+    transparent 58%,
+    rgba(246, 232, 92, 0.9) 58% 92%,
+    transparent 92%
+  );
   color: var(--ink);
   padding: 0 0.12em;
   margin: 0 -0.06em;
@@ -136,7 +140,9 @@
   border-radius: 12px;
   position: relative;
   z-index: 1;
-  transition: transform 0.15s, box-shadow 0.15s;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
   cursor: pointer;
   border: 0;
   display: inline-block;
@@ -235,7 +241,11 @@
   display: block;
   height: 12px;
   border-radius: 8px;
-  background: linear-gradient(90deg, var(--a) var(--f, 0%), color-mix(in srgb, var(--a) 22%, transparent) var(--f, 0%));
+  background: linear-gradient(
+    90deg,
+    var(--a) var(--f, 0%),
+    color-mix(in srgb, var(--a) 22%, transparent) var(--f, 0%)
+  );
 }
 
 .plans-seg b {
@@ -255,7 +265,9 @@
 }
 
 .plans-seg[aria-pressed="true"] .b {
-  box-shadow: 0 0 0 2px var(--ink), 0 0 0 4px var(--a);
+  box-shadow:
+    0 0 0 2px var(--ink),
+    0 0 0 4px var(--a);
 }
 
 .plans-seg .s {
@@ -419,7 +431,9 @@
   display: flex;
   flex-direction: column;
   position: relative;
-  transition: border-color 0.15s, transform 0.15s;
+  transition:
+    border-color 0.15s,
+    transform 0.15s;
   animation: plans-in 0.25s ease both;
 }
 
@@ -627,8 +641,12 @@
 }
 
 @keyframes plans-fade {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .plans-dialog {
@@ -761,7 +779,9 @@
   cursor: pointer;
   display: grid;
   place-items: center;
-  transition: border-color 0.15s, background-color 0.15s;
+  transition:
+    border-color 0.15s,
+    background-color 0.15s;
 }
 
 .plans-df .pn button:hover:not(:disabled) {
@@ -789,7 +809,9 @@
   color: #fff;
   border: 0;
   cursor: pointer;
-  transition: background-color 0.15s, transform 0.15s;
+  transition:
+    background-color 0.15s,
+    transform 0.15s;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
@@ -854,7 +876,7 @@
   .plans-stats4 div:nth-child(3) {
     border-left: 0;
   }
-  .plans-stats4 div:nth-child(n+3) {
+  .plans-stats4 div:nth-child(n + 3) {
     border-top: 1px solid var(--line);
   }
   .plans-df {

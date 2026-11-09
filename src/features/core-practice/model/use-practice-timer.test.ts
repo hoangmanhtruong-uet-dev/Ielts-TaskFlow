@@ -1,10 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-function calculateTimeLeft(serverExpiresAt: string, serverNow: string, clientNow: number): number {
+function calculateTimeLeft(
+  serverExpiresAt: string,
+  serverNow: string,
+  clientNow: number,
+): number {
   const expiresTime = new Date(serverExpiresAt).getTime();
   const serverTimeMs = new Date(serverNow).getTime();
   const drift = clientNow - serverTimeMs;
-  
+
   const diff = Math.max(0, expiresTime - (clientNow - drift));
   return Math.floor(diff / 1000);
 }

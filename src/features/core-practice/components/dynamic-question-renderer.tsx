@@ -1,7 +1,10 @@
 "use client";
 
 import React from "react";
-import { TrueFalseButtonGroup, type QuestionOption } from "./question-registry/true-false-button-group";
+import {
+  TrueFalseButtonGroup,
+  type QuestionOption,
+} from "./question-registry/true-false-button-group";
 import { InlineBlankInput } from "./question-registry/inline-blank-input";
 import { MatchingHeadingsSelector } from "./question-registry/matching-headings-selector";
 import { MatchingPillSelector } from "./question-registry/matching-pill-selector";
@@ -43,7 +46,8 @@ export function DynamicQuestionRenderer({
     qType === "yes_no_not_given" ||
     qType === "true_false"
   ) {
-    const isYesNo = qType === "yes_no_not_given" || question.promptMarkdown.includes("YES");
+    const isYesNo =
+      qType === "yes_no_not_given" || question.promptMarkdown.includes("YES");
     return (
       <TrueFalseButtonGroup
         questionId={question.id}

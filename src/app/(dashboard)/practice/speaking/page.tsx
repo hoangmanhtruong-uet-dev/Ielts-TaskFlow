@@ -20,14 +20,16 @@ export default async function SpeakingCatalogPage() {
     getCurrentLearnerProfile().catch(() => null),
   ]);
 
-  const latestFeedbackAttempt = attempts.find((item) => item.feedback)?.feedback;
+  const latestFeedbackAttempt = attempts.find(
+    (item) => item.feedback,
+  )?.feedback;
 
   const latestFeedback = latestFeedbackAttempt
     ? {
-        pronunciationBand: latestFeedbackAttempt.estimatedPronunciationBand ?? 7.0,
-        fluencyBand: latestFeedbackAttempt.estimatedFluencyBand ?? 7.5,
-        lexicalBand: latestFeedbackAttempt.estimatedLexicalBand ?? 7.5,
-        grammarBand: 7.0,
+        pronunciationBand: latestFeedbackAttempt.estimatedPronunciationBand,
+        fluencyBand: latestFeedbackAttempt.estimatedFluencyBand,
+        lexicalBand: latestFeedbackAttempt.estimatedLexicalBand,
+        grammarBand: latestFeedbackAttempt.estimatedGrammarBand,
       }
     : null;
 

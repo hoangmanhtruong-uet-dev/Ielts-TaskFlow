@@ -1,1 +1,1 @@
-export type Database = any;
+export type { Database, Json } from "@/types/database";

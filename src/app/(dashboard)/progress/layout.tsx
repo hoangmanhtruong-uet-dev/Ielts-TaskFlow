@@ -12,8 +12,6 @@ export default function ProgressLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-[100dvh] bg-[#0d0e15] text-[#f3f4f6]">
-      {children}
-    </div>
+    <div className="min-h-[100dvh] bg-[#0d0e15] text-[#f3f4f6]">{children}</div>
   );
 }

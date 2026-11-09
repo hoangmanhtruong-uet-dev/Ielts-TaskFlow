@@ -4,9 +4,9 @@ import React, { memo } from "react";
 import { cn } from "@/lib/utils";
 
 interface LevelProgressProps {
-  code: string;        // e.g. "B1"
-  label: string;       // e.g. "Intermediate"
-  progress: number;    // 0-100
+  code: string; // e.g. "B1"
+  label: string; // e.g. "Intermediate"
+  progress: number; // 0-100
   mounted: boolean;
 }
 
@@ -45,7 +45,7 @@ export const LevelProgress = memo(function LevelProgress({
       </div>
 
       {/* CEFR ladder */}
-      <div className="flex items-center justify-between mt-1">
+      <div className="mt-1 flex items-center justify-between">
         {CEFR_LEVELS.map((lvl, i) => (
           <div key={lvl} className="flex flex-col items-center gap-0.5">
             <div
@@ -54,8 +54,8 @@ export const LevelProgress = memo(function LevelProgress({
                 i < currentIdx
                   ? "bg-[var(--success)]"
                   : i === currentIdx
-                  ? "bg-[var(--primary)] ring-2 ring-[var(--primary-soft)]"
-                  : "bg-[var(--muted)]"
+                    ? "bg-[var(--primary)] ring-2 ring-[var(--primary-soft)]"
+                    : "bg-[var(--muted)]",
               )}
             />
             <span
@@ -63,7 +63,7 @@ export const LevelProgress = memo(function LevelProgress({
                 "text-[8px] font-bold",
                 i === currentIdx
                   ? "text-[var(--primary)]"
-                  : "text-[var(--muted-foreground)]"
+                  : "text-[var(--muted-foreground)]",
               )}
             >
               {lvl}

@@ -45,7 +45,10 @@ export const getCurrentAccount = cache(
       .maybeSingle();
 
     if (profileError) {
-      console.error("Profile query error detail:", JSON.stringify(profileError, null, 2));
+      console.error(
+        "Profile query error detail:",
+        JSON.stringify(profileError, null, 2),
+      );
       throw new AccountReadError("Không thể đọc hồ sơ người dùng.");
     }
 

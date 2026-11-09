@@ -8,7 +8,10 @@ export interface MultipleChoiceCardProps {
   options: QuestionOption[];
   selectedOptionIds: string[];
   isMultiple?: boolean;
-  onChange: (value: { selectedOptionIds: string[]; answerText: string }) => void;
+  onChange: (value: {
+    selectedOptionIds: string[];
+    answerText: string;
+  }) => void;
 }
 
 export function MultipleChoiceCard({
@@ -47,7 +50,7 @@ export function MultipleChoiceCard({
             key={option.id}
             className={`group flex min-h-14 cursor-pointer items-center justify-between rounded-2xl border-2 px-5 py-3.5 transition-all duration-150 select-none ${
               isChecked
-                ? "border-emerald-600 bg-emerald-50/70 text-emerald-950 ring-2 ring-emerald-500/20 shadow-sm"
+                ? "border-emerald-600 bg-emerald-50/70 text-emerald-950 shadow-sm ring-2 ring-emerald-500/20"
                 : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
             }`}
           >
@@ -60,7 +63,7 @@ export function MultipleChoiceCard({
               onChange={() => handleToggle(option)}
               className="sr-only"
             />
-            <div className="flex items-center gap-4 min-w-0 pr-3">
+            <div className="flex min-w-0 items-center gap-4 pr-3">
               <div
                 className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl border text-xs font-black transition-colors ${
                   isChecked
@@ -70,7 +73,9 @@ export function MultipleChoiceCard({
               >
                 {letter}
               </div>
-              <span className="font-semibold text-sm leading-relaxed">{option.label}</span>
+              <span className="text-sm leading-relaxed font-semibold">
+                {option.label}
+              </span>
             </div>
 
             <div
@@ -86,8 +91,8 @@ export function MultipleChoiceCard({
                 <div
                   className={
                     isMultiple
-                      ? "h-2 w-2 bg-white rounded-xs"
-                      : "h-2 w-2 bg-white rounded-full"
+                      ? "h-2 w-2 rounded-xs bg-white"
+                      : "h-2 w-2 rounded-full bg-white"
                   }
                 />
               )}

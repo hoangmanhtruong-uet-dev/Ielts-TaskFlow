@@ -6,32 +6,23 @@ import {
   ChevronLeft,
   ChevronRight,
   Check,
-  Calendar,
   Sparkles,
   ArrowRight,
-  LogOut,
 } from "lucide-react";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 
 import { Button } from "@/components/ui/button";
 import { LogoutButton } from "@/features/auth/components/logout-button";
-import { AppLogo } from "@/components/shared/app-logo";
 import {
   completeOnboardingAction,
   saveOnboardingStepAction,
-  type OnboardingActionState,
 } from "@/features/onboarding/actions";
 import {
   ONBOARDING_STEPS,
   PRIORITY_SKILLS,
   type PrioritySkill,
-  TEST_TYPE_LABELS,
-  SKILL_LABELS,
-  GOAL_LABELS,
-  type PrimaryGoal,
   isTestType,
-  isPrimaryGoal,
 } from "@/features/onboarding/constants";
 import type { LearnerProfile } from "@/features/onboarding/server/learner-profile";
 import { cn } from "@/lib/utils";
@@ -100,25 +91,40 @@ export function OnboardingWizard({
   });
 
   const [exam, setExam] = useState<"academic" | "general_training" | null>(
-    (learnerProfile?.test_type as any) ?? null,
+    isTestType(learnerProfile?.test_type ?? null)
+      ? (learnerProfile?.test_type as "academic" | "general_training")
+      : null,
   );
-  const [cur, setCur] = useState<number | null>(learnerProfile?.current_band ?? null);
+  const [cur, setCur] = useState<number | null>(
+    learnerProfile?.current_band ?? null,
+  );
   const [curSkip, setCurSkip] = useState<boolean>(
-    learnerProfile?.current_band === null && (learnerProfile?.onboarding_step ?? 1) > 3,
+    learnerProfile?.current_band === null &&
+      (learnerProfile?.onboarding_step ?? 1) > 3,
   );
-  const [tar, setTar] = useState<number | null>(learnerProfile?.target_band ?? null);
-  const [date, setDate] = useState<string>(learnerProfile?.target_exam_date ?? "");
+  const [tar, setTar] = useState<number | null>(
+    learnerProfile?.target_band ?? null,
+  );
+  const [date, setDate] = useState<string>(
+    learnerProfile?.target_exam_date ?? "",
+  );
   const [noDate, setNoDate] = useState<boolean>(
-    learnerProfile?.target_exam_date === null && (learnerProfile?.onboarding_step ?? 1) > 5,
+    learnerProfile?.target_exam_date === null &&
+      (learnerProfile?.onboarding_step ?? 1) > 5,
   );
   const [days, setDays] = useState<number[]>(() => {
     if (learnerProfile?.study_days_per_week) {
-      return Array.from({ length: learnerProfile.study_days_per_week }, (_, i) => i);
+      return Array.from(
+        { length: learnerProfile.study_days_per_week },
+        (_, i) => i,
+      );
     }
     return [0, 1, 2, 3, 4];
   });
   const [hrs, setHrs] = useState<number>(
-    learnerProfile?.daily_study_minutes ? learnerProfile.daily_study_minutes / 60 : 1.5,
+    learnerProfile?.daily_study_minutes
+      ? learnerProfile.daily_study_minutes / 60
+      : 1.5,
   );
   const [skills, setSkills] = useState<PrioritySkill[]>(
     (learnerProfile?.priority_skills as PrioritySkill[]) ?? [],
@@ -126,17 +132,25 @@ export function OnboardingWizard({
 
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string[] | undefined>>({});
+  const [fieldErrors, setFieldErrors] = useState<
+    Record<string, string[] | undefined>
+  >({});
   const [returnToReview, setReturnToReview] = useState(false);
 
-  const [completeState, completeAction] = useActionState(completeOnboardingAction, {
+  const clearErrors = () => {
+    if (saveError !== null) setSaveError(null);
+    if (Object.keys(fieldErrors).length > 0) setFieldErrors({});
+  };
+
+  const [mountNowMs] = useState(() => Date.now());
+  const [, completeAction] = useActionState(completeOnboardingAction, {
     status: "idle",
   });
 
   // Calculations for Live Plan Card
   const weeksLeft = () => {
     if (!date || noDate) return null;
-    const d = (new Date(date).getTime() - new Date().getTime()) / 864e5;
+    const d = (new Date(date).getTime() - mountNowMs) / 864e5;
     return d > 0 ? Math.max(1, Math.ceil(d / 7)) : 0;
   };
 
@@ -154,7 +168,8 @@ export function OnboardingWizard({
   const nh = needHours();
   const hv = haveWeek();
   const needPerWeek = nh != null && w != null && w > 0 ? nh / w : null;
-  const ratio = needPerWeek != null && needPerWeek > 0 ? Math.min(1, hv / needPerWeek) : 0;
+  const ratio =
+    needPerWeek != null && needPerWeek > 0 ? Math.min(1, hv / needPerWeek) : 0;
 
   function isValid(): boolean {
     switch (step) {
@@ -186,11 +201,17 @@ export function OnboardingWizard({
       if (returnToReview) formData.append("returnToReview", "true");
       if (exam) formData.append("testType", exam);
       if (step === 3 || cur !== null || curSkip) {
-        formData.append("currentBand", curSkip || cur === null ? "unknown" : String(cur));
+        formData.append(
+          "currentBand",
+          curSkip || cur === null ? "unknown" : String(cur),
+        );
       }
       if (tar) {
         formData.append("targetBand", String(tar));
-        formData.append("primaryGoal", exam === "general_training" ? "work" : "study_abroad");
+        formData.append(
+          "primaryGoal",
+          exam === "general_training" ? "work" : "study_abroad",
+        );
       }
       if (step === 5 || date || noDate) {
         formData.append("targetExamDate", noDate ? "" : date);
@@ -204,7 +225,10 @@ export function OnboardingWizard({
       }
 
       if (step >= 2 && step <= 7) {
-        const res = await saveOnboardingStepAction({ status: "idle" }, formData);
+        const res = await saveOnboardingStepAction(
+          { status: "idle" },
+          formData,
+        );
         if (res.status === "error") {
           setSaveError(res.message || "Hãy kiểm tra lại thông tin ở bước này.");
           if (res.fieldErrors) setFieldErrors(res.fieldErrors);
@@ -229,8 +253,9 @@ export function OnboardingWizard({
       setTimeout(() => {
         document.getElementById("onboarding-step-title")?.focus();
       }, 0);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Save step error:", err);
+      setSaveError("Không thể lưu tiến độ lúc này. Vui lòng thử lại.");
       setIsSaving(false);
     }
   }
@@ -247,9 +272,16 @@ export function OnboardingWizard({
   }
 
   function jumpToStep(targetStep: number) {
+    setSaveError(null);
+    setFieldErrors({});
     setReturnToReview(true);
     setStep(targetStep);
   }
+
+  const keyHandlerRef = useRef({ handleNext, isValid });
+  useEffect(() => {
+    keyHandlerRef.current = { handleNext, isValid };
+  });
 
   // Keyboard shortcut: Enter to continue
   useEffect(() => {
@@ -257,20 +289,28 @@ export function OnboardingWizard({
       if (e.key === "Enter" && step < 8) {
         const target = e.target as HTMLElement | null;
         if (target && target.tagName === "BUTTON") return;
-        if (target && target.tagName === "INPUT" && (target as HTMLInputElement).type !== "date") return;
-        if (isValid()) {
+        if (
+          target &&
+          target.tagName === "INPUT" &&
+          (target as HTMLInputElement).type !== "date"
+        )
+          return;
+        if (keyHandlerRef.current.isValid()) {
           e.preventDefault();
-          handleNext();
+          keyHandlerRef.current.handleNext();
         }
       }
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [step, exam, cur, curSkip, tar, date, noDate, days, hrs, skills, returnToReview]);
+  }, [step]);
 
   const completedFormSteps = Math.max(0, step - 1);
-  const minExamDate = new Date(Date.now() + 864e5).toISOString().slice(0, 10);
-  const weeklyTimeLabel = formatWeeklyStudyTime(Math.round(hrs * 60), days.length);
+  const minExamDate = new Date(mountNowMs + 864e5).toISOString().slice(0, 10);
+  const weeklyTimeLabel = formatWeeklyStudyTime(
+    Math.round(hrs * 60),
+    days.length,
+  );
 
   return (
     <div className="flex min-h-screen flex-col bg-[var(--ink)] text-[var(--text)]">
@@ -353,8 +393,9 @@ export function OnboardingWizard({
                   <span className="mk">lộ trình</span> cho bạn nhé
                 </h1>
                 <p className="mt-4 max-w-xl text-base leading-relaxed text-[var(--mute)] sm:text-lg">
-                  Bảy câu hỏi ngắn, khoảng 2 phút. Bên phải, lộ trình sẽ thành hình dần
-                  theo từng câu trả lời của bạn. Bạn có thể sửa lại bất cứ lúc nào trong Hồ sơ.
+                  Bảy câu hỏi ngắn, khoảng 2 phút. Bên phải, lộ trình sẽ thành
+                  hình dần theo từng câu trả lời của bạn. Bạn có thể sửa lại bất
+                  cứ lúc nào trong Hồ sơ.
                 </p>
 
                 <div className="mt-8">
@@ -367,6 +408,7 @@ export function OnboardingWizard({
                       href="/onboarding?step=2"
                       onClick={(e) => {
                         e.preventDefault();
+                        clearErrors();
                         setStep(2);
                       }}
                       className="inline-flex items-center gap-2"
@@ -390,25 +432,28 @@ export function OnboardingWizard({
                   Bạn đang chuẩn bị cho loại bài thi nào?
                 </h1>
                 <p className="mt-3 text-sm text-[var(--mute)] sm:text-base">
-                  Hai dạng có Writing và Reading khác nhau, nên mình cần biết để chọn đúng đề luyện.
+                  Hai dạng có Writing và Reading khác nhau, nên mình cần biết để
+                  chọn đúng đề luyện.
                 </p>
 
                 <fieldset className="mt-6 grid grid-cols-1 gap-3.5 sm:grid-cols-2">
                   <legend className="sr-only">Loại bài thi IELTS</legend>
-                  {[
-                    {
-                      id: "academic",
-                      label: "IELTS Academic",
-                      title: "Academic",
-                      desc: "Du học, đại học, sau đại học",
-                    },
-                    {
-                      id: "general_training",
-                      label: "IELTS General Training",
-                      title: "General Training",
-                      desc: "Định cư, làm việc, đi nước ngoài",
-                    },
-                  ].map((item) => {
+                  {(
+                    [
+                      {
+                        id: "academic",
+                        label: "IELTS Academic",
+                        title: "Academic",
+                        desc: "Du học, đại học, sau đại học",
+                      },
+                      {
+                        id: "general_training",
+                        label: "IELTS General Training",
+                        title: "General Training",
+                        desc: "Định cư, làm việc, đi nước ngoài",
+                      },
+                    ] as const
+                  ).map((item) => {
                     const isSelected = exam === item.id;
                     return (
                       <label
@@ -417,7 +462,7 @@ export function OnboardingWizard({
                           "relative flex cursor-pointer flex-col justify-between rounded-2xl border-2 p-5 transition-all duration-150",
                           isSelected
                             ? "border-[var(--mark)] bg-[var(--panel2)] shadow-md"
-                            : "border-[var(--line)] bg-[var(--panel)] hover:border-[var(--indigo-hi)] hover:-translate-y-0.5",
+                            : "border-[var(--line)] bg-[var(--panel)] hover:-translate-y-0.5 hover:border-[var(--indigo-hi)]",
                         )}
                       >
                         <input
@@ -425,7 +470,10 @@ export function OnboardingWizard({
                           name="testType"
                           value={item.id}
                           checked={isSelected}
-                          onChange={() => setExam(item.id as any)}
+                          onChange={() => {
+                            clearErrors();
+                            setExam(item.id);
+                          }}
                           aria-label={item.label}
                           className="sr-only focus:not-sr-only focus:outline-none"
                         />
@@ -478,14 +526,19 @@ export function OnboardingWizard({
                 <input
                   aria-label="Band hiện tại"
                   className="sr-only"
-                  value={curSkip ? "unknown" : cur !== null ? String(cur) : "unknown"}
+                  value={
+                    curSkip ? "unknown" : cur !== null ? String(cur) : "unknown"
+                  }
                   onChange={(e) => {
+                    clearErrors();
                     if (e.target.value === "unknown") {
                       setCurSkip(true);
                       setCur(null);
                     } else {
                       setCurSkip(false);
-                      setCur(e.target.value ? parseFloat(e.target.value) : null);
+                      setCur(
+                        e.target.value ? parseFloat(e.target.value) : null,
+                      );
                     }
                   }}
                 />
@@ -498,15 +551,16 @@ export function OnboardingWizard({
                         key={b}
                         type="button"
                         onClick={() => {
+                          clearErrors();
                           setCur(b);
                           setCurSkip(false);
                           if (tar !== null && tar <= b) setTar(null);
                         }}
                         className={cn(
-                          "rounded-xl border-2 py-3.5 text-center font-head text-lg font-bold transition-all sm:text-xl",
+                          "font-head rounded-xl border-2 py-3.5 text-center text-lg font-bold transition-all sm:text-xl",
                           isSelected
                             ? "border-[var(--mark)] bg-[var(--mark)] text-[var(--ink)] shadow-md"
-                            : "border-[var(--line)] bg-[var(--panel)] text-[var(--text)] hover:border-[var(--indigo-hi)] hover:-translate-y-0.5",
+                            : "border-[var(--line)] bg-[var(--panel)] text-[var(--text)] hover:-translate-y-0.5 hover:border-[var(--indigo-hi)]",
                         )}
                       >
                         {formatBand(b)}
@@ -519,6 +573,7 @@ export function OnboardingWizard({
                   <button
                     type="button"
                     onClick={() => {
+                      clearErrors();
                       setCurSkip((prev) => !prev);
                       if (!curSkip) setCur(null);
                     }}
@@ -546,7 +601,8 @@ export function OnboardingWizard({
                   Bạn muốn đạt band mấy?
                 </h1>
                 <p className="mt-3 text-sm text-[var(--mute)] sm:text-base">
-                  Mục tiêu phải cao hơn điểm hiện tại. Chọn mức bạn cần cho hồ sơ, không phải mức bạn nghĩ là dễ.
+                  Mục tiêu phải cao hơn điểm hiện tại. Chọn mức bạn cần cho hồ
+                  sơ, không phải mức bạn nghĩ là dễ.
                 </p>
 
                 {/* Input for getByLabelText("Band mục tiêu") in tests */}
@@ -554,7 +610,10 @@ export function OnboardingWizard({
                   aria-label="Band mục tiêu"
                   className="sr-only"
                   value={tar ?? ""}
-                  onChange={(e) => setTar(e.target.value ? parseFloat(e.target.value) : null)}
+                  onChange={(e) => {
+                    clearErrors();
+                    setTar(e.target.value ? parseFloat(e.target.value) : null);
+                  }}
                 />
 
                 <div className="mt-6 grid grid-cols-5 gap-2.5">
@@ -566,14 +625,17 @@ export function OnboardingWizard({
                         key={b}
                         type="button"
                         disabled={isDisabled}
-                        onClick={() => setTar(b)}
+                        onClick={() => {
+                          clearErrors();
+                          setTar(b);
+                        }}
                         className={cn(
-                          "rounded-xl border-2 py-3.5 text-center font-head text-lg font-bold transition-all sm:text-xl",
+                          "font-head rounded-xl border-2 py-3.5 text-center text-lg font-bold transition-all sm:text-xl",
                           isSelected
                             ? "border-[var(--mark)] bg-[var(--mark)] text-[var(--ink)] shadow-md"
                             : isDisabled
-                              ? "cursor-not-allowed border-[var(--line)] bg-[var(--panel2)] opacity-30 text-[var(--mute)]"
-                              : "border-[var(--line)] bg-[var(--panel)] text-[var(--text)] hover:border-[var(--indigo-hi)] hover:-translate-y-0.5",
+                              ? "cursor-not-allowed border-[var(--line)] bg-[var(--panel2)] text-[var(--mute)] opacity-30"
+                              : "border-[var(--line)] bg-[var(--panel)] text-[var(--text)] hover:-translate-y-0.5 hover:border-[var(--indigo-hi)]",
                         )}
                       >
                         {formatBand(b)}
@@ -595,7 +657,8 @@ export function OnboardingWizard({
                   Bao giờ bạn thi?
                 </h1>
                 <p className="mt-3 text-sm text-[var(--mute)] sm:text-base">
-                  Có ngày thi, mình mới tính được mỗi tuần bạn cần học bao nhiêu.
+                  Có ngày thi, mình mới tính được mỗi tuần bạn cần học bao
+                  nhiêu.
                 </p>
 
                 <div className="mt-6">
@@ -605,9 +668,12 @@ export function OnboardingWizard({
                     min={minExamDate}
                     value={date}
                     disabled={noDate}
-                    onChange={(e) => setDate(e.target.value)}
+                    onChange={(e) => {
+                      clearErrors();
+                      setDate(e.target.value);
+                    }}
                     aria-label="Ngày thi"
-                    className="w-full rounded-2xl border-2 border-[var(--line)] bg-[var(--panel)] px-5 py-4 font-body text-base font-semibold text-[var(--text)] focus:border-[var(--indigo-hi)] focus:outline-none disabled:opacity-40"
+                    className="font-body w-full rounded-2xl border-2 border-[var(--line)] bg-[var(--panel)] px-5 py-4 text-base font-semibold text-[var(--text)] focus:border-[var(--indigo-hi)] focus:outline-none disabled:opacity-40"
                   />
                 </div>
 
@@ -615,6 +681,7 @@ export function OnboardingWizard({
                   <button
                     type="button"
                     onClick={() => {
+                      clearErrors();
                       setNoDate((prev) => !prev);
                       if (!noDate) setDate("");
                     }}
@@ -654,12 +721,15 @@ export function OnboardingWizard({
                         key={d}
                         type="button"
                         onClick={() => {
+                          clearErrors();
                           setDays((prev) =>
-                            prev.includes(i) ? prev.filter((x) => x !== i) : [...prev, i],
+                            prev.includes(i)
+                              ? prev.filter((x) => x !== i)
+                              : [...prev, i],
                           );
                         }}
                         className={cn(
-                          "rounded-xl border-2 py-3.5 text-center font-body text-sm font-bold transition-all sm:text-base",
+                          "font-body rounded-xl border-2 py-3.5 text-center text-sm font-bold transition-all sm:text-base",
                           isSelected
                             ? "border-[var(--indigo)] bg-[var(--indigo)] text-white shadow-md"
                             : "border-[var(--line)] bg-[var(--panel)] text-[var(--text)] hover:border-[var(--indigo-hi)]",
@@ -687,7 +757,10 @@ export function OnboardingWizard({
                     max={4}
                     step={0.5}
                     value={hrs}
-                    onChange={(e) => setHrs(parseFloat(e.target.value))}
+                    onChange={(e) => {
+                      clearErrors();
+                      setHrs(parseFloat(e.target.value));
+                    }}
                     aria-label="Giờ học mỗi buổi"
                     className="mt-4 w-full cursor-pointer accent-[var(--mark)]"
                   />
@@ -711,14 +784,18 @@ export function OnboardingWizard({
                   Kỹ năng nào cần ưu tiên?
                 </h1>
                 <p className="mt-3 text-sm text-[var(--mute)] sm:text-base">
-                  Chọn những kỹ năng bạn thấy yếu nhất. Mình sẽ cho chúng nhiều thời gian hơn.
+                  Chọn những kỹ năng bạn thấy yếu nhất. Mình sẽ cho chúng nhiều
+                  thời gian hơn.
                 </p>
 
                 {/* 1-click select all 4 skills */}
                 <div className="mt-4 flex justify-end">
                   <button
                     type="button"
-                    onClick={() => setSkills([...ALL_PRIORITY_SKILLS])}
+                    onClick={() => {
+                      clearErrors();
+                      setSkills([...ALL_PRIORITY_SKILLS]);
+                    }}
                     className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--indigo-hi)] hover:underline"
                   >
                     <Sparkles size={14} />
@@ -744,8 +821,11 @@ export function OnboardingWizard({
                           type="checkbox"
                           checked={isSelected}
                           onChange={() => {
+                            clearErrors();
                             setSkills((prev) =>
-                              prev.includes(k) ? prev.filter((x) => x !== k) : [...prev, k],
+                              prev.includes(k)
+                                ? prev.filter((x) => x !== k)
+                                : [...prev, k],
                             );
                           }}
                           aria-label={info.name}
@@ -794,7 +874,9 @@ export function OnboardingWizard({
                   <div className="flex items-center justify-between p-4 text-sm">
                     <span className="text-[var(--mute)]">Bài thi</span>
                     <b className="font-semibold text-white">
-                      {exam === "general_training" ? "IELTS General Training" : "IELTS Academic"}
+                      {exam === "general_training"
+                        ? "IELTS General Training"
+                        : "IELTS Academic"}
                       <button
                         type="button"
                         onClick={() => jumpToStep(2)}
@@ -863,7 +945,8 @@ export function OnboardingWizard({
                   <div className="flex items-center justify-between p-4 text-sm">
                     <span className="text-[var(--mute)]">Lịch học</span>
                     <b className="font-semibold text-white">
-                      {days.map((i) => DAY_NAMES[i]).join(", ")} · {hrs} giờ/buổi
+                      {days.map((i) => DAY_NAMES[i]).join(", ")} · {hrs}{" "}
+                      giờ/buổi
                       {weeklyTimeLabel ? (
                         <span className="ml-2 text-xs font-normal text-[var(--mute)]">
                           {weeklyTimeLabel}
@@ -883,7 +966,9 @@ export function OnboardingWizard({
                   <div className="flex items-center justify-between p-4 text-sm">
                     <span className="text-[var(--mute)]">Kỹ năng ưu tiên</span>
                     <b className="font-semibold text-white">
-                      {skills.map((k) => SKILL_DESCRIPTIONS[k]?.name || k).join(", ")}
+                      {skills
+                        .map((k) => SKILL_DESCRIPTIONS[k]?.name || k)
+                        .join(", ")}
                       <button
                         type="button"
                         onClick={() => jumpToStep(7)}
@@ -896,7 +981,10 @@ export function OnboardingWizard({
                   </div>
                 </div>
 
-                <form action={completeAction} className="mt-8 flex items-center justify-between">
+                <form
+                  action={completeAction}
+                  className="mt-8 flex items-center justify-between"
+                >
                   <button
                     type="button"
                     onClick={handleBack}
@@ -931,7 +1019,7 @@ export function OnboardingWizard({
                     onClick={handleNext}
                     disabled={isSaving}
                     aria-label="Lưu và tiếp tục"
-                    className="btn flex items-center gap-2 rounded-xl bg-[var(--indigo)] px-6 py-3 font-head text-sm font-bold text-white transition-all hover:bg-[var(--indigo-hi)] active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-[var(--panel2)] disabled:text-[var(--mute)]"
+                    className="btn font-head flex items-center gap-2 rounded-xl bg-[var(--indigo)] px-6 py-3 text-sm font-bold text-white transition-all hover:bg-[var(--indigo-hi)] active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-[var(--panel2)] disabled:text-[var(--mute)]"
                   >
                     {isSaving ? "Đang lưu…" : "Lưu và tiếp tục"}
                     <ChevronRight size={17} />
@@ -953,18 +1041,23 @@ export function OnboardingWizard({
         </section>
 
         {/* RIGHT COLUMN: LIVE PLAN CARD (STICKY) */}
-        <aside aria-label="Lộ trình ước tính" className="md:sticky md:top-24 md:self-start">
+        <aside
+          aria-label="Lộ trình ước tính"
+          className="md:sticky md:top-24 md:self-start"
+        >
           <div className="onboarding-card-accent relative overflow-hidden rounded-3xl border border-[var(--line)] bg-[var(--panel)] p-6 shadow-xl sm:p-7">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--mute)]">
+            <h3 className="text-xs font-bold tracking-wider text-[var(--mute)] uppercase">
               Lộ trình của bạn
             </h3>
 
             {/* BIG PATH (CUR -> TAR) */}
-            <div className="mt-3 flex items-baseline gap-3 font-head text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
-              <span className={cur != null ? "text-white" : "text-[var(--line)]"}>
+            <div className="font-head mt-3 flex items-baseline gap-3 text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
+              <span
+                className={cur != null ? "text-white" : "text-[var(--line)]"}
+              >
                 {cur != null ? formatBand(cur) : curSkip ? "0.0" : "–.–"}
               </span>
-              <em className="text-xl font-normal not-italic text-[var(--mute)] sm:text-2xl">
+              <em className="text-xl font-normal text-[var(--mute)] not-italic sm:text-2xl">
                 →
               </em>
               <span
@@ -991,29 +1084,57 @@ export function OnboardingWizard({
             {/* STATS 2x2 GRID */}
             <div className="mt-6 grid grid-cols-2 gap-[1px] overflow-hidden rounded-xl bg-[var(--line)]">
               <div className="bg-[var(--panel2)] p-3 sm:p-4">
-                <small className="block text-[11px] text-[var(--mute)]">Còn lại</small>
-                <b className={cn("font-head text-lg font-bold sm:text-xl", w ? "text-white" : "text-[var(--line)]")}>
+                <small className="block text-[11px] text-[var(--mute)]">
+                  Còn lại
+                </small>
+                <b
+                  className={cn(
+                    "font-head text-lg font-bold sm:text-xl",
+                    w ? "text-white" : "text-[var(--line)]",
+                  )}
+                >
                   {w != null && w > 0 ? `${w} tuần` : noDate ? "Chưa đặt" : "–"}
                 </b>
               </div>
 
               <div className="bg-[var(--panel2)] p-3 sm:p-4">
-                <small className="block text-[11px] text-[var(--mute)]">Cần học tổng</small>
-                <b className={cn("font-head text-lg font-bold sm:text-xl", nh != null ? "text-white" : "text-[var(--line)]")}>
+                <small className="block text-[11px] text-[var(--mute)]">
+                  Cần học tổng
+                </small>
+                <b
+                  className={cn(
+                    "font-head text-lg font-bold sm:text-xl",
+                    nh != null ? "text-white" : "text-[var(--line)]",
+                  )}
+                >
                   {nh != null ? `${Math.round(nh)} giờ` : "–"}
                 </b>
               </div>
 
               <div className="bg-[var(--panel2)] p-3 sm:p-4">
-                <small className="block text-[11px] text-[var(--mute)]">Cần mỗi tuần</small>
-                <b className={cn("font-head text-lg font-bold sm:text-xl", needPerWeek != null ? "text-white" : "text-[var(--line)]")}>
+                <small className="block text-[11px] text-[var(--mute)]">
+                  Cần mỗi tuần
+                </small>
+                <b
+                  className={cn(
+                    "font-head text-lg font-bold sm:text-xl",
+                    needPerWeek != null ? "text-white" : "text-[var(--line)]",
+                  )}
+                >
                   {needPerWeek != null ? `${needPerWeek.toFixed(1)} giờ` : "–"}
                 </b>
               </div>
 
               <div className="bg-[var(--panel2)] p-3 sm:p-4">
-                <small className="block text-[11px] text-[var(--mute)]">Bạn dành mỗi tuần</small>
-                <b className={cn("font-head text-lg font-bold sm:text-xl", hv > 0 ? "text-white" : "text-[var(--line)]")}>
+                <small className="block text-[11px] text-[var(--mute)]">
+                  Bạn dành mỗi tuần
+                </small>
+                <b
+                  className={cn(
+                    "font-head text-lg font-bold sm:text-xl",
+                    hv > 0 ? "text-white" : "text-[var(--line)]",
+                  )}
+                >
                   {step >= 5 || days.length > 0 ? `${hv.toFixed(1)} giờ` : "–"}
                 </b>
               </div>
@@ -1066,7 +1187,8 @@ export function OnboardingWizard({
           </div>
 
           <p className="mt-3 px-2 text-[11px] leading-relaxed text-[var(--mute)]/80">
-            Ước tính theo quy ước phổ biến: khoảng 200 giờ học để tăng 1.0 band. Thực tế tuỳ mỗi người.
+            Ước tính theo quy ước phổ biến: khoảng 200 giờ học để tăng 1.0 band.
+            Thực tế tuỳ mỗi người.
           </p>
         </aside>
       </main>

@@ -3,8 +3,8 @@ import { notFound } from "next/navigation";
 
 import { ListeningRunner } from "@/features/listening/components/listening-runner";
 import { ListeningStart } from "@/features/listening/components/listening-start";
-import { parseMockRunnerContext } from "@/features/mock-tests/schemas";
 import { getListeningPracticePage } from "@/features/listening/server/content";
+import { verifyMockRunnerContext } from "@/features/mock-tests/server/content";
 
 export const metadata: Metadata = { title: "Listening practice" };
 
@@ -21,10 +21,19 @@ export default async function ListeningPracticePage({
   }>;
 }) {
   const [{ exerciseSlug }, query] = await Promise.all([params, searchParams]);
-  const data = await getListeningPracticePage(exerciseSlug);
+  const verifiedMock = await verifyMockRunnerContext(query, "listening");
+  const data = await getListeningPracticePage(exerciseSlug, {
+    mockAttemptId: verifiedMock?.learnerAttemptId ?? undefined,
+  });
   if (!data) notFound();
+  const mockContext =
+    verifiedMock &&
+    data.attempt &&
+    data.attempt.id === verifiedMock.learnerAttemptId
+      ? verifiedMock.context
+      : undefined;
   return data.attempt ? (
-    <ListeningRunner data={data} mockContext={parseMockRunnerContext(query)} />
+    <ListeningRunner data={data} mockContext={mockContext} />
   ) : (
     <ListeningStart data={data} error={query.error} />
   );

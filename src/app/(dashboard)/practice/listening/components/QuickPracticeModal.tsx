@@ -8,13 +8,15 @@ import {
   Sparkles,
   ArrowRight,
   RotateCcw,
-  BookOpen
+  BookOpen,
 } from "lucide-react";
 
 import type { CuratedExercise } from "./listening-curated-data";
 
 export interface QuickPracticeModalProps {
   exercise: CuratedExercise;
+  hasFullRunner?: boolean;
+  fallbackSlug?: string;
   playbackSpeed: number;
   onClose: () => void;
   onSeekTo: (seconds: number) => void;
@@ -23,10 +25,12 @@ export interface QuickPracticeModalProps {
 
 export function QuickPracticeModal({
   exercise,
+  hasFullRunner = false,
+  fallbackSlug,
   playbackSpeed,
   onClose,
   onSeekTo,
-  onSpeak
+  onSpeak,
 }: QuickPracticeModalProps) {
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [submitted, setSubmitted] = useState(false);
@@ -44,27 +48,27 @@ export function QuickPracticeModal({
   }, 0);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-      <div className="relative w-full max-w-4xl rounded-3xl bg-[#0C0E1D] border border-indigo-500/40 shadow-2xl overflow-hidden my-8 max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/80 p-4 backdrop-blur-md">
+      <div className="relative my-8 flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-indigo-500/40 bg-[#0C0E1D] shadow-2xl">
         {/* Modal Header */}
-        <div className="p-5 sm:p-6 bg-[#141731] border-b border-[#2B3060] flex items-center justify-between gap-4 shrink-0">
+        <div className="flex shrink-0 items-center justify-between gap-4 border-b border-[#2B3060] bg-[#141731] p-5 sm:p-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white font-bold shadow-md shadow-indigo-600/30">
-              <Headphones className="w-5 h-5" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-600 font-bold text-white shadow-md shadow-indigo-600/30">
+              <Headphones className="h-5 w-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold uppercase px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                <span className="rounded border border-indigo-500/30 bg-indigo-500/20 px-2 py-0.5 text-xs font-bold text-indigo-300 uppercase">
                   {exercise.section}
                 </span>
-                <span className="text-xs text-emerald-300 font-semibold">
+                <span className="text-xs font-semibold text-emerald-300">
                   Band {exercise.band}
                 </span>
                 <span className="text-xs text-zinc-400">
                   • {exercise.accent}
                 </span>
               </div>
-              <h3 className="text-lg font-extrabold text-white mt-0.5 tracking-tight">
+              <h3 className="mt-0.5 text-lg font-extrabold tracking-tight text-white">
                 {exercise.title}
               </h3>
             </div>
@@ -73,22 +77,22 @@ export function QuickPracticeModal({
           <button
             onClick={onClose}
             aria-label="Đóng bài tập"
-            className="p-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-zinc-300 hover:text-white transition-colors"
+            className="rounded-xl bg-white/[0.06] p-2 text-zinc-300 transition-colors hover:bg-white/[0.12] hover:text-white"
           >
-            <X className="w-5 h-5" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 overflow-y-auto flex-1">
+        <div className="grid flex-1 grid-cols-1 gap-6 overflow-y-auto p-6 lg:grid-cols-12">
           {/* Question List (7 cols) */}
-          <div className="lg:col-span-7 space-y-4">
+          <div className="space-y-4 lg:col-span-7">
             <div className="flex items-center justify-between">
-              <h4 className="text-sm font-bold uppercase tracking-wider text-indigo-300 flex items-center gap-2">
+              <h4 className="flex items-center gap-2 text-sm font-bold tracking-wider text-indigo-300 uppercase">
                 <span>📝 Phiếu Trả Lời Câu Hỏi (NO MORE THAN TWO WORDS)</span>
               </h4>
               {submitted && (
-                <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                <span className="rounded-lg border border-emerald-500/30 bg-emerald-500/20 px-2.5 py-1 text-xs font-bold text-emerald-300">
                   Kết quả: {scoreCount}/{exercise.questions.length} câu đúng
                 </span>
               )}
@@ -102,10 +106,12 @@ export function QuickPracticeModal({
                 return (
                   <div
                     key={qItem.id}
-                    className="p-4 rounded-2xl bg-[#141731] border border-[#2B3060] space-y-2.5 shadow-sm"
+                    className="space-y-2.5 rounded-2xl border border-[#2B3060] bg-[#141731] p-4 shadow-sm"
                   >
-                    <div className="text-sm text-zinc-200 font-medium leading-relaxed">
-                      <span className="text-indigo-400 font-bold mr-2">Câu {idx + 1}:</span>
+                    <div className="text-sm leading-relaxed font-medium text-zinc-200">
+                      <span className="mr-2 font-bold text-indigo-400">
+                        Câu {idx + 1}:
+                      </span>
                       {qItem.q}
                     </div>
 
@@ -117,23 +123,25 @@ export function QuickPracticeModal({
                           setAnswers({ ...answers, [qItem.id]: e.target.value })
                         }
                         placeholder="Nhập đáp án của bạn..."
-                        className="flex-1 px-3.5 py-2.5 rounded-xl bg-[#0C0E1D] border border-[#2B3060] focus:border-indigo-400 text-sm text-white placeholder-zinc-500 outline-none transition-colors"
+                        className="flex-1 rounded-xl border border-[#2B3060] bg-[#0C0E1D] px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 transition-colors outline-none focus:border-indigo-400"
                       />
                       {submitted && (
                         <span
-                          className={`px-3 py-2 rounded-xl text-xs font-bold shrink-0 ${
+                          className={`shrink-0 rounded-xl px-3 py-2 text-xs font-bold ${
                             isCorrect
-                              ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                              : "bg-rose-500/20 text-rose-300 border border-rose-500/30"
+                              ? "border border-emerald-500/30 bg-emerald-500/20 text-emerald-300"
+                              : "border border-rose-500/30 bg-rose-500/20 text-rose-300"
                           }`}
                         >
-                          {isCorrect ? "✓ Chính xác" : `✗ Đáp án: ${qItem.answer}`}
+                          {isCorrect
+                            ? "✓ Chính xác"
+                            : `✗ Đáp án: ${qItem.answer}`}
                         </span>
                       )}
                     </div>
 
-                    <div className="text-[11px] text-amber-300/90 flex items-center gap-1.5 pt-0.5">
-                      <Sparkles className="w-3 h-3 text-amber-400" />
+                    <div className="flex items-center gap-1.5 pt-0.5 text-[11px] text-amber-300/90">
+                      <Sparkles className="h-3 w-3 text-amber-400" />
                       <span>Gợi ý Paraphrase: {qItem.hint}</span>
                     </div>
                   </div>
@@ -145,7 +153,7 @@ export function QuickPracticeModal({
             <div className="flex flex-wrap items-center gap-3 pt-3">
               <button
                 onClick={() => setSubmitted(true)}
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-400 hover:to-violet-500 text-white text-xs font-bold shadow-md shadow-indigo-600/30 transition-all hover:scale-105 active:scale-95"
+                className="rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-indigo-600/30 transition-all hover:scale-105 hover:from-indigo-400 hover:to-violet-500 active:scale-95"
               >
                 Chấm điểm & Giải thích chi tiết
               </button>
@@ -155,39 +163,45 @@ export function QuickPracticeModal({
                   setAnswers({});
                   setSubmitted(false);
                 }}
-                className="px-4 py-2.5 rounded-xl bg-[#1B1F40] hover:bg-[#252A56] text-zinc-300 text-xs font-semibold border border-[#2B3060] flex items-center gap-1.5 transition-colors"
+                className="flex items-center gap-1.5 rounded-xl border border-[#2B3060] bg-[#1B1F40] px-4 py-2.5 text-xs font-semibold text-zinc-300 transition-colors hover:bg-[#252A56]"
               >
                 <RotateCcw size={13} />
                 <span>Làm lại</span>
               </button>
 
-              {/* Link to Full Exercise Runner */}
-              <Link
-                href={`/practice/listening/${exercise.slug}`}
-                className="ml-auto px-4 py-2.5 rounded-xl bg-[#F6E85C] hover:bg-[#F6E85C]/90 text-[#0C0E1D] text-xs font-extrabold flex items-center gap-1.5 shadow-md hover:-translate-y-0.5 transition-all"
-              >
-                <span>Vào phòng thi đầy đủ (Full Runner)</span>
-                <ArrowRight size={13} />
-              </Link>
+              {/* Link to Full Exercise Runner (only valid DB slug) */}
+              {(hasFullRunner || fallbackSlug) && (
+                <Link
+                  href={`/practice/listening/${hasFullRunner ? exercise.slug : fallbackSlug}`}
+                  className="ml-auto flex items-center gap-1.5 rounded-xl bg-[#F6E85C] px-4 py-2.5 text-xs font-extrabold text-[#0C0E1D] shadow-md transition-all hover:-translate-y-0.5 hover:bg-[#F6E85C]/90"
+                >
+                  <span>
+                    {hasFullRunner
+                      ? "Vào phòng thi đầy đủ (Full Runner)"
+                      : "Mở bài luyện Listening đầy đủ"}
+                  </span>
+                  <ArrowRight size={13} />
+                </Link>
+              )}
             </div>
           </div>
 
           {/* Interactive Live Transcript & Vocab (5 cols) */}
-          <div className="lg:col-span-5 space-y-4">
+          <div className="space-y-4 lg:col-span-5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+              <span className="text-xs font-bold tracking-wider text-zinc-400 uppercase">
                 🎧 Transcript Đồng Bộ (Bấm để nghe)
               </span>
               <button
                 onClick={() => setShowTranscript(!showTranscript)}
-                className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold transition-colors"
+                className="text-xs font-semibold text-indigo-400 transition-colors hover:text-indigo-300"
               >
                 {showTranscript ? "Ẩn Transcript" : "Hiện Transcript"}
               </button>
             </div>
 
             {showTranscript ? (
-              <div className="p-4 rounded-2xl bg-[#141731] border border-[#2B3060] space-y-2.5 max-h-64 overflow-y-auto">
+              <div className="max-h-64 space-y-2.5 overflow-y-auto rounded-2xl border border-[#2B3060] bg-[#141731] p-4">
                 {exercise.transcript.map((line, i) => (
                   <div
                     key={i}
@@ -196,14 +210,14 @@ export function QuickPracticeModal({
                       const lang = exercise.accent.includes("US")
                         ? "en-US"
                         : exercise.accent.includes("AUS")
-                        ? "en-AU"
-                        : "en-GB";
+                          ? "en-AU"
+                          : "en-GB";
                       onSpeak(line.text, lang, playbackSpeed);
                     }}
-                    className="p-2.5 rounded-xl hover:bg-[#1B1F40] cursor-pointer transition-colors text-xs leading-relaxed text-zinc-300 border border-transparent hover:border-indigo-500/30"
+                    className="cursor-pointer rounded-xl border border-transparent p-2.5 text-xs leading-relaxed text-zinc-300 transition-colors hover:border-indigo-500/30 hover:bg-[#1B1F40]"
                     title="Bấm để phát câu này"
                   >
-                    <span className="text-indigo-400 font-mono font-bold mr-2 tabular-nums">
+                    <span className="mr-2 font-mono font-bold text-indigo-400 tabular-nums">
                       [{formatTime(line.time)}]
                     </span>
                     {line.text}
@@ -211,14 +225,14 @@ export function QuickPracticeModal({
                 ))}
               </div>
             ) : (
-              <div className="p-8 rounded-2xl bg-[#141731] border border-[#2B3060] text-center text-xs text-zinc-400">
+              <div className="rounded-2xl border border-[#2B3060] bg-[#141731] p-8 text-center text-xs text-zinc-400">
                 Transcript đang được ẩn để rèn khả năng nghe thực chiến.
               </div>
             )}
 
             {/* Key Vocabulary Card */}
             {exercise.vocab.length > 0 && (
-              <div className="p-4 rounded-2xl bg-[#141731] border border-[#2B3060] space-y-2.5">
+              <div className="space-y-2.5 rounded-2xl border border-[#2B3060] bg-[#141731] p-4">
                 <div className="flex items-center gap-2 text-xs font-bold text-cyan-300">
                   <BookOpen size={14} />
                   <span>TỪ VỰNG TRỌNG TÂM TRONG BÀI</span>
@@ -227,13 +241,17 @@ export function QuickPracticeModal({
                   {exercise.vocab.map((v, i) => (
                     <div
                       key={i}
-                      className="p-2.5 rounded-xl bg-[#0C0E1D] border border-[#2B3060]/60 text-xs flex flex-col gap-0.5"
+                      className="flex flex-col gap-0.5 rounded-xl border border-[#2B3060]/60 bg-[#0C0E1D] p-2.5 text-xs"
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-white">{v.word}</span>
-                        <span className="text-cyan-400 font-mono text-[11px]">{v.ipa}</span>
+                        <span className="font-mono text-[11px] text-cyan-400">
+                          {v.ipa}
+                        </span>
                       </div>
-                      <span className="text-zinc-400 text-[11px]">{v.meaning}</span>
+                      <span className="text-[11px] text-zinc-400">
+                        {v.meaning}
+                      </span>
                     </div>
                   ))}
                 </div>

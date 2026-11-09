@@ -112,7 +112,11 @@ export function WordOfTheDayCard({ wordInfo }: WordOfTheDayCardProps) {
         onClick={handleToggleVault}
         disabled={saving}
       >
-        {inVault ? "✓ Added to your word list" : saving ? "Saving..." : "+ Add to my word list"}
+        {inVault
+          ? "✓ Added to your word list"
+          : saving
+            ? "Saving..."
+            : "+ Add to my word list"}
       </button>
     </div>
   );

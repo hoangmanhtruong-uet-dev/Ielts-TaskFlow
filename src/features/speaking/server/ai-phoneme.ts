@@ -1,84 +1,88 @@
 import "server-only";
 
-export interface PhonemeScore {
-  phoneme: string;
-  accuracyScore: number;
-}
-
-export interface WordPronunciationScore {
+export interface WordTranscriptEvaluation {
   word: string;
-  accuracyScore: number;
-  phonemes: PhonemeScore[];
-  isMispronounced: boolean;
+  matchedTarget: boolean | null;
+  phonemeScoreAvailable: false;
 }
 
 export interface PronunciationEvaluationResult {
-  overallScore: number;
+  phonemeScoringAvailable: false;
   fluencyScore: number;
-  completenessScore: number;
-  pronunciationBand: number;
-  words: WordPronunciationScore[];
+  wpm: number;
+  completenessScore: number | null;
+  pronunciationBand: null;
+  notice: string;
+  words: WordTranscriptEvaluation[];
 }
 
+function normalizeWords(text: string): string[] {
+  return text
+    .trim()
+    .split(/\s+/)
+    .map((word) => word.replace(/[^a-zA-Z'-]/g, "").toLowerCase())
+    .filter((word) => word.length > 0);
+}
+
+/**
+ * Evaluates speaking transcript delivery pace (WPM) and optional word-level
+ * matching against a target prompt. Does NOT fabricate phoneme-level acoustic scores.
+ */
 export function evaluatePronunciationTranscript(
   transcript: string,
   audioDurationSeconds: number,
+  targetPrompt?: string,
 ): PronunciationEvaluationResult {
-  const words = transcript
-    .trim()
-    .split(/\s+/)
-    .filter((w) => w.length > 0);
+  const spokenWords = normalizeWords(transcript);
 
-  if (words.length === 0 || audioDurationSeconds <= 0) {
+  if (spokenWords.length === 0 || audioDurationSeconds <= 0) {
     return {
-      overallScore: 0,
+      phonemeScoringAvailable: false,
       fluencyScore: 0,
-      completenessScore: 0,
-      pronunciationBand: 0,
+      wpm: 0,
+      completenessScore: targetPrompt ? 0 : null,
+      pronunciationBand: null,
+      notice:
+        "Chưa có dữ liệu lời nói hoặc thời lượng hợp lệ để tính tốc độ nói.",
       words: [],
     };
   }
 
-  // Calculate words per minute (WPM)
-  const wpm = (words.length / audioDurationSeconds) * 60;
-  // Ideal IELTS Speaking WPM is 110-150 WPM
-  const fluencyScore = Math.min(100, Math.max(0, Math.round((wpm / 130) * 100)));
-  const completenessScore = Math.min(100, words.length >= 5 ? 100 : words.length * 20);
-
-  const wordScores: WordPronunciationScore[] = words.map((word) => {
-    const cleanWord = word.replace(/[^a-zA-Z]/g, "").toLowerCase();
-    const mockAccuracy = Math.min(100, Math.max(60, 75 + (cleanWord.length % 5) * 5));
-    const isMispronounced = mockAccuracy < 70;
-
-    const phonemes: PhonemeScore[] = cleanWord.split("").map((char) => ({
-      phoneme: char,
-      accuracyScore: mockAccuracy,
-    }));
-
-    return {
-      word: cleanWord,
-      accuracyScore: mockAccuracy,
-      phonemes,
-      isMispronounced,
-    };
-  });
-
-  const avgWordAccuracy = Math.round(
-    wordScores.reduce((acc, curr) => acc + curr.accuracyScore, 0) / wordScores.length,
+  const wpm = Math.round((spokenWords.length / audioDurationSeconds) * 60);
+  // Target conversational IELTS pace around 110-150 WPM.
+  const fluencyScore = Math.min(
+    100,
+    Math.max(0, Math.round((wpm / 130) * 100)),
   );
 
-  const overallScore = Math.round(
-    avgWordAccuracy * 0.5 + fluencyScore * 0.3 + completenessScore * 0.2,
-  );
+  const targetWords = targetPrompt ? normalizeWords(targetPrompt) : [];
+  const targetSet = new Set(targetWords);
+  const spokenSet = new Set(spokenWords);
 
-  // Map 0-100 score to IELTS Band 0-9
-  const pronunciationBand = Math.round((overallScore / 100) * 9 * 2) / 2;
+  let completenessScore: number | null = null;
+  if (targetWords.length > 0) {
+    const matchedTargetCount = targetWords.filter((w) =>
+      spokenSet.has(w),
+    ).length;
+    completenessScore = Math.round(
+      (matchedTargetCount / targetWords.length) * 100,
+    );
+  }
+
+  const words: WordTranscriptEvaluation[] = spokenWords.map((word) => ({
+    word,
+    matchedTarget: targetWords.length > 0 ? targetSet.has(word) : null,
+    phonemeScoreAvailable: false,
+  }));
 
   return {
-    overallScore,
+    phonemeScoringAvailable: false,
     fluencyScore,
+    wpm,
     completenessScore,
-    pronunciationBand,
-    words: wordScores,
+    pronunciationBand: null,
+    notice:
+      "Hệ thống hiện chỉ đánh giá tốc độ nói (WPM) và đối chiếu từ khóa văn bản; chấm điểm âm vị (phoneme) từ âm thanh gốc chưa được hỗ trợ.",
+    words,
   };
 }

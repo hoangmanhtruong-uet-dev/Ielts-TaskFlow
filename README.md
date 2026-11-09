@@ -8,16 +8,17 @@
 
 ## 📌 1. Trả Lời Đánh Giá Go-Live (Go-Live Audit Summary)
 
-### Câu hỏi: *Dự án đã Go-Live chưa?*
+### Câu hỏi: _Dự án đã Go-Live chưa?_
+
 👉 **TRẢ LỜI:** **Dự án CHƯA Go-Live chính thức trên môi trường Production.**
 
-| Hạng mục đánh giá | Mức độ sẵn sàng | Trạng thái chi tiết |
-| :--- | :---: | :--- |
-| **Codebase & Tính năng (Application Code)** | **9.5 / 10** | 🟢 **Hoàn tất 100%**: 383 routes build thành công, 274 unit/integration tests pass, 0 lỗi TypeScript, 0 lỗi ESLint. Đầy đủ vòng lặp Onboarding -> Lộ trình học -> 4 Kỹ năng R/L/W/S -> Mock Test -> Analytics. |
-| **Bảo mật & Toàn vẹn Dữ liệu (Database/RLS)** | **9.5 / 10** | 🟢 **Bảo mật tuyệt đối**: 100% bảng có RLS, phân quyền least-privilege, chấm điểm deterministic ở Postgres, Answer Key nằm schema `private`, Server-authoritative timer. |
-| **Nội dung Giáo trình MVP (Curriculum Content)** | **8.0 / 10** | 🟢 **Đã nạp Cloud Dev**: 4 Modules, 20 Lessons, 60 Sections, 27 Sets, 146 Questions, 13 Grammar Topics, 328 Oxford CEFR Vocab entries. (Cần tiếp tục mở rộng ngân hàng đề). |
-| **Hạ tầng Mạng & Cloud (Production Infrastructure)** | **3.5 / 10** | 🔴 **Chưa Go-Live (Blocker)**: Đang chạy trên Cloud Dev Supabase (`tpqlqwvzqhjrtqpitslk`). Chưa cấp Supabase Production (gói Pro có PITR), chưa trỏ Custom Domain HTTPS, chưa cấu hình SMTP Production với DNS SPF/DKIM/DMARC. |
-| **Dịch vụ Ngoài & Tối ưu CDN (Third-party & CDN)** | **4.0 / 10** | 🟡 **Cần kích hoạt**: Cần cấu hình Cloudflare R2 Custom Domain cho Audio Streaming với HTTP Cache `immutable`, thiết lập Hard Spend Limit trên OpenAI API và bật Cloudflare Turnstile/WAF. |
+| Hạng mục đánh giá                                    | Mức độ sẵn sàng | Trạng thái chi tiết                                                                                                                                                                                                            |
+| :--------------------------------------------------- | :-------------: | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Codebase & Tính năng (Application Code)**          |  **9.5 / 10**   | 🟢 **Hoàn tất 100%**: 383 routes build thành công, 274 unit/integration tests pass, 0 lỗi TypeScript, 0 lỗi ESLint. Đầy đủ vòng lặp Onboarding -> Lộ trình học -> 4 Kỹ năng R/L/W/S -> Mock Test -> Analytics.                 |
+| **Bảo mật & Toàn vẹn Dữ liệu (Database/RLS)**        |  **9.5 / 10**   | 🟢 **Bảo mật tuyệt đối**: 100% bảng có RLS, phân quyền least-privilege, chấm điểm deterministic ở Postgres, Answer Key nằm schema `private`, Server-authoritative timer.                                                       |
+| **Nội dung Giáo trình MVP (Curriculum Content)**     |  **8.0 / 10**   | 🟢 **Đã nạp Cloud Dev**: 4 Modules, 20 Lessons, 60 Sections, 27 Sets, 146 Questions, 13 Grammar Topics, 328 Oxford CEFR Vocab entries. (Cần tiếp tục mở rộng ngân hàng đề).                                                    |
+| **Hạ tầng Mạng & Cloud (Production Infrastructure)** |  **3.5 / 10**   | 🔴 **Chưa Go-Live (Blocker)**: Đang chạy trên Cloud Dev Supabase (`tpqlqwvzqhjrtqpitslk`). Chưa cấp Supabase Production (gói Pro có PITR), chưa trỏ Custom Domain HTTPS, chưa cấu hình SMTP Production với DNS SPF/DKIM/DMARC. |
+| **Dịch vụ Ngoài & Tối ưu CDN (Third-party & CDN)**   |  **4.0 / 10**   | 🟡 **Cần kích hoạt**: Cần cấu hình Cloudflare R2 Custom Domain cho Audio Streaming với HTTP Cache `immutable`, thiết lập Hard Spend Limit trên OpenAI API và bật Cloudflare Turnstile/WAF.                                     |
 
 > 💡 **Kết luận:** Hệ thống đã hoàn tất toàn bộ khâu R&D, kiểm thử và thiết kế giao diện. Để chính thức Go-Live, dự án cần thực hiện các bước cấu hình hạ tầng tại [Mục 8: Lộ Trình Triển Khai Go-Live](#-8-lộ-trình-và-danh-mục-chuẩn-bị-go-live-checklist).
 
@@ -27,7 +28,7 @@
 
 Ứng dụng được xây dựng theo kiến trúc **Server-First Modular Monolith** trên nền tảng Next.js 16 và Supabase, tuân thủ nguyên tắc không lưu trữ logic nhạy cảm hoặc tính điểm ở Client:
 
-- **Frontend & UI:** 
+- **Frontend & UI:**
   - Next.js 16 (App Router với Turbopack engine), React 19, TypeScript strict mode.
   - Thiết kế hiện đại **Indigo Scholar & Cybernetic Dark Navy** với hiệu ứng WebGL 3D (Three.js), Tailwind CSS v4, Lucide Icons và Motion.
 - **Backend & Cơ sở dữ liệu:**
@@ -47,6 +48,7 @@
 ## 🌟 3. Các Phân Hệ & Chức Năng Đã Triển Khai
 
 ### 3.1. Hệ thống Học tập & Lộ trình (Curriculum & Learning Engine)
+
 - **Progressive Onboarding:** Wizard 8 bước thu thập mục tiêu band, thời gian học, chẩn đoán ban đầu; tự động sinh lộ trình cá nhân hóa.
 - **Thư viện Học lý thuyết (`/learn`):** 4 Modules nền tảng, 20 bài học chuẩn hóa CEFR A2–B2, 60 phần lý thuyết kèm Markdown bảo mật.
 - **Ngân hàng Ngữ pháp & Từ vựng SRS:**
@@ -56,7 +58,9 @@
 - **Deep Dictation (`/dictation`):** Hệ thống nghe chép chính tả phân tầng tốc độ, đối soát sai khác từng ký tự thời gian thực.
 
 ### 3.2. Bốn Trung Tâm Luyện Tập 3D Thực Chiến (Practice Hubs)
+
 Giao diện được tái cấu trúc đồng bộ theo chuẩn **Indigo Scholar & Dark Navy**:
+
 1. **Reading Hub (`/practice/reading`):**
    - WebGL 3D Cybernetic Lexical Matrix & Laser Scanner.
    - Live Reading Lab: Bẫy True/False/Not Given, Speed Reading WPM Meter, Bẫy Matching Headings.
@@ -75,8 +79,9 @@ Giao diện được tái cấu trúc đồng bộ theo chuẩn **Indigo Scholar
    - Quick Speaking Studio Modal tích hợp thu âm và phân tích ngữ âm AI.
 
 ### 3.3. Thi Thử & Phân Tích Dữ Liệu (Mock Tests & Analytics)
+
 - **Mock Tests Engine (`/mock-tests`):** Điều phối phiên thi chuẩn 4 kỹ năng tuần tự (Reading $\rightarrow$ Listening $\rightarrow$ Writing $\rightarrow$ Speaking) với Server-Authoritative Timer.
-- **Learner Analytics Dashboard (`/progress`):** 
+- **Learner Analytics Dashboard (`/progress`):**
   - 3D Skill Radar Chart (Three.js) trực quan hóa độ lệch 4 kỹ năng.
   - Biểu đồ nhiệt tiến độ học tập (Activity Calendar) và lộ trình đạt mục tiêu band.
 - **Smart Errors Notebook (`/error-notebook`):** Tự động thu thập câu sai từ các bài thi để đưa vào danh sách cần khắc phục dứt điểm.
@@ -86,11 +91,13 @@ Giao diện được tái cấu trúc đồng bộ theo chuẩn **Indigo Scholar
 ## 🛠️ 4. Hướng Dẫn Cài Đặt & Chạy Môi Trường Local
 
 ### 4.1. Yêu cầu tiên quyết
+
 - **Node.js:** `>= 20.9.0` (Khuyến nghị Node.js LTS 22.x)
 - **npm:** `>= 10.x`
 - Git
 
 ### 4.2. Khởi tạo dự án
+
 ```powershell
 # 1. Clone repository và cài đặt thư viện
 git clone <repository-url>
@@ -102,6 +109,7 @@ Copy-Item .env.example .env.local
 ```
 
 ### 4.3. Cấu hình `.env.local`
+
 Điền các thông tin kết nối Supabase của bạn (có thể dùng dự án Cloud Dev hoặc Supabase Local):
 
 ```ini
@@ -120,9 +128,11 @@ SPEAKING_PIPELINE_SIGNING_SECRET=dev-local-speaking-signing-secret-32-chars!
 ```
 
 ### 4.4. Khởi chạy máy chủ phát triển
+
 ```powershell
 npm run dev
 ```
+
 Mở trình duyệt tại [http://localhost:3000](http://localhost:3000) để trải nghiệm ứng dụng.
 
 ---
@@ -151,19 +161,20 @@ npm run build
 
 Hệ thống quản lý lược đồ dữ liệu thông qua các tệp SQL phiên bản hóa tuần tự trong thư mục `supabase/migrations/`:
 
-| Thứ tự migration | Tên tệp | Nội dung |
-| :--- | :--- | :--- |
-| `20260716100000` | `phase_1_profiles_and_onboarding.sql` | Quản lý Profile người học, RLS và Onboarding State Machine |
-| `20260716120000` | `phase_4_learning_content_progress.sql` | Modules, Lessons, Sections, Versioning bất biến |
-| `20260716143000` | `phase_5_exercise_vocabulary_grammar.sql` | Động cơ chấm điểm bài tập, từ vựng, ngữ pháp |
-| `20260717100000` | `phase_7_listening_practice_engine.sql` | Hệ thống luyện nghe, lưu nháp và tính giờ server |
-| `20260717140000` | `phase_8_writing_practice_engine.sql` | Hệ thống luyện viết Task 2, kiểm soát số từ, AI feedback contract |
-| `20260717160000` | `phase_9_speaking_practice_engine.sql` | Hệ thống ghi âm, xác minh media, đánh giá phát âm |
-| `20260717190000` | `phase_10a_mock_tests_engine.sql` | Điều phối bài thi thử 4 kỹ năng tuần tự |
-| `20261024100000` | `seed_oxford_cefr_vocabulary.sql` | Seed 320 từ vựng Oxford phân loại CEFR A1-C1 |
-| `20261025000000` | `seed_mvp_learning_curriculum.sql` | Seed 4 modules lý thuyết, 20 lessons, 27 exercise sets MVP |
+| Thứ tự migration | Tên tệp                                   | Nội dung                                                          |
+| :--------------- | :---------------------------------------- | :---------------------------------------------------------------- |
+| `20260716100000` | `phase_1_profiles_and_onboarding.sql`     | Quản lý Profile người học, RLS và Onboarding State Machine        |
+| `20260716120000` | `phase_4_learning_content_progress.sql`   | Modules, Lessons, Sections, Versioning bất biến                   |
+| `20260716143000` | `phase_5_exercise_vocabulary_grammar.sql` | Động cơ chấm điểm bài tập, từ vựng, ngữ pháp                      |
+| `20260717100000` | `phase_7_listening_practice_engine.sql`   | Hệ thống luyện nghe, lưu nháp và tính giờ server                  |
+| `20260717140000` | `phase_8_writing_practice_engine.sql`     | Hệ thống luyện viết Task 2, kiểm soát số từ, AI feedback contract |
+| `20260717160000` | `phase_9_speaking_practice_engine.sql`    | Hệ thống ghi âm, xác minh media, đánh giá phát âm                 |
+| `20260717190000` | `phase_10a_mock_tests_engine.sql`         | Điều phối bài thi thử 4 kỹ năng tuần tự                           |
+| `20261024100000` | `seed_oxford_cefr_vocabulary.sql`         | Seed 320 từ vựng Oxford phân loại CEFR A1-C1                      |
+| `20261025000000` | `seed_mvp_learning_curriculum.sql`        | Seed 4 modules lý thuyết, 20 lessons, 27 exercise sets MVP        |
 
 ### Đẩy Migration lên Supabase Cloud:
+
 ```powershell
 # Đẩy migration lên Cloud project liên kết
 npx supabase db push
@@ -206,26 +217,31 @@ npx supabase db push
 Để đưa ứng dụng từ trạng thái **Staging** sang **Public Production Go-Live**, các bước kỹ thuật sau cần được hoàn tất:
 
 ### 1. Cơ sở hạ tầng & Database (Infra & DB Gate)
+
 - [ ] Khởi tạo dự án **Supabase Production** độc lập (gói Pro có kích hoạt Point-in-Time Recovery - PITR).
 - [ ] Chạy `supabase db push` để đồng bộ toàn bộ 20 migrations và seed curriculum chính thức.
 - [ ] Thiết lập kết nối qua **Supavisor Transaction Pooler** (Cổng 6543) cho toàn bộ API routes trên Vercel.
 
 ### 2. Tên miền & Bảo mật Mạng (Domain & Network Security)
+
 - [ ] Cấu hình Production Domain chính thức kèm chứng chỉ SSL/TLS.
 - [ ] Cập nhật biến môi trường `NEXT_PUBLIC_SITE_URL` thành canonical HTTPS domain.
 - [ ] Kích hoạt **Cloudflare WAF** và tích hợp **Cloudflare Turnstile** chống bot spam đăng ký.
 - [ ] Khóa chặt CORS của Supabase Storage, chỉ cho phép upload từ domain production.
 
 ### 3. Giao vận Email & Truyền thông (SMTP & Communication)
+
 - [ ] Cấu hình dịch vụ SMTP thương mại (Resend / Postmark).
 - [ ] Xác thực đầy đủ các bản ghi DNS: SPF, DKIM, DMARC trên domain chính thức.
 - [ ] Thử nghiệm luồng Email Confirmation và Password Recovery với hòm thư thật.
 
 ### 4. Lưu trữ & Phân phối Âm thanh (Audio CDN Streaming)
+
 - [ ] Cấu hình **Cloudflare R2 Custom Domain** cho các tệp âm thanh bài nghe IELTS.
 - [ ] Thiết lập Header `Cache-Control: public, max-age=31536000, immutable` để tối ưu chi phí băng thông và tốc độ tải audio.
 
 ### 5. Giám sát & Quản lý Chi phí (Observability & Cost Guardrails)
+
 - [ ] Kết nối **Sentry** để theo dõi lỗi Client và Server thời gian thực.
 - [ ] Thiết lập **Hard Spend Limit** trên tài khoản OpenAI API để ngăn chặn cạn kiệt ngân sách ngoài ý muốn.
 - [ ] Kích hoạt Log Drain (Axiom / Better Stack) để lưu vết kiểm toán và đối soát vận hành.

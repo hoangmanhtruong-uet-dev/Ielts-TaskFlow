@@ -8,35 +8,26 @@ interface StudyHeatmapProps {
   data?: number[];
 }
 
+const HEATMAP_CELL_COUNT = 126;
+
 export function StudyHeatmap({
-  activeDays = 32,
-  totalTime = "13h 0m",
+  activeDays = 0,
+  totalTime = "0h 0m",
   data,
 }: StudyHeatmapProps) {
-  // 18 weeks * 7 days = 126 cells
+  // 18 weeks * 7 days = 126 cells, always sourced from DB telemetry (never fabricated)
   const cells = useMemo(() => {
-    if (data && data.length >= 126) {
-      return data.slice(0, 126);
+    if (!data || data.length === 0) {
+      return Array<number>(HEATMAP_CELL_COUNT).fill(0);
     }
-    // Deterministic pseudo-random generation matching prototype (32 active days)
-    let s = 7;
-    const r = () => {
-      s = (s * 9301 + 49297) % 233280;
-      return s / 233280;
-    };
-    const N = 126;
-    const result = Array<number>(N).fill(0);
-    let n = 0;
-    while (n < activeDays) {
-      const i = Math.floor(r() * N);
-      const bias = i > N * 0.35 || r() > 0.6;
-      if (!result[i] && bias) {
-        result[i] = 1 + Math.floor(r() * 4);
-        n++;
-      }
+    if (data.length >= HEATMAP_CELL_COUNT) {
+      return data.slice(data.length - HEATMAP_CELL_COUNT);
     }
-    return result;
-  }, [data, activeDays]);
+    return [
+      ...Array<number>(HEATMAP_CELL_COUNT - data.length).fill(0),
+      ...data,
+    ];
+  }, [data]);
 
   return (
     <div className="box">
@@ -59,7 +50,7 @@ export function StudyHeatmap({
         {cells.map((level, i) => (
           <i
             key={i}
-            className={level > 0 ? `l${level}` : undefined}
+            className={level > 0 ? `l${Math.min(4, level)}` : undefined}
             title={level > 0 ? `Activity level: ${level}` : "No activity"}
           />
         ))}

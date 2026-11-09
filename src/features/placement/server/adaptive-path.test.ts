@@ -5,9 +5,21 @@ import { generateAdaptiveLearningPath } from "./adaptive-path";
 describe("generateAdaptiveLearningPath", () => {
   it("generates prioritized recommendations for tags with < 70% accuracy", () => {
     const weakTags = [
-      { tagId: "reading_matching_headings", tagName: "Matching Headings", accuracyRate: 45 },
-      { tagId: "listening_section3", tagName: "Section 3 Multiple Choice", accuracyRate: 60 },
-      { tagId: "grammar_articles", tagName: "Articles & Determiners", accuracyRate: 85 },
+      {
+        tagId: "reading_matching_headings",
+        tagName: "Matching Headings",
+        accuracyRate: 45,
+      },
+      {
+        tagId: "listening_section3",
+        tagName: "Section 3 Multiple Choice",
+        accuracyRate: 60,
+      },
+      {
+        tagId: "grammar_articles",
+        tagName: "Articles & Determiners",
+        accuracyRate: 85,
+      },
     ];
 
     const recommendations = generateAdaptiveLearningPath(weakTags, 7.5);

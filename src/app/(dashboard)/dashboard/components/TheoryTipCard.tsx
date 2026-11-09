@@ -29,7 +29,7 @@ const TIPS = [
   },
   {
     title: "Context Over Isolated Lists",
-    body: "Learning \"ephemeral\" in a sentence (\"The beauty of a sunset is ephemeral\") triggers 3× better recall than learning the word alone. Always read the example.",
+    body: 'Learning "ephemeral" in a sentence ("The beauty of a sunset is ephemeral") triggers 3× better recall than learning the word alone. Always read the example.',
     source: "Merriam-Webster",
     href: "https://www.merriam-webster.com",
     tag: "Vocabulary",
@@ -84,14 +84,19 @@ export const TheoryTipCard = memo(function TheoryTipCard() {
       <div
         className={cn(
           "app-panel border-l-2 border-l-[var(--primary)] p-4 transition-opacity duration-200",
-          animating ? "opacity-0" : "opacity-100"
+          animating ? "opacity-0" : "opacity-100",
         )}
       >
-        <div className="flex items-start justify-between gap-2 mb-2">
-          <p className="text-sm font-bold text-[var(--foreground)] leading-snug">
+        <div className="mb-2 flex items-start justify-between gap-2">
+          <p className="text-sm leading-snug font-bold text-[var(--foreground)]">
             {tip.title}
           </p>
-          <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold", tip.tagColor)}>
+          <span
+            className={cn(
+              "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold",
+              tip.tagColor,
+            )}
+          >
             {tip.tag}
           </span>
         </div>
@@ -118,8 +123,8 @@ export const TheoryTipCard = memo(function TheoryTipCard() {
             className={cn(
               "h-1.5 rounded-full transition-all",
               i === idx
-                ? "bg-[var(--primary)] w-5"
-                : "bg-[var(--muted)] w-1.5 hover:bg-[var(--border-strong)]"
+                ? "w-5 bg-[var(--primary)]"
+                : "w-1.5 bg-[var(--muted)] hover:bg-[var(--border-strong)]",
             )}
           />
         ))}

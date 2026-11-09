@@ -14,13 +14,18 @@ const password = urlObj.password;
 const projectRef = "tpqlqwvzqhjrtqpitslk";
 
 const poolerUrl = `postgresql://postgres.${projectRef}:${encodeURIComponent(password)}@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres`;
-console.log("Applying all unapplied migrations to remote Supabase Cloud database...");
+console.log(
+  "Applying all unapplied migrations to remote Supabase Cloud database...",
+);
 
 try {
-  const result = execSync(`npx supabase db push --include-all --db-url "${poolerUrl}"`, {
-    encoding: "utf8",
-    stdio: "pipe"
-  });
+  const result = execSync(
+    `npx supabase db push --include-all --db-url "${poolerUrl}"`,
+    {
+      encoding: "utf8",
+      stdio: "pipe",
+    },
+  );
   console.log("Migration push SUCCESSFUL!\n", result);
 } catch (err) {
   console.log("Migration push output / error:");

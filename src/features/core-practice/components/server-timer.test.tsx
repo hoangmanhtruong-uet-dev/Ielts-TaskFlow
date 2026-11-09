@@ -26,7 +26,7 @@ describe("ServerTimer", () => {
         serverExpiresAt={serverExpiresAt}
         serverNow={serverNow}
         onExpire={onExpire}
-      />
+      />,
     );
 
     // Initial time should be 10 seconds (00:10)
@@ -49,11 +49,11 @@ describe("ServerTimer", () => {
         serverExpiresAt={serverExpiresAt}
         serverNow={serverNow}
         onExpire={onExpire}
-      />
+      />,
     );
 
     expect(screen.getByText("00:02")).toBeInTheDocument();
-    
+
     act(() => {
       vi.advanceTimersByTime(2000);
     });

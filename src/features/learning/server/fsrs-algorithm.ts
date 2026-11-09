@@ -60,7 +60,9 @@ export function calculateNextSRSState(
     nextInterval = Math.max(1, Math.round(nextInterval * 0.8));
   }
 
-  const dueAtDate = new Date(now.getTime() + nextInterval * 24 * 60 * 60 * 1000);
+  const dueAtDate = new Date(
+    now.getTime() + nextInterval * 24 * 60 * 60 * 1000,
+  );
 
   return {
     repetitions: nextRepetitions,

@@ -2,7 +2,13 @@ export interface CuratedWritingTask {
   id: string;
   slug: string;
   taskType: "task1" | "task2";
-  category: "Bar Chart" | "Line Graph" | "Process" | "Opinion" | "Discussion" | "Problem-Solution";
+  category:
+    | "Bar Chart"
+    | "Line Graph"
+    | "Process"
+    | "Opinion"
+    | "Discussion"
+    | "Problem-Solution";
   title: string;
   topic: string;
   targetBand: number;
@@ -41,7 +47,8 @@ export interface ParaphraseDrill {
 }
 
 export interface CohesiveDevice {
-  category: "Contrast" | "Causation" | "Concession" | "Exemplification" | "Addition";
+  category:
+    "Contrast" | "Causation" | "Concession" | "Exemplification" | "Addition";
   commonLinkers: string[];
   advancedBand8Linkers: string[];
   exampleSentence: string;
@@ -51,30 +58,42 @@ export const WRITING_BAND_STAGES: WritingBandStage[] = [
   {
     band: "5.0 - 5.5",
     name: "Emerging Writer",
-    taskResponseTarget: "Trả lời được câu hỏi chính nhưng còn sơ sài, thiếu dẫn chứng cụ thể.",
-    coherenceTarget: "Sử dụng từ nối cơ bản (and, but, so), các đoạn văn chưa cân đối.",
-    lexicalTarget: "Vốn từ hạn chế, dễ lặp từ vựng trong đề bài, còn nhiều lỗi chính tả.",
+    taskResponseTarget:
+      "Trả lời được câu hỏi chính nhưng còn sơ sài, thiếu dẫn chứng cụ thể.",
+    coherenceTarget:
+      "Sử dụng từ nối cơ bản (and, but, so), các đoạn văn chưa cân đối.",
+    lexicalTarget:
+      "Vốn từ hạn chế, dễ lặp từ vựng trong đề bài, còn nhiều lỗi chính tả.",
   },
   {
     band: "6.0 - 6.5",
     name: "Competent Essayist",
-    taskResponseTarget: "Bao quát được các luận điểm chính, mở bài và kết bài rõ ràng.",
-    coherenceTarget: "Sắp xếp thông tin mạch lạc, dùng các liên từ phổ biến tương đối chính xác.",
-    lexicalTarget: "Có vốn từ vựng học thuật cơ bản, biết cách paraphrase dù đôi chỗ còn gượng gạo.",
+    taskResponseTarget:
+      "Bao quát được các luận điểm chính, mở bài và kết bài rõ ràng.",
+    coherenceTarget:
+      "Sắp xếp thông tin mạch lạc, dùng các liên từ phổ biến tương đối chính xác.",
+    lexicalTarget:
+      "Có vốn từ vựng học thuật cơ bản, biết cách paraphrase dù đôi chỗ còn gượng gạo.",
   },
   {
     band: "7.0 - 7.5",
     name: "Advanced Rhetorician",
-    taskResponseTarget: "Luận điểm sâu sắc, phát triển ý chặt chẽ với các ví dụ thực tiễn thuyết phục.",
-    coherenceTarget: "Dòng chảy lập luận tự nhiên, chuyển đoạn mượt mà không bị lạm dụng từ nối cơ học.",
-    lexicalTarget: "Sử dụng thành thạo từ vựng ít phổ biến (uncommon lexical items) và collocations chuẩn xác.",
+    taskResponseTarget:
+      "Luận điểm sâu sắc, phát triển ý chặt chẽ với các ví dụ thực tiễn thuyết phục.",
+    coherenceTarget:
+      "Dòng chảy lập luận tự nhiên, chuyển đoạn mượt mà không bị lạm dụng từ nối cơ học.",
+    lexicalTarget:
+      "Sử dụng thành thạo từ vựng ít phổ biến (uncommon lexical items) và collocations chuẩn xác.",
   },
   {
     band: "8.0 - 9.0",
     name: "Master Stylist",
-    taskResponseTarget: "Phản hồi toàn diện mọi khía cạnh của đề thi với góc nhìn sắc bén, thông tuệ.",
-    coherenceTarget: "Cấu trúc bài viết hoàn hảo, nghệ thuật liên kết ý tinh tế ở cấp độ câu và đoạn.",
-    lexicalTarget: "Vốn từ phong phú, uyển chuyển, độ chính xác tuyệt đối như bài viết học thuật quốc tế.",
+    taskResponseTarget:
+      "Phản hồi toàn diện mọi khía cạnh của đề thi với góc nhìn sắc bén, thông tuệ.",
+    coherenceTarget:
+      "Cấu trúc bài viết hoàn hảo, nghệ thuật liên kết ý tinh tế ở cấp độ câu và đoạn.",
+    lexicalTarget:
+      "Vốn từ phong phú, uyển chuyển, độ chính xác tuyệt đối như bài viết học thuật quốc tế.",
   },
 ];
 
@@ -98,15 +117,47 @@ export const CURATED_WRITING_TASKS: CuratedWritingTask[] = [
     ],
     recommendedVocabulary: [
       { word: "Subsidize", meaning: "Trợ cấp ngân sách nhà nước", band: "C1" },
-      { word: "Fossil fuel dependence", meaning: "Sự phụ thuộc vào nhiên liệu hóa thạch", band: "C1" },
-      { word: "Fiscal allocation", meaning: "Phân bổ ngân sách tài khóa", band: "C2" },
-      { word: "Imperative", meaning: "Mệnh lệnh cấp bách, thiết yếu", band: "C1" },
+      {
+        word: "Fossil fuel dependence",
+        meaning: "Sự phụ thuộc vào nhiên liệu hóa thạch",
+        band: "C1",
+      },
+      {
+        word: "Fiscal allocation",
+        meaning: "Phân bổ ngân sách tài khóa",
+        band: "C2",
+      },
+      {
+        word: "Imperative",
+        meaning: "Mệnh lệnh cấp bách, thiết yếu",
+        band: "C1",
+      },
     ],
     modelOutline: [
-      { paragraph: "Introduction", focus: "Paraphrase đề bài + Thesis Statement nghiêng về phân bổ kép", starterPhrase: "In contemporary public administration debates..." },
-      { paragraph: "Body Paragraph 1", focus: "Tầm quan trọng sống còn của việc đầu tư năng lượng tái tạo", starterPhrase: "Advocates of ecological investment legitimately assert that..." },
-      { paragraph: "Body Paragraph 2", focus: "Áp lực trước mắt của hệ thống y tế và giáo dục cơ bản", starterPhrase: "Conversely, proponents of immediate public welfare maintain that..." },
-      { paragraph: "Conclusion", focus: "Khẳng định đầu tư năng lượng là bảo vệ sức khỏe thế hệ tương lai", starterPhrase: "In final analysis, rather than treating these domains as mutually exclusive..." },
+      {
+        paragraph: "Introduction",
+        focus: "Paraphrase đề bài + Thesis Statement nghiêng về phân bổ kép",
+        starterPhrase: "In contemporary public administration debates...",
+      },
+      {
+        paragraph: "Body Paragraph 1",
+        focus: "Tầm quan trọng sống còn của việc đầu tư năng lượng tái tạo",
+        starterPhrase:
+          "Advocates of ecological investment legitimately assert that...",
+      },
+      {
+        paragraph: "Body Paragraph 2",
+        focus: "Áp lực trước mắt của hệ thống y tế và giáo dục cơ bản",
+        starterPhrase:
+          "Conversely, proponents of immediate public welfare maintain that...",
+      },
+      {
+        paragraph: "Conclusion",
+        focus:
+          "Khẳng định đầu tư năng lượng là bảo vệ sức khỏe thế hệ tương lai",
+        starterPhrase:
+          "In final analysis, rather than treating these domains as mutually exclusive...",
+      },
     ],
     sampleHighBandExcerpt:
       "In contemporary public administration debates, striking an equitable balance between immediate social welfare and long-term ecological security represents a formidable challenge...",
@@ -131,16 +182,53 @@ export const CURATED_WRITING_TASKS: CuratedWritingTask[] = [
       "Ensure an explicit Overview paragraph highlighting key trends",
     ],
     recommendedVocabulary: [
-      { word: "Downward trajectory", meaning: "Xu hướng đi xuống rõ rệt", band: "C1" },
-      { word: "Exponential surge", meaning: "Sự tăng vọt đột biến theo cấp số nhân", band: "C2" },
-      { word: "Plateaued", meaning: "Đi ngang ổn định ở mức phẳng", band: "C1" },
-      { word: "Negligible proportion", meaning: "Tỷ trọng không đáng kể", band: "C1" },
+      {
+        word: "Downward trajectory",
+        meaning: "Xu hướng đi xuống rõ rệt",
+        band: "C1",
+      },
+      {
+        word: "Exponential surge",
+        meaning: "Sự tăng vọt đột biến theo cấp số nhân",
+        band: "C2",
+      },
+      {
+        word: "Plateaued",
+        meaning: "Đi ngang ổn định ở mức phẳng",
+        band: "C1",
+      },
+      {
+        word: "Negligible proportion",
+        meaning: "Tỷ trọng không đáng kể",
+        band: "C1",
+      },
     ],
     modelOutline: [
-      { paragraph: "Introduction", focus: "Paraphrase đề bài và các trục tọa độ", starterPhrase: "The line chart delineates the volume of carbon emissions..." },
-      { paragraph: "Overview", focus: "Nêu 2 đặc điểm nổi bật nhất (Xe cá nhân giảm, Hàng không tăng vọt)", starterPhrase: "Overall, what stands out from the graph is that while..." },
-      { paragraph: "Body 1: Road & Rail", focus: "Chi tiết số liệu xe hơi cá nhân và tàu hỏa đường sắt", starterPhrase: "Regarding terrestrial transportation, private automobiles..." },
-      { paragraph: "Body 2: Air & Sea", focus: "Chi tiết số liệu hàng không và hàng hải thương mại", starterPhrase: "Turning to aviation and maritime transport, a contrasting picture emerges..." },
+      {
+        paragraph: "Introduction",
+        focus: "Paraphrase đề bài và các trục tọa độ",
+        starterPhrase:
+          "The line chart delineates the volume of carbon emissions...",
+      },
+      {
+        paragraph: "Overview",
+        focus:
+          "Nêu 2 đặc điểm nổi bật nhất (Xe cá nhân giảm, Hàng không tăng vọt)",
+        starterPhrase:
+          "Overall, what stands out from the graph is that while...",
+      },
+      {
+        paragraph: "Body 1: Road & Rail",
+        focus: "Chi tiết số liệu xe hơi cá nhân và tàu hỏa đường sắt",
+        starterPhrase:
+          "Regarding terrestrial transportation, private automobiles...",
+      },
+      {
+        paragraph: "Body 2: Air & Sea",
+        focus: "Chi tiết số liệu hàng không và hàng hải thương mại",
+        starterPhrase:
+          "Turning to aviation and maritime transport, a contrasting picture emerges...",
+      },
     ],
   },
   {
@@ -161,16 +249,54 @@ export const CURATED_WRITING_TASKS: CuratedWritingTask[] = [
       "Provide a reasoned perspective on hybrid working models",
     ],
     recommendedVocabulary: [
-      { word: "Spatial autonomy", meaning: "Sự tự chủ về không gian làm việc", band: "C2" },
-      { word: "Social alienation", meaning: "Sự xa lánh, cô lập xã hội", band: "C1" },
-      { word: "Workplace cohesion", meaning: "Sự gắn kết trong môi trường làm việc", band: "C1" },
-      { word: "Hybrid paradigm", meaning: "Mô hình kết hợp linh hoạt", band: "C1" },
+      {
+        word: "Spatial autonomy",
+        meaning: "Sự tự chủ về không gian làm việc",
+        band: "C2",
+      },
+      {
+        word: "Social alienation",
+        meaning: "Sự xa lánh, cô lập xã hội",
+        band: "C1",
+      },
+      {
+        word: "Workplace cohesion",
+        meaning: "Sự gắn kết trong môi trường làm việc",
+        band: "C1",
+      },
+      {
+        word: "Hybrid paradigm",
+        meaning: "Mô hình kết hợp linh hoạt",
+        band: "C1",
+      },
     ],
     modelOutline: [
-      { paragraph: "Introduction", focus: "Giới thiệu bối cảnh hậu đại dịch + Luận đề ủng hộ mô hình lai", starterPhrase: "The accelerated transition toward decentralized working environments..." },
-      { paragraph: "Body Paragraph 1", focus: "Lợi ích: tiết kiệm thời gian di chuyển, tối ưu nhịp sinh học cá nhân", starterPhrase: "On the one hand, remote arrangements confer unparalleled flexibility..." },
-      { paragraph: "Body Paragraph 2", focus: "Thách thức: mất ranh giới công việc - đời sống, thiếu tương tác người - người", starterPhrase: "On the other hand, prolonged telecommuting can engender subtle psychological costs..." },
-      { paragraph: "Conclusion", focus: "Tổng kết: mô hình hybrid là giải pháp hài hòa tối ưu", starterPhrase: "To recapitulate, while the benefits of telework are indisputable..." },
+      {
+        paragraph: "Introduction",
+        focus: "Giới thiệu bối cảnh hậu đại dịch + Luận đề ủng hộ mô hình lai",
+        starterPhrase:
+          "The accelerated transition toward decentralized working environments...",
+      },
+      {
+        paragraph: "Body Paragraph 1",
+        focus:
+          "Lợi ích: tiết kiệm thời gian di chuyển, tối ưu nhịp sinh học cá nhân",
+        starterPhrase:
+          "On the one hand, remote arrangements confer unparalleled flexibility...",
+      },
+      {
+        paragraph: "Body Paragraph 2",
+        focus:
+          "Thách thức: mất ranh giới công việc - đời sống, thiếu tương tác người - người",
+        starterPhrase:
+          "On the other hand, prolonged telecommuting can engender subtle psychological costs...",
+      },
+      {
+        paragraph: "Conclusion",
+        focus: "Tổng kết: mô hình hybrid là giải pháp hài hòa tối ưu",
+        starterPhrase:
+          "To recapitulate, while the benefits of telework are indisputable...",
+      },
     ],
   },
 ];
@@ -178,27 +304,36 @@ export const CURATED_WRITING_TASKS: CuratedWritingTask[] = [
 export const PARAPHRASE_DRILLS: ParaphraseDrill[] = [
   {
     id: "p-01",
-    originalSentence: "Many people think that cars cause too much pollution in cities.",
-    band6Attempt: "A lot of people believe that vehicles create pollution in urban areas.",
+    originalSentence:
+      "Many people think that cars cause too much pollution in cities.",
+    band6Attempt:
+      "A lot of people believe that vehicles create pollution in urban areas.",
     band8Paraphrase:
       "A prevailing body of opinion contends that private motor transport constitutes the primary driver of atmospheric degradation in metropolitan centers.",
-    technique: "Nâng cấp danh từ học thuật ('atmospheric degradation') và cụm từ động ('primary driver').",
+    technique:
+      "Nâng cấp danh từ học thuật ('atmospheric degradation') và cụm từ động ('primary driver').",
   },
   {
     id: "p-02",
-    originalSentence: "The chart shows how much money was spent on food from 2010 to 2020.",
-    band6Attempt: "The chart displays the expenditure on food between 2010 and 2020.",
+    originalSentence:
+      "The chart shows how much money was spent on food from 2010 to 2020.",
+    band6Attempt:
+      "The chart displays the expenditure on food between 2010 and 2020.",
     band8Paraphrase:
       "The graph illustrates the financial outlay allocated to dietary necessities over a decade-long timeframe spanning 2010 to 2020.",
-    technique: "Dùng 'financial outlay' thay cho 'spent money' và 'dietary necessities' thay cho 'food'.",
+    technique:
+      "Dùng 'financial outlay' thay cho 'spent money' và 'dietary necessities' thay cho 'food'.",
   },
   {
     id: "p-03",
-    originalSentence: "Students should learn science subjects because it helps them find jobs.",
-    band6Attempt: "Students ought to study sciences because it gives them better employment chances.",
+    originalSentence:
+      "Students should learn science subjects because it helps them find jobs.",
+    band6Attempt:
+      "Students ought to study sciences because it gives them better employment chances.",
     band8Paraphrase:
       "Prioritizing STEM disciplines equips learners with analytical competencies highly prized in the modern knowledge-driven labor market.",
-    technique: "Thay đổi cấu trúc câu sang Danh động từ (Gerund Subject) kèm tính từ ghép ('knowledge-driven').",
+    technique:
+      "Thay đổi cấu trúc câu sang Danh động từ (Gerund Subject) kèm tính từ ghép ('knowledge-driven').",
   },
 ];
 
@@ -206,14 +341,22 @@ export const COHESIVE_DEVICES_MATRIX: CohesiveDevice[] = [
   {
     category: "Contrast",
     commonLinkers: ["However", "On the other hand", "But"],
-    advancedBand8Linkers: ["Conversely", "By marked contrast", "This notwithstanding"],
+    advancedBand8Linkers: [
+      "Conversely",
+      "By marked contrast",
+      "This notwithstanding",
+    ],
     exampleSentence:
       "Public investment in roads has surged; conversely, subsidization of mass rail transit has experienced stagnation.",
   },
   {
     category: "Causation",
     commonLinkers: ["Because", "So", "Therefore"],
-    advancedBand8Linkers: ["Consequently", "It follows that", "In light of this consideration"],
+    advancedBand8Linkers: [
+      "Consequently",
+      "It follows that",
+      "In light of this consideration",
+    ],
     exampleSentence:
       "Deforestation disrupts rainfall cycles; consequently, agricultural yields in adjacent regions suffer precipitous declines.",
   },
@@ -227,7 +370,11 @@ export const COHESIVE_DEVICES_MATRIX: CohesiveDevice[] = [
   {
     category: "Exemplification",
     commonLinkers: ["For example", "For instance"],
-    advancedBand8Linkers: ["A salient illustration of this is", "Case in point", "Exemplified by"],
+    advancedBand8Linkers: [
+      "A salient illustration of this is",
+      "Case in point",
+      "Exemplified by",
+    ],
     exampleSentence:
       "Urban densification can overwhelm infrastructure, a salient illustration of this being the severe gridlock in megacities.",
   },

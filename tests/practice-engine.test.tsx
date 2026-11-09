@@ -34,18 +34,22 @@ describe("GenericPracticeEngine", () => {
             Rendering {currentQuestion.id}
           </div>
         )}
-      </GenericPracticeEngine>
+      </GenericPracticeEngine>,
     );
 
     // Initial render should show first question
-    expect(screen.getByTestId("question-display").textContent).toBe("Rendering q1");
-    
+    expect(screen.getByTestId("question-display").textContent).toBe(
+      "Rendering q1",
+    );
+
     // Check navigation buttons exist
     const nextBtn = screen.getByText("Câu tiếp");
     expect(nextBtn).toBeDefined();
 
     // Go to next question
     fireEvent.click(nextBtn);
-    expect(screen.getByTestId("question-display").textContent).toBe("Rendering q2");
+    expect(screen.getByTestId("question-display").textContent).toBe(
+      "Rendering q2",
+    );
   });
 });

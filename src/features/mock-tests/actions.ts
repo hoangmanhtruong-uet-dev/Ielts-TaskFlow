@@ -11,6 +11,7 @@ import {
   type SubmitMockSectionInput,
 } from "@/features/mock-tests/schemas";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { requireCompletedOnboarding } from "@/features/onboarding/server/learner-profile";
 import { getMockSessionPage } from "@/features/mock-tests/server/content";
 
 export async function startMockTestAction(formData: FormData) {
@@ -18,6 +19,7 @@ export async function startMockTestAction(formData: FormData) {
     mockTestSlug: formData.get("mockTestSlug"),
   });
   if (!parsed.success) redirect("/mock-tests?error=invalid");
+  await requireCompletedOnboarding();
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc("start_mock_test", {
     p_mock_test_slug: parsed.data.mockTestSlug,
@@ -36,6 +38,7 @@ export async function startMockSectionAction(formData: FormData) {
     sectionId: formData.get("sectionId"),
   });
   if (!parsed.success) redirect("/mock-tests?error=invalid");
+  await requireCompletedOnboarding();
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc("start_mock_test_section", {
     p_session_id: parsed.data.sessionId,
@@ -70,6 +73,7 @@ export async function submitMockTestSectionAction(
       status: "error" as const,
       message: "Dữ liệu nộp section không hợp lệ.",
     };
+  await requireCompletedOnboarding();
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.rpc("submit_mock_test_section", {
     p_section_attempt_id: parsed.data.sectionAttemptId,
@@ -92,6 +96,7 @@ export async function submitMockTestAction(formData: FormData) {
     sessionId: formData.get("sessionId"),
   });
   if (!parsed.success) redirect("/mock-tests?error=invalid");
+  await requireCompletedOnboarding();
   const supabase = await createSupabaseServerClient();
   const { error: submitError } = await supabase.rpc("submit_mock_test", {
     p_session_id: parsed.data.sessionId,

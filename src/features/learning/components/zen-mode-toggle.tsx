@@ -31,18 +31,20 @@ export function ZenModeToggle() {
   return (
     <button
       onClick={() => setIsZenMode((p) => !p)}
-      className="p-2 rounded-lg text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors flex items-center gap-2"
+      className="flex items-center gap-2 rounded-lg p-2 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
       title={isZenMode ? "Thoát chế độ tập trung (Esc)" : "Chế độ tập trung"}
     >
       {isZenMode ? (
         <>
-          <Minimize className="w-5 h-5" />
-          <span className="text-sm font-medium hidden sm:inline">Thoát Zen Mode</span>
+          <Minimize className="h-5 w-5" />
+          <span className="hidden text-sm font-medium sm:inline">
+            Thoát Zen Mode
+          </span>
         </>
       ) : (
         <>
-          <Maximize className="w-5 h-5" />
-          <span className="text-sm font-medium hidden sm:inline">Zen Mode</span>
+          <Maximize className="h-5 w-5" />
+          <span className="hidden text-sm font-medium sm:inline">Zen Mode</span>
         </>
       )}
     </button>

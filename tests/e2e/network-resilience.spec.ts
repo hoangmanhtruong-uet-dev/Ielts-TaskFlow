@@ -1,7 +1,7 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from "@playwright/test";
 
-test.describe('Network Resilience', () => {
-  test('Autosave falls back to localforage when offline', async ({ page, context }) => {
+test.describe("Network Resilience", () => {
+  test("Autosave falls back to localforage when offline", async () => {
     expect(true).toBe(true);
 
     /*
