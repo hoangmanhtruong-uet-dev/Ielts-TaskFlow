@@ -4,52 +4,26 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { recordVocabularyReviewAction } from "@/features/learning/vocabulary-actions";
-import { getPublicVocabularyCatalog } from "@/features/learning/server/foundations";
+import {
+  getVocabularyCatalog,
+  getVocabularyEntry,
+} from "@/features/learning/server/foundations";
 
 type PageProps = { params: Promise<{ slug: string }> };
-
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-
-export async function generateStaticParams() {
-  // Use admin client to avoid cookies() error during build
-  const supabase = createSupabaseAdminClient();
-  const { data } = await supabase.from("vocabulary_entries").select("slug");
-  return (data || []).map((entry) => ({
-    slug: entry.slug,
-  }));
-}
 
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-
-  const supabase = createSupabaseAdminClient();
-  const { data: entries } = await supabase
-    .from("vocabulary_entries")
-    .select("id")
-    .eq("slug", slug)
-    .single();
-
-  if (!entries) return {};
-
-  const { data: version } = await supabase
-    .from("vocabulary_entry_versions")
-    .select("term, definition_vi")
-    .eq("vocabulary_entry_id", entries.id)
-    .eq("status", "published")
-    .order("version", { ascending: false })
-    .limit(1)
-    .single();
-
-  if (!version) return {};
+  const entry = await getVocabularyEntry(slug);
+  if (!entry) return {};
 
   return {
-    title: `Học từ vựng: ${version.term} | IELTS Self-Study`,
-    description: `Nghĩa của từ ${version.term}: ${version.definition_vi}. Khám phá cách phát âm, ví dụ và các điểm ngữ pháp liên quan.`,
+    title: `Học từ vựng: ${entry.term} | IELTS Self-Study`,
+    description: `Nghĩa của từ ${entry.term}: ${entry.definitionVi}. Khám phá cách phát âm, ví dụ và các điểm ngữ pháp liên quan.`,
     openGraph: {
-      title: `Từ vựng: ${version.term} - IELTS Self-Study`,
-      description: version.definition_vi,
+      title: `Từ vựng: ${entry.term} - IELTS Self-Study`,
+      description: entry.definitionVi,
       type: "article",
     },
   };
@@ -57,7 +31,7 @@ export async function generateMetadata({
 
 export default async function VocabularyDetailPage({ params }: PageProps) {
   const { slug } = await params;
-  const entries = await getPublicVocabularyCatalog();
+  const entries = await getVocabularyCatalog();
   if (slug === "%5Bslug%5D" || slug === "[slug]") {
     if (entries[0]) {
       redirect(`/learn/vocabulary/${entries[0].slug}`);

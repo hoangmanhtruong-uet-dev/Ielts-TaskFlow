@@ -95,8 +95,8 @@ select extensions.results_eq(
     from public.exercise_set_versions as versions
     join public.exercise_sets as sets on sets.id = versions.exercise_set_id
     where versions.status = 'published' and sets.domain in ('vocabulary', 'grammar')$$,
-  array[2],
-  'seed has two published exercise sets'
+  array[22],
+  'seed and curriculum have twenty-two published exercise sets'
 );
 select extensions.results_eq(
   $$select count(*)::integer
@@ -112,18 +112,18 @@ select extensions.results_eq(
     join public.exercise_set_versions as versions on versions.id = questions.exercise_set_version_id
     join public.exercise_sets as sets on sets.id = versions.exercise_set_id
     where sets.domain in ('vocabulary', 'grammar')$$,
-  array[8],
-  'seed has eight original exercise questions'
+  array[128],
+  'seed and curriculum have 128 exercise questions'
 );
 select extensions.results_eq(
   $$select count(*)::integer from public.vocabulary_entry_versions where status = 'published'$$,
-  array[8],
-  'seed has eight published vocabulary entries'
+  array[328],
+  'seed and curriculum have 328 published vocabulary entries'
 );
 select extensions.results_eq(
   $$select count(*)::integer from public.grammar_topic_versions where status = 'published'$$,
-  array[3],
-  'seed has three published grammar topics'
+  array[13],
+  'seed and curriculum have 13 published grammar topics'
 );
 
 select extensions.throws_ok(
@@ -170,7 +170,7 @@ set local request.jwt.claim.sub = '61111111-1111-4111-8111-111111111111';
 
 select extensions.results_eq(
   $$select count(*)::integer from public.exercise_sets where domain in ('vocabulary', 'grammar')$$,
-  array[2],
+  array[22],
   'learner sees only published exercise identities'
 );
 select extensions.results_eq(
@@ -180,12 +180,12 @@ select extensions.results_eq(
 );
 select extensions.results_eq(
   $$select count(*)::integer from public.vocabulary_entries$$,
-  array[8],
+  array[328],
   'learner sees published vocabulary'
 );
 select extensions.results_eq(
   $$select count(*)::integer from public.grammar_topics$$,
-  array[3],
+  array[13],
   'learner sees published grammar'
 );
 select extensions.throws_ok(

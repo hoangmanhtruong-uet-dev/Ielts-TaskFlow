@@ -224,13 +224,13 @@ select extensions.ok(
 
 select extensions.results_eq(
   $$select count(*)::integer from public.learning_modules where status = 'published'$$,
-  array[2],
-  'seed contains two published modules'
+  array[6],
+  'seed and curriculum contain six published modules'
 );
 select extensions.results_eq(
   $$select count(*)::integer from public.lesson_versions where status = 'published'$$,
-  array[4],
-  'seed contains four published lessons'
+  array[24],
+  'seed and curriculum contain twenty-four published lessons'
 );
 select extensions.results_eq(
   $$select count(*)::integer from public.lesson_versions where status = 'draft'$$,
@@ -245,8 +245,8 @@ select extensions.results_eq(
       on lesson_versions.id = lesson_sections.lesson_version_id
     where lesson_versions.status = 'published'
   $$,
-  array[12],
-  'published seed lessons contain twelve sections'
+  array[72],
+  'published lessons contain seventy-two sections'
 );
 
 insert into auth.users (id, email, raw_user_meta_data)
@@ -304,13 +304,13 @@ set local request.jwt.claim.sub = '51111111-1111-4111-8111-111111111111';
 
 select extensions.results_eq(
   $$select count(*)::integer from public.learning_modules$$,
-  array[2],
-  'Academic learner can read both published modules'
+  array[6],
+  'Academic learner can read all six published modules'
 );
 select extensions.results_eq(
   $$select count(*)::integer from public.lessons$$,
-  array[4],
-  'Academic learner can read four published lessons'
+  array[24],
+  'Academic learner can read twenty-four published lessons'
 );
 select extensions.results_eq(
   $$
@@ -323,7 +323,7 @@ select extensions.results_eq(
 );
 select extensions.results_eq(
   $$select count(*)::integer from public.lesson_sections$$,
-  array[12],
+  array[72],
   'Learner reads sections only from published lesson versions'
 );
 
@@ -497,12 +497,12 @@ set local request.jwt.claim.sub = '52222222-2222-4222-8222-222222222222';
 
 select extensions.results_eq(
   $$select count(*)::integer from public.learning_modules$$,
-  array[1],
-  'General Training learner sees only the both module'
+  array[2],
+  'General Training learner sees only the both modules'
 );
 select extensions.results_eq(
   $$select count(*)::integer from public.lessons$$,
-  array[2],
+  array[7],
   'General Training learner sees only foundation lessons'
 );
 select extensions.results_eq(

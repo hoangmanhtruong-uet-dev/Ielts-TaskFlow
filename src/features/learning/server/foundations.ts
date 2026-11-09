@@ -1,3 +1,5 @@
+import { cache } from "react";
+
 import { learningSlugSchema } from "@/features/learning/schemas";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireCompletedOnboarding } from "@/features/onboarding/server/learner-profile";
@@ -36,101 +38,55 @@ export class LearningFoundationReadError extends Error {
   }
 }
 
-export async function getVocabularyCatalog(): Promise<VocabularyEntry[]> {
-  await requireCompletedOnboarding();
-  const supabase = await createSupabaseServerClient();
-  const [entriesResult, versionsResult, exercisesResult] = await Promise.all([
-    supabase
-      .from("vocabulary_entries")
-      .select("id, slug, part_of_speech, display_order")
-      .order("display_order"),
-    supabase
-      .from("vocabulary_entry_versions")
-      .select(
-        "id, vocabulary_entry_id, term, definition_vi, example_sentence, topic, tags, difficulty, related_exercise_set_id, status",
-      )
-      .eq("status", "published"),
-    supabase.from("exercise_sets").select("id, slug"),
-  ]);
-  if (entriesResult.error || versionsResult.error || exercisesResult.error) {
-    throw new LearningFoundationReadError();
-  }
-  const versionByEntry = new Map(
-    versionsResult.data.map((item) => [item.vocabulary_entry_id, item]),
-  );
-  const exerciseById = new Map(
-    exercisesResult.data.map((item) => [item.id, item.slug]),
-  );
+export const getVocabularyCatalog = cache(
+  async (): Promise<VocabularyEntry[]> => {
+    await requireCompletedOnboarding();
+    const supabase = await createSupabaseServerClient();
+    const [entriesResult, versionsResult, exercisesResult] = await Promise.all([
+      supabase
+        .from("vocabulary_entries")
+        .select("id, slug, part_of_speech, display_order")
+        .order("display_order"),
+      supabase
+        .from("vocabulary_entry_versions")
+        .select(
+          "id, vocabulary_entry_id, term, definition_vi, example_sentence, topic, tags, difficulty, related_exercise_set_id, status",
+        )
+        .eq("status", "published"),
+      supabase.from("exercise_sets").select("id, slug"),
+    ]);
+    if (entriesResult.error || versionsResult.error || exercisesResult.error) {
+      throw new LearningFoundationReadError();
+    }
+    const versionByEntry = new Map(
+      versionsResult.data.map((item) => [item.vocabulary_entry_id, item]),
+    );
+    const exerciseById = new Map(
+      exercisesResult.data.map((item) => [item.id, item.slug]),
+    );
 
-  return entriesResult.data.flatMap((entry): VocabularyEntry[] => {
-    const version = versionByEntry.get(entry.id);
-    if (!version) return [];
-    return [
-      {
-        id: entry.id,
-        slug: entry.slug,
-        term: version.term,
-        partOfSpeech: entry.part_of_speech,
-        definitionVi: version.definition_vi,
-        exampleSentence: version.example_sentence,
-        topic: version.topic,
-        tags: version.tags,
-        difficulty: version.difficulty,
-        exerciseSlug: version.related_exercise_set_id
-          ? (exerciseById.get(version.related_exercise_set_id) ?? null)
-          : null,
-      },
-    ];
-  });
-}
-
-export async function getPublicVocabularyCatalog(): Promise<VocabularyEntry[]> {
-  const { createSupabaseAdminClient } = await import("@/lib/supabase/admin");
-  const supabase = createSupabaseAdminClient();
-  const [entriesResult, versionsResult, exercisesResult] = await Promise.all([
-    supabase
-      .from("vocabulary_entries")
-      .select("id, slug, part_of_speech, display_order")
-      .order("display_order"),
-    supabase
-      .from("vocabulary_entry_versions")
-      .select(
-        "id, vocabulary_entry_id, term, definition_vi, example_sentence, topic, tags, difficulty, related_exercise_set_id, status",
-      )
-      .eq("status", "published"),
-    supabase.from("exercise_sets").select("id, slug"),
-  ]);
-  if (entriesResult.error || versionsResult.error || exercisesResult.error) {
-    throw new LearningFoundationReadError();
-  }
-  const versionByEntry = new Map(
-    versionsResult.data.map((item) => [item.vocabulary_entry_id, item]),
-  );
-  const exerciseById = new Map(
-    exercisesResult.data.map((item) => [item.id, item.slug]),
-  );
-
-  return entriesResult.data.flatMap((entry): VocabularyEntry[] => {
-    const version = versionByEntry.get(entry.id);
-    if (!version) return [];
-    return [
-      {
-        id: entry.id,
-        slug: entry.slug,
-        term: version.term,
-        partOfSpeech: entry.part_of_speech,
-        definitionVi: version.definition_vi,
-        exampleSentence: version.example_sentence,
-        topic: version.topic,
-        tags: version.tags,
-        difficulty: version.difficulty,
-        exerciseSlug: version.related_exercise_set_id
-          ? (exerciseById.get(version.related_exercise_set_id) ?? null)
-          : null,
-      },
-    ];
-  });
-}
+    return entriesResult.data.flatMap((entry): VocabularyEntry[] => {
+      const version = versionByEntry.get(entry.id);
+      if (!version) return [];
+      return [
+        {
+          id: entry.id,
+          slug: entry.slug,
+          term: version.term,
+          partOfSpeech: entry.part_of_speech,
+          definitionVi: version.definition_vi,
+          exampleSentence: version.example_sentence,
+          topic: version.topic,
+          tags: version.tags,
+          difficulty: version.difficulty,
+          exerciseSlug: version.related_exercise_set_id
+            ? (exerciseById.get(version.related_exercise_set_id) ?? null)
+            : null,
+        },
+      ];
+    });
+  },
+);
 
 export async function getVocabularyEntry(slug: string) {
   if (!learningSlugSchema.safeParse(slug).success) return null;
@@ -151,7 +107,7 @@ export async function getVocabularyProgressSummary() {
   };
 }
 
-export async function getGrammarCatalog(): Promise<GrammarTopic[]> {
+export const getGrammarCatalog = cache(async (): Promise<GrammarTopic[]> => {
   await requireCompletedOnboarding();
   const supabase = await createSupabaseServerClient();
   const [topicsResult, versionsResult, exercisesResult] = await Promise.all([
@@ -195,7 +151,7 @@ export async function getGrammarCatalog(): Promise<GrammarTopic[]> {
       },
     ];
   });
-}
+});
 
 export async function getGrammarTopic(slug: string) {
   if (!learningSlugSchema.safeParse(slug).success) return null;
